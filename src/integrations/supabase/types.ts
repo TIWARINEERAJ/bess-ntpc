@@ -14,16 +14,249 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      issues: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          owner: string | null
+          resolved_at: string | null
+          severity: string
+          station_id: string
+          status: string
+          target_date: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          owner?: string | null
+          resolved_at?: string | null
+          severity?: string
+          station_id: string
+          status?: string
+          target_date?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          owner?: string | null
+          resolved_at?: string | null
+          severity?: string
+          station_id?: string
+          status?: string
+          target_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issues_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      l2_tasks: {
+        Row: {
+          baseline_finish: string | null
+          baseline_start: string | null
+          duration_days: number
+          id: string
+          is_section: boolean
+          name: string
+          parent_wbs: string | null
+          predecessors: string | null
+          sort_order: number
+          wbs_code: string
+        }
+        Insert: {
+          baseline_finish?: string | null
+          baseline_start?: string | null
+          duration_days?: number
+          id?: string
+          is_section?: boolean
+          name: string
+          parent_wbs?: string | null
+          predecessors?: string | null
+          sort_order?: number
+          wbs_code: string
+        }
+        Update: {
+          baseline_finish?: string | null
+          baseline_start?: string | null
+          duration_days?: number
+          id?: string
+          is_section?: boolean
+          name?: string
+          parent_wbs?: string | null
+          predecessors?: string | null
+          sort_order?: number
+          wbs_code?: string
+        }
+        Relationships: []
+      }
+      station_task_status: {
+        Row: {
+          actual_finish: string | null
+          actual_start: string | null
+          id: string
+          owner: string | null
+          percent_complete: number
+          remarks: string | null
+          station_id: string
+          status: string
+          task_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          actual_finish?: string | null
+          actual_start?: string | null
+          id?: string
+          owner?: string | null
+          percent_complete?: number
+          remarks?: string | null
+          station_id: string
+          status?: string
+          task_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          actual_finish?: string | null
+          actual_start?: string | null
+          id?: string
+          owner?: string | null
+          percent_complete?: number
+          remarks?: string | null
+          station_id?: string
+          status?: string
+          task_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_task_status_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "station_task_status_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "l2_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stations: {
+        Row: {
+          agency: string | null
+          agency_contacts: Json | null
+          capacity_mw: number | null
+          capacity_mwh: number
+          created_at: string
+          eic_contact: string | null
+          eic_email: string | null
+          engg_taskforce: string | null
+          id: string
+          lot: string
+          name: string
+          ntpc_eic: string | null
+          pm_coordinator: string | null
+          poi: string | null
+          project_start_date: string | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          agency?: string | null
+          agency_contacts?: Json | null
+          capacity_mw?: number | null
+          capacity_mwh: number
+          created_at?: string
+          eic_contact?: string | null
+          eic_email?: string | null
+          engg_taskforce?: string | null
+          id?: string
+          lot: string
+          name: string
+          ntpc_eic?: string | null
+          pm_coordinator?: string | null
+          poi?: string | null
+          project_start_date?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agency?: string | null
+          agency_contacts?: Json | null
+          capacity_mw?: number | null
+          capacity_mwh?: number
+          created_at?: string
+          eic_contact?: string | null
+          eic_email?: string | null
+          engg_taskforce?: string | null
+          id?: string
+          lot?: string
+          name?: string
+          ntpc_eic?: string | null
+          pm_coordinator?: string | null
+          poi?: string | null
+          project_start_date?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_authenticated_user: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +383,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "editor", "viewer"],
+    },
   },
 } as const
