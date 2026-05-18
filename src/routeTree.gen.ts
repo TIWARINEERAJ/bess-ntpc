@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedWeeklyPlannerRouteImport } from './routes/_authenticated.weekly-planner'
 import { Route as AuthenticatedStationsStationIdRouteImport } from './routes/_authenticated.stations.$stationId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -28,6 +29,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedWeeklyPlannerRoute =
+  AuthenticatedWeeklyPlannerRouteImport.update({
+    id: '/weekly-planner',
+    path: '/weekly-planner',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedStationsStationIdRoute =
   AuthenticatedStationsStationIdRouteImport.update({
     id: '/stations/$stationId',
@@ -38,10 +45,12 @@ const AuthenticatedStationsStationIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/': typeof AuthenticatedIndexRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
 }
@@ -49,18 +58,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/stations/$stationId'
+  fullPaths: '/' | '/login' | '/weekly-planner' | '/stations/$stationId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/stations/$stationId'
+  to: '/login' | '/weekly-planner' | '/' | '/stations/$stationId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/weekly-planner'
     | '/_authenticated/'
     | '/_authenticated/stations/$stationId'
   fileRoutesById: FileRoutesById
@@ -93,6 +104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/weekly-planner': {
+      id: '/_authenticated/weekly-planner'
+      path: '/weekly-planner'
+      fullPath: '/weekly-planner'
+      preLoaderRoute: typeof AuthenticatedWeeklyPlannerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/stations/$stationId': {
       id: '/_authenticated/stations/$stationId'
       path: '/stations/$stationId'
@@ -104,11 +122,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedWeeklyPlannerRoute: typeof AuthenticatedWeeklyPlannerRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedStationsStationIdRoute: typeof AuthenticatedStationsStationIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedWeeklyPlannerRoute: AuthenticatedWeeklyPlannerRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedStationsStationIdRoute: AuthenticatedStationsStationIdRoute,
 }
@@ -124,3 +144,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
