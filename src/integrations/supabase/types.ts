@@ -14,6 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          field: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          station_id: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          field?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          station_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          field?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          station_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      boi_master: {
+        Row: {
+          drawings_count: number | null
+          id: string
+          inspection_category: string | null
+          name: string
+          scheduled_po_date: string | null
+          sl_no: number
+          sort_order: number
+        }
+        Insert: {
+          drawings_count?: number | null
+          id?: string
+          inspection_category?: string | null
+          name: string
+          scheduled_po_date?: string | null
+          sl_no: number
+          sort_order?: number
+        }
+        Update: {
+          drawings_count?: number | null
+          id?: string
+          inspection_category?: string | null
+          name?: string
+          scheduled_po_date?: string | null
+          sl_no?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      compliance_master: {
+        Row: {
+          authority: string | null
+          category: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          authority?: string | null
+          category: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          authority?: string | null
+          category?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      delay_register: {
+        Row: {
+          corrective_action: string | null
+          created_at: string
+          id: string
+          reason_category: string | null
+          recovery_date: string | null
+          recovery_plan: string | null
+          responsibility: string | null
+          root_cause: string | null
+          station_id: string
+          status: string
+          task_id: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          corrective_action?: string | null
+          created_at?: string
+          id?: string
+          reason_category?: string | null
+          recovery_date?: string | null
+          recovery_plan?: string | null
+          responsibility?: string | null
+          root_cause?: string | null
+          station_id: string
+          status?: string
+          task_id?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          corrective_action?: string | null
+          created_at?: string
+          id?: string
+          reason_category?: string | null
+          recovery_date?: string | null
+          recovery_plan?: string | null
+          responsibility?: string | null
+          root_cause?: string | null
+          station_id?: string
+          status?: string
+          task_id?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       issues: {
         Row: {
           created_at: string
@@ -100,6 +247,117 @@ export type Database = {
           predecessors?: string | null
           sort_order?: number
           wbs_code?: string
+        }
+        Relationships: []
+      }
+      notification_dismissals: {
+        Row: {
+          dismissed_at: string
+          id: string
+          notification_key: string
+          user_id: string
+        }
+        Insert: {
+          dismissed_at?: string
+          id?: string
+          notification_key: string
+          user_id: string
+        }
+        Update: {
+          dismissed_at?: string
+          id?: string
+          notification_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      station_boi_status: {
+        Row: {
+          actual_po_date: string | null
+          boi_id: string
+          delivery_date: string | null
+          id: string
+          mobilization_status: string | null
+          remarks: string | null
+          site_receipt_date: string | null
+          station_id: string
+          sub_vendor_category: string | null
+          sub_vendor_details: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          actual_po_date?: string | null
+          boi_id: string
+          delivery_date?: string | null
+          id?: string
+          mobilization_status?: string | null
+          remarks?: string | null
+          site_receipt_date?: string | null
+          station_id: string
+          sub_vendor_category?: string | null
+          sub_vendor_details?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          actual_po_date?: string | null
+          boi_id?: string
+          delivery_date?: string | null
+          id?: string
+          mobilization_status?: string | null
+          remarks?: string | null
+          site_receipt_date?: string | null
+          station_id?: string
+          sub_vendor_category?: string | null
+          sub_vendor_details?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      station_compliance: {
+        Row: {
+          application_date: string | null
+          approval_date: string | null
+          compliance_id: string
+          document_ref: string | null
+          expiry_date: string | null
+          id: string
+          owner: string | null
+          remarks: string | null
+          station_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          application_date?: string | null
+          approval_date?: string | null
+          compliance_id: string
+          document_ref?: string | null
+          expiry_date?: string | null
+          id?: string
+          owner?: string | null
+          remarks?: string | null
+          station_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          application_date?: string | null
+          approval_date?: string | null
+          compliance_id?: string
+          document_ref?: string | null
+          expiry_date?: string | null
+          id?: string
+          owner?: string | null
+          remarks?: string | null
+          station_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -238,6 +496,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_review_plan: {
+        Row: {
+          agenda_notes: string | null
+          created_at: string
+          created_by: string | null
+          day_of_week: number
+          id: string
+          slot: number
+          station_id: string
+          week_start_date: string
+        }
+        Insert: {
+          agenda_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_of_week: number
+          id?: string
+          slot: number
+          station_id: string
+          week_start_date: string
+        }
+        Update: {
+          agenda_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_of_week?: number
+          id?: string
+          slot?: number
+          station_id?: string
+          week_start_date?: string
         }
         Relationships: []
       }

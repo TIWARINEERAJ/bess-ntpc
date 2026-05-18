@@ -1,81 +1,102 @@
-# NTPC BESS Project Monitoring Portal — Plan
+# NTPC BESS Portal — Phase 2 Features
 
-A world-class monitoring site for the 15 NTPC BESS stations (5,004 MWh across Lot-1 + Lot-2). One executive home dashboard for cross-station progress and MIS, and one Gantt-chart tracking page per station that mirrors the Dadri L2 network exactly. Actual dates are user-editable; planned dates come from the L2 baseline.
+Adding 7 modules on top of the existing Home Dashboard + per-station L2 Gantt.
 
-## What we'll build
+## 1. BOI Equipment Ordering Status (per-station tab)
+New tab on `/stations/$stationId` called **"BOI Status"** mirroring the uploaded Simhadri sheet:
+- Columns: SL, Specific Name of BOI, No. of Drawings, Scheduled PO Date (L2), Actual/Anticipatory PO Date, Sub-Vendor Category (Approved/DR), Sub-Vendor Details, Inspection Category (I/II/III), Remarks.
+- Pre-seeded with the 31-row BOI master list from the Simhadri sheet (Power Transformer → MISC-CIVIL).
+- Inline edit (editor/admin) for actual PO date, sub-vendor, inspection, remarks.
+- Status chip: Ordered / Pending / Delayed (auto from scheduled vs actual).
+- Plus a **Delivery & Mobilization** sub-section (delivery date, site receipt date, mobilization status) per BOI item.
 
-### 1. Home Dashboard (`/`)
-- **KPI strip**: Total capacity (5,004 MWh), stations on-track / delayed / at-risk, weighted % physical progress, upcoming milestones (next 7 / 30 days), open exceptions.
-- **Station grid**: card per station with Lot, MW/MWh, agency, EIC, % progress, current phase, days ahead/behind, status chip (Green / Amber / Red). Click → station page.
-- **Cross-station summary Gantt**: 15 stations × 20 L2 sections, planned vs actual bars, today line.
-- **Exceptions panel**: tasks where Actual > Planned, or planned start passed with no actual — owner + days slipped.
-- **MIS toolbar**:
-  - Download Weekly MIS (.xlsx) — all stations, all sections, planned/actual/variance/% progress.
-  - Download Exception Report (.xlsx) — only slipped / at-risk tasks.
-  - Download Executive Summary (.pdf) — KPIs + station status table + top risks.
-  - Filters: Lot, Agency, Status, Date range — apply to exports.
+## 2. Weekly Review Planner
+New top-level route `/weekly-planner`:
+- Calendar grid (Mon–Sun) for any selected week.
+- Each weekday slot holds up to 3 station review assignments (covers your "3 stations/day" rule).
+- Drag-or-dropdown to assign stations; auto-pulls latest progress %, open exceptions, top 3 delayed tasks for the agenda.
+- "Generate Agenda PDF" button per day; "Export Weekly Plan" for the whole week.
+- Persists in new `weekly_review_plan` table.
 
-### 2. Station Gantt Page (`/stations/$stationId`)
-Mirrors the Dadri L2 network exactly. Header shows station meta (capacity, agency, EIC, PM coordinator, contacts). Below it:
+## 3. Delay Analysis Register
+New tab on `/stations/$stationId` called **"Delay Register"**:
+- Auto-populated from tasks where Actual Finish > Planned Finish OR Planned Finish passed with <100%.
+- Editable fields per row: Reason category (Vendor / Clearance / Site / Design / Force Majeure / Other), Root cause, Responsibility (NTPC / Vendor / Statutory), Corrective action, Recovery plan, Recovery date, Status (Open / Mitigated / Closed).
+- Vendors (editor role) can update reason + corrective action; admin can close.
+- Exportable as Excel (per-station and consolidated).
+- New `delay_register` table.
 
-- **Editable Gantt + WBS table** combined:
-  - Left pane: WBS tree (1.1 NOA → 1.20 Completion of facilities) with ~127 sub-tasks, durations, predecessors. Collapsible by section.
-  - Right pane: timeline (zoom: week / month / quarter). Two bars per row — **planned (grey)** from L2 baseline, **actual (blue → green when complete, red when delayed)**. Today line. Milestones (0-day tasks like NOA) as diamonds.
-- **Inline edit**: click any task row → side drawer with Actual Start, Actual Finish, % Complete, Status (Not started / In progress / Completed / Delayed / Blocked), Remarks, Owner. Saves immediately.
-- **Section rollups** auto-computed: section % complete = duration-weighted average of children; section actual dates = min start / max finish of children.
-- **Critical-path highlight** based on L2 predecessors.
-- **Per-station export**: download this station's Gantt as .xlsx and PDF snapshot.
+## 4. Due-Date Notifications
+- Bell icon in `AppHeader` with unread count.
+- Generated client-side on data load from: L2 tasks due within 7 days with no actual start, BOI POs due within 7 days, open issues with target_date within 3 days, delay register items with recovery_date within 3 days.
+- Click → deep-link to the relevant station/tab.
+- Per-user dismiss tracked in `notification_dismissals` table.
 
-### 3. Issues tab on each station page
-Vendor / safety / clearance issues with owner, target date, status. Open issues surface in home-dashboard exceptions.
+## 5. Edit Audit Trail
+- New `audit_log` table (id, user_id, user_email, station_id, entity_type, entity_id, field, old_value, new_value, action, created_at).
+- DB triggers on `station_task_status`, `issues`, `delay_register`, BOI tables → write to audit_log on INSERT/UPDATE/DELETE.
+- New tab on station page **"Audit Trail"** with filter by user / entity / date. Admin-only full view; editors see their own.
+- Exportable as Excel.
 
-## Data model (Lovable Cloud / Postgres)
+## 6. Bulk MIS Export
+New section on Home Dashboard **"Bulk MIS"**:
+- Multi-select stations (or "All 15"), multi-select report types (Weekly MIS, Exceptions, BOI Status, Delay Register, Audit Trail, Compliances).
+- Single click → generates one .zip containing all selected reports as separate .xlsx files, named by station.
+- Server function using `jszip` + existing `xlsx` exporters.
+- Also: scheduled "Top Management Pack" — one consolidated workbook with executive summary, all station summaries, top 20 delays, top 10 risks.
 
+## 7. Status of Compliances
+New tab on `/stations/$stationId` called **"Compliances"**:
+- Categories: Statutory (MoEF, CEA, CTE, CTO, Forest, NOC), Safety (HIRA, JSA, PTW, Safety Audit), Quality (QAP, FQP, MQP), Insurance (CAR, WC), Local (PCB, Fire).
+- Per item: Authority, Application date, Approval/expiry date, Status (Not applied / Applied / Under review / Approved / Rejected / Expired), Document ref, Owner, Remarks.
+- Auto-flag items expiring within 30 days → feed notifications.
+- Pre-seeded master list of ~25 standard NTPC BESS compliance items per station.
+- New `compliance_items` table.
+- Cross-station rollup tile on Home Dashboard ("X of Y compliances cleared portfolio-wide").
+
+## Data model additions
 ```text
-stations             id, name, lot, capacity_mwh, capacity_mw, poi, agency,
-                     agency_contacts (jsonb), ntpc_eic, eic_contact, eic_email,
-                     pm_coordinator, project_start_date
+boi_master           id, sl_no, name, drawings_count, scheduled_po_date, inspection_category, sort_order
+                     -- shared template, seeded from Simhadri sheet (31 rows)
 
-l2_tasks             id, wbs_code (e.g. "1.8.5"), parent_wbs, name, is_section,
-                     duration_days, baseline_start, baseline_finish,
-                     predecessors, sort_order
-                     -- single shared L2 template seeded from Dadri PDF
+station_boi_status   id, station_id, boi_id, actual_po_date, sub_vendor_category,
+                     sub_vendor_details, delivery_date, site_receipt_date,
+                     mobilization_status, remarks, updated_by, updated_at
+                     -- unique (station_id, boi_id)
 
-station_task_status  id, station_id, task_id, actual_start, actual_finish,
-                     percent_complete, status, remarks, owner, updated_by,
-                     updated_at
-                     -- unique (station_id, task_id)
+weekly_review_plan   id, week_start_date, day_of_week, slot, station_id,
+                     agenda_notes, created_by, created_at
 
-issues               id, station_id, title, description, severity, owner,
-                     target_date, status, created_at, resolved_at
+delay_register       id, station_id, task_id (nullable), title, reason_category,
+                     root_cause, responsibility, corrective_action, recovery_plan,
+                     recovery_date, status, created_at, updated_at, updated_by
 
-user_roles           id, user_id, role  (admin | editor | viewer)
+audit_log            id, user_id, user_email, station_id, entity_type, entity_id,
+                     field, old_value, new_value, action, created_at
+
+notification_dismissals  id, user_id, notification_key, dismissed_at
+
+compliance_master    id, category, name, authority, sort_order
+                     -- shared template (~25 items)
+
+station_compliance   id, station_id, compliance_id, application_date,
+                     approval_date, expiry_date, status, document_ref,
+                     owner, remarks, updated_by, updated_at
+                     -- unique (station_id, compliance_id)
 ```
 
-Baselines are shared (Dadri L2 is the common template — same Gantt for every station, as requested). Per-station deviations live in `station_task_status`. A future revision can clone the template per station if dates diverge.
+All new tables get RLS: read = any authenticated, write = admin/editor (same model as existing tables). Audit log triggers run as `SECURITY DEFINER`.
 
-## Auth (Lovable Cloud)
-Email/password sign-in. Roles via separate `user_roles` table (with `has_role` security-definer function, RLS scoped accordingly):
-- **admin** — edit any station, manage users, seed/reset baselines.
-- **editor** — update actuals + issues on assigned stations.
-- **viewer** — read-only + can download MIS.
+## UI/UX
+- Station page restructured with shadcn Tabs: **L2 Gantt | BOI Status | Compliances | Delay Register | Issues | Audit Trail**.
+- AppHeader gets: notification bell, weekly-planner nav link.
+- Home Dashboard adds: Bulk MIS panel, Compliance rollup tile, "Today's review stations" strip (from weekly planner).
+- Reuse existing dark navy ops-control theme + status chips.
 
-## Tech approach
-- TanStack Start routes: `/` (home), `/login`, `/_authenticated/stations/$stationId`, `/_authenticated/issues`, `/_authenticated/admin`.
-- Gantt: custom SVG renderer — lightweight, fully controllable, prints cleanly, virtualised for 127 tasks × 15 stations.
-- Exports: `xlsx` for spreadsheets and `@react-pdf/renderer` for PDFs, generated inside `createServerFn` and streamed to the browser.
-- Data: TanStack Query + server functions with optimistic updates on actual-date edits.
-- Design: ops-control aesthetic — dark navy + cyan accent, mono numerals, status chips, dense info. Built for big-screen review rooms.
+## Out of scope (this phase)
+- Email/SMS push for notifications (in-app bell only).
+- Auto-routing of weekly plan to Outlook/Teams calendars.
+- Photo upload for BOI delivery / compliance docs (just text refs).
+- Document vault.
 
-## Seeding (first run)
-- 15 stations + Lot / MWh / agency / contacts / EIC from your uploaded sheets.
-- 1 L2 template = 20 sections + ~127 tasks from `Dadri_L2.pdf` (WBS, duration, baseline start/finish, predecessors).
-- Empty `station_task_status` (all rows start "Not started", actuals blank).
-
-## Out of scope for v1
-- Auto-rotating "3 stations/day" weekly review scheduler.
-- Dedicated equipment PO / dispatch / delivery tracker.
-- Photo upload per task; document vault.
-- Email / Teams notifications on slippage.
-
-Approve and I'll enable Lovable Cloud, seed the L2 template + stations, and build the dashboard, Gantt page, and MIS exports.
+Approve and I'll run the migration (7 new tables + audit triggers + seeds), then build the UI in one pass.

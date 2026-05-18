@@ -1,8 +1,9 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Battery, LogOut, Shield } from "lucide-react";
+import { Battery, LogOut, Shield, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function AppHeader() {
   const { user, role, signOut } = useAuth();
@@ -21,8 +22,12 @@ export function AppHeader() {
         </Link>
         <nav className="ml-6 hidden gap-1 md:flex">
           <Link to="/" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} activeOptions={{ exact: true }}>Dashboard</Link>
+          <Link to="/weekly-planner" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
+            <CalendarDays className="h-3.5 w-3.5" /> Weekly Planner
+          </Link>
         </nav>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
+          <NotificationBell />
           {role && (
             <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
               <Shield className="h-3 w-3" /> {role.toUpperCase()}

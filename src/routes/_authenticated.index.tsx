@@ -10,8 +10,11 @@ import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, Trend
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
-import { useMemo } from "react";
+import { bulkExport } from "@/lib/bulk-export";
+import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Package } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Dashboard — NTPC BESS L2 Monitor" }] }),
@@ -179,7 +182,74 @@ function Dashboard() {
           </Card>
         </div>
       </section>
+
+      <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
     </div>
+  );
+}
+
+function BulkMisPanel({ stations, tasks, statusByStation }: { stations: Station[]; tasks: L2Task[]; statusByStation: Record<string, Status[]> }) {
+  const REPORTS = [
+    { id: "weekly", label: "Weekly MIS" }, { id: "exceptions", label: "Exceptions" },
+    { id: "boi", label: "BOI Status" }, { id: "delays", label: "Delay Register" },
+    { id: "compliance", label: "Compliances" }, { id: "audit", label: "Audit Trail" },
+  ] as const;
+  const [selStations, setSelStations] = useState<Set<string>>(new Set(stations.map(s => s.id)));
+  const [selReports, setSelReports] = useState<Set<string>>(new Set(["weekly", "exceptions", "boi", "delays", "compliance"]));
+  const [busy, setBusy] = useState(false);
+
+  const toggle = (set: Set<string>, setSet: (s: Set<string>) => void, id: string) => {
+    const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); setSet(n);
+  };
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      await bulkExport({ stations, tasks, statusByStation, reports: Array.from(selReports) as ("weekly"|"exceptions"|"boi"|"delays"|"compliance"|"audit")[], selectedStationIds: Array.from(selStations) });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <section>
+      <SectionHeading title="Bulk MIS Export" sub="Generate a single .zip pack with all selected reports for top-management review" />
+      <Card className="p-4">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr_auto]">
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Stations ({selStations.size}/{stations.length})</div>
+              <div className="flex gap-2">
+                <button className="text-[10px] text-primary hover:underline" onClick={() => setSelStations(new Set(stations.map(s => s.id)))}>All</button>
+                <button className="text-[10px] text-muted-foreground hover:underline" onClick={() => setSelStations(new Set())}>None</button>
+              </div>
+            </div>
+            <div className="grid max-h-48 grid-cols-2 gap-1 overflow-auto rounded-md border border-border/60 p-2 text-xs">
+              {stations.map(s => (
+                <label key={s.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-secondary/60">
+                  <Checkbox checked={selStations.has(s.id)} onCheckedChange={() => toggle(selStations, setSelStations, s.id)} />
+                  <span className="truncate">{s.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Reports ({selReports.size}/{REPORTS.length})</div>
+            <div className="grid gap-1 rounded-md border border-border/60 p-2 text-xs">
+              {REPORTS.map(r => (
+                <label key={r.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-secondary/60">
+                  <Checkbox checked={selReports.has(r.id)} onCheckedChange={() => toggle(selReports, setSelReports, r.id)} />
+                  <span>{r.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-end">
+            <Button disabled={busy || selStations.size === 0 || selReports.size === 0} onClick={run} className="w-full lg:w-auto">
+              <Package className="mr-2 h-4 w-4" /> {busy ? "Generating…" : "Generate MIS Pack (.zip)"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </section>
   );
 }
 
