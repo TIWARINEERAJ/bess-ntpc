@@ -20,6 +20,10 @@ import { GanttChart } from "@/components/GanttChart";
 import { buildStatusMap, computeRowState, fmtD, sectionRollup, stationProgress, statusLabel, type L2Task, type RowStatus, type Status } from "@/lib/gantt-utils";
 import { exportStation } from "@/lib/mis-export";
 import { useAuth } from "@/lib/auth-context";
+import { BoiStatusTab } from "@/components/BoiStatusTab";
+import { DelayRegisterTab } from "@/components/DelayRegisterTab";
+import { ComplianceTab } from "@/components/ComplianceTab";
+import { AuditTrailTab } from "@/components/AuditTrailTab";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
@@ -158,9 +162,13 @@ function StationPage() {
       </Card>
 
       <Tabs defaultValue="gantt">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
+          <TabsTrigger value="boi">BOI Status</TabsTrigger>
+          <TabsTrigger value="compliance">Compliances</TabsTrigger>
+          <TabsTrigger value="delays">Delay Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
+          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         </TabsList>
 
         <TabsContent value="gantt" className="space-y-2">
@@ -202,9 +210,11 @@ function StationPage() {
           <Legend />
         </TabsContent>
 
-        <TabsContent value="issues">
-          <IssuesPanel stationId={stationId} canEdit={canEdit} />
-        </TabsContent>
+        <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
+        <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="audit"><AuditTrailTab stationId={stationId} /></TabsContent>
       </Tabs>
 
       <TaskDrawer
