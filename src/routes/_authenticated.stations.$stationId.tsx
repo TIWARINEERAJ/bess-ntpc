@@ -169,15 +169,17 @@ function StationPage() {
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
           <TabsTrigger value="delays">Delay Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
+          <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         </TabsList>
 
         <TabsContent value="gantt" className="space-y-2">
-          <div className="grid grid-cols-[minmax(420px,520px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
+          <div className="grid grid-cols-[minmax(760px,860px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
-              <div className="sticky top-0 z-10 grid grid-cols-[80px_1fr_60px_60px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(180px,1fr)_44px_44px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
+                <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div>
               </div>
               <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
                 {visibleTasks.map(t => {
@@ -188,7 +190,7 @@ function StationPage() {
                   const roll = t.is_section ? sectionRollup(tasks, statusMap, t.wbs_code) : null;
                   const pctDisplay = t.is_section ? roll!.pct : (st?.percent_complete ?? 0);
                   return (
-                    <div key={t.id} className={`grid h-8 grid-cols-[80px_1fr_60px_60px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
+                    <div key={t.id} className={`grid h-8 grid-cols-[70px_minmax(180px,1fr)_44px_44px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
                       <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 10 }}>
                         {hasChildren ? (
@@ -200,6 +202,10 @@ function StationPage() {
                       </div>
                       <div className="text-right font-mono text-[10px] text-muted-foreground">{t.duration_days}d</div>
                       <div className="text-right font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : pctDisplay >= 100 ? "var(--status-green)" : "var(--foreground)" }}>{pctDisplay}%</div>
+                      <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_start)}</div>
+                      <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_finish)}</div>
+                      <div className="font-mono text-[10px]" style={{ color: st?.actual_start ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(st?.actual_start)}</div>
+                      <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : st?.actual_finish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(st?.actual_finish)}</div>
                     </div>
                   );
                 })}
@@ -215,6 +221,7 @@ function StationPage() {
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
         <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="meetings"><MeetingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="audit"><AuditTrailTab stationId={stationId} /></TabsContent>
       </Tabs>
 
