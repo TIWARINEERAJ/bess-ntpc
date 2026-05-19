@@ -24,6 +24,7 @@ import { BoiStatusTab } from "@/components/BoiStatusTab";
 import { DelayRegisterTab } from "@/components/DelayRegisterTab";
 import { ComplianceTab } from "@/components/ComplianceTab";
 import { AuditTrailTab } from "@/components/AuditTrailTab";
+import { MeetingsTab } from "@/components/MeetingsTab";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
