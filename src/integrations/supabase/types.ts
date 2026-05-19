@@ -250,6 +250,51 @@ export type Database = {
         }
         Relationships: []
       }
+      meetings: {
+        Row: {
+          action_items: string | null
+          agenda: string | null
+          attendees: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          meeting_date: string
+          meeting_type: string
+          minutes: string | null
+          next_meeting_date: string | null
+          station_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: string | null
+          agenda?: string | null
+          attendees?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_date: string
+          meeting_type: string
+          minutes?: string | null
+          next_meeting_date?: string | null
+          station_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: string | null
+          agenda?: string | null
+          attendees?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_date?: string
+          meeting_type?: string
+          minutes?: string | null
+          next_meeting_date?: string | null
+          station_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_dismissals: {
         Row: {
           dismissed_at: string
