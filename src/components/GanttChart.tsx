@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { differenceInCalendarDays, addMonths, startOfMonth, format } from "date-fns";
-import { computeRowState, parseD, projectBounds, type L2Task, type Status } from "@/lib/gantt-utils";
+import { computeRowState, sectionDerived, parseD, projectBounds, type L2Task, type Status } from "@/lib/gantt-utils";
 
 type Props = {
   tasks: L2Task[];
