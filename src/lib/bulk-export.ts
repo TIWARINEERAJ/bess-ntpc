@@ -30,7 +30,8 @@ export async function bulkExport(opts: {
     const wb = XLSX.utils.book_new();
     const summary = stations.map(s => {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      const p = stationProgress(opts.tasks, m);
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      const p = stationProgress(sTasks, m);
       return { Station: s.name, Lot: s.lot, "MWh": s.capacity_mwh, Agency: s.agency ?? "",
         EIC: s.ntpc_eic ?? "", "Progress %": p.pct, Done: p.completed, Total: p.total, Delayed: p.delayed };
     });
