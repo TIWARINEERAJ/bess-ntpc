@@ -37,19 +37,21 @@ function Dashboard() {
       return data as Station[];
     },
   });
+  const stations = stationsQ.data ?? [];
+  const stationIds = useMemo(() => stations.map(s => s.id), [stations]);
+  const stationKey = stationIds.join("|");
   const tasksQ = useQuery({
-    queryKey: ["l2_tasks", "by-station", stations.map(s => s.id).join("|")],
-    queryFn: () => fetchTasksByStation(stations.map(s => s.id)),
-    enabled: stations.length > 0,
+    queryKey: ["l2_tasks", "by-station", stationKey],
+    queryFn: () => fetchTasksByStation(stationIds),
+    enabled: stationIds.length > 0,
   });
   const statusQ = useQuery({
-    queryKey: ["all_status", "by-station", stations.map(s => s.id).join("|")],
-    queryFn: () => fetchStatusesByStation(stations.map(s => s.id)),
-    enabled: stations.length > 0,
+    queryKey: ["all_status", "by-station", stationKey],
+    queryFn: () => fetchStatusesByStation(stationIds),
+    enabled: stationIds.length > 0,
   });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
-  const stations = stationsQ.data ?? [];
   const tasksByStation = tasksQ.data ?? {};
   const statusByStation = statusQ.data ?? {};
   const tasks = useMemo(() => Object.values(tasksByStation).flat(), [tasksByStation]);
