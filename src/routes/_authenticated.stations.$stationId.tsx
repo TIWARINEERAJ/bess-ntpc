@@ -47,13 +47,10 @@ function StationPage() {
   const tasksQ = useQuery({
     queryKey: ["l2_tasks", stationId],
     queryFn: async () => {
-      // Prefer station-specific tasks; fall back to legacy global (station_id IS NULL)
-      const { data: own, error } = await supabase.from("l2_tasks").select("*").eq("station_id", stationId).order("sort_order");
+      const { data, error } = await supabase
+        .from("l2_tasks").select("*").eq("station_id", stationId).order("sort_order");
       if (error) throw error;
-      if (own && own.length > 0) return own as L2Task[];
-      const { data: global, error: e2 } = await supabase.from("l2_tasks").select("*").is("station_id", null).order("sort_order");
-      if (e2) throw e2;
-      return (global ?? []) as L2Task[];
+      return (data ?? []) as L2Task[];
     },
   });
   const statusQ = useQuery({
