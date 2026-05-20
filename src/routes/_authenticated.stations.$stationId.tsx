@@ -232,6 +232,7 @@ function StationPage() {
       <TaskDrawer
         task={openTask}
         status={openTask ? statusMap.get(openTask.id) : undefined}
+        derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
         onClose={() => setOpenTask(null)}
         canEdit={canEdit}
         saving={upsert.isPending}
