@@ -63,7 +63,7 @@ export function DelayRegisterTab({ stationId, canEdit, tasks, status }: { statio
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs text-muted-foreground">{(q.data ?? []).length} registered · {autoUnregistered.length} auto-detected unregistered slips</div>
+        <div className="text-xs text-muted-foreground">{(q.data ?? []).length} hindrance entr{(q.data ?? []).length === 1 ? "y" : "ies"} · {autoUnregistered.length} auto-detected slips</div>
         {canEdit && (
           <div className="flex gap-2">
             {autoUnregistered.length > 0 && <Button size="sm" variant="outline" onClick={autoSeed}><Wand2 className="mr-1 h-3 w-3" /> Auto-register slips</Button>}
