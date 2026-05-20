@@ -78,6 +78,8 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
             const aStartD = derived ? derived.actual_start : cs.actualStart;
             const aEndD = derived ? derived.actual_finish ?? (derived.actual_start ? today : null) : (cs.actualEnd ?? (cs.actualStart ? today : null));
             const effPct = derived ? derived.pct : cs.pct;
+            const isMilestone = t.duration_days === 0;
+            const barH = t.is_section ? 6 : 10;
             const yPlanned = y + (rowHeight - barH) / 2 - 2;
             const yActual = y + (rowHeight - barH) / 2 + 6;
 
