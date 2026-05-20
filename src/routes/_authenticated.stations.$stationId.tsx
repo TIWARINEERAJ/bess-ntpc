@@ -232,6 +232,7 @@ function StationPage() {
       <TaskDrawer
         task={openTask}
         status={openTask ? statusMap.get(openTask.id) : undefined}
+        derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
         onClose={() => setOpenTask(null)}
         canEdit={canEdit}
         saving={upsert.isPending}
@@ -270,9 +271,10 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
   );
 }
 
-function TaskDrawer({ task, status, onClose, onSave, canEdit, saving }: {
+function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }: {
   task: L2Task | null;
   status: Status | undefined;
+  derived: { pct: number; actual_start: Date | null; actual_finish: Date | null; leafCount: number } | null;
   onClose: () => void;
   onSave: (p: Partial<Status>) => Promise<void>;
   canEdit: boolean;
@@ -285,17 +287,34 @@ function TaskDrawer({ task, status, onClose, onSave, canEdit, saving }: {
   const [owner, setOwner] = useState("");
   const [remarks, setRemarks] = useState("");
 
+  const isSection = !!task?.is_section;
+  const fmtIso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
+  const sectionStatus: RowStatus = derived
+    ? derived.pct >= 100 ? "completed" : derived.pct > 0 ? "in_progress" : "not_started"
+    : "not_started";
+
   useEffect(() => {
-    setActualStart(status?.actual_start ?? "");
-    setActualFinish(status?.actual_finish ?? "");
-    setPct(status?.percent_complete ?? 0);
-    setStatusV(status?.status ?? "not_started");
-    setOwner(status?.owner ?? "");
-    setRemarks(status?.remarks ?? "");
-  }, [task, status]);
+    if (isSection && derived) {
+      setActualStart(fmtIso(derived.actual_start));
+      setActualFinish(fmtIso(derived.actual_finish));
+      setPct(derived.pct);
+      setStatusV(sectionStatus);
+      setOwner(status?.owner ?? "");
+      setRemarks(status?.remarks ?? "");
+    } else {
+      setActualStart(status?.actual_start ?? "");
+      setActualFinish(status?.actual_finish ?? "");
+      setPct(status?.percent_complete ?? 0);
+      setStatusV(status?.status ?? "not_started");
+      setOwner(status?.owner ?? "");
+      setRemarks(status?.remarks ?? "");
+    }
+  }, [task, status, derived, isSection, sectionStatus]);
 
   if (!task) return null;
-  const cs = computeRowState(task, status);
+  const cs = isSection
+    ? { status: sectionStatus }
+    : computeRowState(task, status);
 
   return (
     <Sheet open={!!task} onOpenChange={(o) => !o && onClose()}>
