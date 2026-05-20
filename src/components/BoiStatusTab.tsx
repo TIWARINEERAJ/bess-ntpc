@@ -50,7 +50,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
             <tr>
-              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Insp.", "Delivery", "Site Receipt", "Mobilization", "Status", "Remarks"].map(h =>
+              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Insp.", "Delivery", "Site Receipt", "Mobilization", "Status", "Remarks", "Docs"].map(h =>
                 <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
             </tr>
           </thead>
