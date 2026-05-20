@@ -38,7 +38,8 @@ export async function bulkExport(opts: {
     XLSX.utils.book_append_sheet(wb, sheet(summary), "Summary");
     for (const s of stations) {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      const rows = opts.tasks.map(t => {
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      const rows = sTasks.map(t => {
         const st = m.get(t.id); const cs = computeRowState(t, st);
         return { WBS: t.wbs_code, Task: t.name, "Plan Start": t.baseline_start, "Plan Finish": t.baseline_finish,
           "Actual Start": st?.actual_start ?? "", "Actual Finish": st?.actual_finish ?? "",
