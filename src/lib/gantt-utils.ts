@@ -2,6 +2,7 @@ import { differenceInCalendarDays, parseISO, format, addDays, max as dMax, min a
 
 export type L2Task = {
   id: string;
+  station_id: string;
   wbs_code: string;
   parent_wbs: string | null;
   name: string;
