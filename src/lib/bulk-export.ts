@@ -30,14 +30,16 @@ export async function bulkExport(opts: {
     const wb = XLSX.utils.book_new();
     const summary = stations.map(s => {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      const p = stationProgress(opts.tasks, m);
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      const p = stationProgress(sTasks, m);
       return { Station: s.name, Lot: s.lot, "MWh": s.capacity_mwh, Agency: s.agency ?? "",
         EIC: s.ntpc_eic ?? "", "Progress %": p.pct, Done: p.completed, Total: p.total, Delayed: p.delayed };
     });
     XLSX.utils.book_append_sheet(wb, sheet(summary), "Summary");
     for (const s of stations) {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      const rows = opts.tasks.map(t => {
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      const rows = sTasks.map(t => {
         const st = m.get(t.id); const cs = computeRowState(t, st);
         return { WBS: t.wbs_code, Task: t.name, "Plan Start": t.baseline_start, "Plan Finish": t.baseline_finish,
           "Actual Start": st?.actual_start ?? "", "Actual Finish": st?.actual_finish ?? "",
@@ -55,7 +57,8 @@ export async function bulkExport(opts: {
     const exc: Array<Record<string, string | number>> = [];
     for (const s of stations) {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      for (const t of opts.tasks) {
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      for (const t of sTasks) {
         if (t.is_section) continue;
         const st = m.get(t.id); const cs = computeRowState(t, st);
         if (cs.status === "delayed" || cs.status === "blocked" || cs.slipDays > 0) {
