@@ -169,7 +169,7 @@ function StationPage() {
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
-          <TabsTrigger value="delays">Delay Register</TabsTrigger>
+          <TabsTrigger value="delays">Hindrance Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
           <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
