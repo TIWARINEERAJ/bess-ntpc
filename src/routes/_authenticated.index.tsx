@@ -321,6 +321,15 @@ function BulkMisPanel({ stations, tasks, statusByStation }: { stations: Station[
   );
 }
 
+function LegendDot({ grad, label, dashed }: { grad: string; label: string; dashed?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: grad, border: dashed ? "1px dashed var(--primary)" : undefined, backgroundImage: dashed ? "none" : undefined }} />
+      <span>{label}</span>
+    </span>
+  );
+}
+
 function SectionHeading({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-3 flex items-end justify-between">
