@@ -11,7 +11,7 @@ import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2T
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { bulkExport } from "@/lib/bulk-export";
-import { fetchAllStationTasks, fetchAllTaskStatuses, groupByStation } from "@/lib/task-data";
+import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,29 +38,21 @@ function Dashboard() {
     },
   });
   const tasksQ = useQuery({
-    queryKey: ["l2_tasks", "all-stations-paged"],
-    queryFn: fetchAllStationTasks,
+    queryKey: ["l2_tasks", "by-station", stations.map(s => s.id).join("|")],
+    queryFn: () => fetchTasksByStation(stations.map(s => s.id)),
+    enabled: stations.length > 0,
   });
   const statusQ = useQuery({
-    queryKey: ["all_status", "all-stations-paged"],
-    queryFn: fetchAllTaskStatuses,
+    queryKey: ["all_status", "by-station", stations.map(s => s.id).join("|")],
+    queryFn: () => fetchStatusesByStation(stations.map(s => s.id)),
+    enabled: stations.length > 0,
   });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const stations = stationsQ.data ?? [];
-  const tasks = tasksQ.data ?? [];
-  const allStatus = statusQ.data ?? [];
-
-  const statusByStation = useMemo(() => {
-    const o: Record<string, Status[]> = {};
-    for (const s of stations) o[s.id] = [];
-    for (const r of allStatus) (o[r.station_id] ??= []).push(r);
-    return o;
-  }, [stations, allStatus]);
-
-  const tasksByStation = useMemo(() => {
-    return groupByStation(tasks, stations.map(s => s.id));
-  }, [stations, tasks]);
+  const tasksByStation = tasksQ.data ?? {};
+  const statusByStation = statusQ.data ?? {};
+  const tasks = useMemo(() => Object.values(tasksByStation).flat(), [tasksByStation]);
 
   const computed = useMemo(() => {
     return stations.map(s => {
