@@ -56,6 +56,42 @@ export type Database = {
         }
         Relationships: []
       }
+      boi_documents: {
+        Row: {
+          boi_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          station_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          boi_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          station_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          boi_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          station_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       boi_master: {
         Row: {
           drawings_count: number | null
@@ -83,6 +119,42 @@ export type Database = {
           scheduled_po_date?: string | null
           sl_no?: number
           sort_order?: number
+        }
+        Relationships: []
+      }
+      compliance_documents: {
+        Row: {
+          compliance_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          station_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          compliance_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          station_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          compliance_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          station_id?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }
@@ -222,6 +294,7 @@ export type Database = {
           parent_wbs: string | null
           predecessors: string | null
           sort_order: number
+          station_id: string | null
           wbs_code: string
         }
         Insert: {
@@ -234,6 +307,7 @@ export type Database = {
           parent_wbs?: string | null
           predecessors?: string | null
           sort_order?: number
+          station_id?: string | null
           wbs_code: string
         }
         Update: {
@@ -246,6 +320,7 @@ export type Database = {
           parent_wbs?: string | null
           predecessors?: string | null
           sort_order?: number
+          station_id?: string | null
           wbs_code?: string
         }
         Relationships: []
@@ -528,18 +603,21 @@ export type Database = {
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          station_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
+          station_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          station_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -582,6 +660,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_station: {
+        Args: { _station_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -590,6 +672,7 @@ export type Database = {
         Returns: boolean
       }
       is_authenticated_user: { Args: never; Returns: boolean }
+      user_station_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
