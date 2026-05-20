@@ -19,7 +19,8 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
   const q = useQuery({
     queryKey: key,
     queryFn: async () => {
-      const { data, error } = await supabase.from(table).select("*").eq("station_id", stationId).eq(fkCol, refId).order("created_at", { ascending: false });
+      const qb = supabase.from(table).select("*").eq("station_id", stationId);
+      const { data, error } = await (kind === "boi" ? qb.eq("boi_id", refId) : qb.eq("compliance_id", refId)).order("created_at", { ascending: false });
       if (error) throw error; return data as Doc[];
     },
   });
