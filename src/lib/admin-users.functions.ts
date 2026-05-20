@@ -12,7 +12,7 @@ async function assertAdmin(userId: string) {
 export const listStationUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase as never, context.userId);
+    await assertAdmin(context.userId);
     const { data: roles, error } = await supabaseAdmin.from("user_roles").select("user_id, role, station_id").order("role");
     if (error) throw new Error(error.message);
     const { data: usersRes } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
@@ -35,7 +35,7 @@ export const createStationUser = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase as never, context.userId);
+    await assertAdmin(context.userId);
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -56,7 +56,7 @@ export const deleteStationUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ user_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase as never, context.userId);
+    await assertAdmin(context.userId);
     if (data.user_id === context.userId) throw new Error("Cannot delete your own account");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
     if (error) throw new Error(error.message);
@@ -67,7 +67,7 @@ export const resetStationUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ user_id: z.string().uuid(), password: z.string().min(8).max(72) }).parse(input))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase as never, context.userId);
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, { password: data.password });
     if (error) throw new Error(error.message);
     return { ok: true };
