@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { differenceInCalendarDays, addMonths, startOfMonth, format } from "date-fns";
-import { computeRowState, parseD, projectBounds, type L2Task, type Status } from "@/lib/gantt-utils";
+import { computeRowState, sectionDerived, parseD, projectBounds, type L2Task, type Status } from "@/lib/gantt-utils";
 
 type Props = {
   tasks: L2Task[];
@@ -73,7 +73,11 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
             const cs = computeRowState(t, st, today);
             const y = i * rowHeight;
             const pStartD = cs.plannedStart, pEndD = cs.plannedEnd;
-            const aStartD = cs.actualStart, aEndD = cs.actualEnd ?? (cs.actualStart ? today : null);
+            // For section rows, derive actual dates and % from leaf children
+            const derived = t.is_section ? sectionDerived(tasks, statusMap, t.wbs_code) : null;
+            const aStartD = derived ? derived.actual_start : cs.actualStart;
+            const aEndD = derived ? derived.actual_finish ?? (derived.actual_start ? today : null) : (cs.actualEnd ?? (cs.actualStart ? today : null));
+            const effPct = derived ? derived.pct : cs.pct;
             const isMilestone = t.duration_days === 0;
             const barH = t.is_section ? 6 : 10;
             const yPlanned = y + (rowHeight - barH) / 2 - 2;
@@ -108,8 +112,8 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
                     <title>{`Actual: ${format(aStartD, "dd-MMM")} → ${aEndD ? format(aEndD, "dd-MMM") : "ongoing"}`}</title>
                   </rect>
                 )}
-                {cs.pct > 0 && cs.pct < 100 && aStartD && (
-                  <rect x={actualX} y={yActual} width={(actualW * cs.pct) / 100} height={barH - 4}
+                {effPct > 0 && effPct < 100 && aStartD && (
+                  <rect x={actualX} y={yActual} width={(actualW * effPct) / 100} height={barH - 4}
                     fill="var(--primary)" opacity={0.6} rx={2} />
                 )}
               </g>
