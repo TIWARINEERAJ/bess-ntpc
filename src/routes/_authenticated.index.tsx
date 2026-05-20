@@ -38,11 +38,11 @@ function Dashboard() {
     },
   });
   const tasksQ = useQuery({
-    queryKey: ["l2_tasks"],
+    queryKey: ["l2_tasks", "all-stations-paged"],
     queryFn: fetchAllStationTasks,
   });
   const statusQ = useQuery({
-    queryKey: ["all_status"],
+    queryKey: ["all_status", "all-stations-paged"],
     queryFn: fetchAllTaskStatuses,
   });
 
