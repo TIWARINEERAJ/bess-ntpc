@@ -1,102 +1,56 @@
-# NTPC BESS Portal — Phase 2 Features
+# Plan — NTPC BESS Portal: 8-part upgrade
 
-Adding 7 modules on top of the existing Home Dashboard + per-station L2 Gantt.
+## 1. Solapur split (16 packages / 15 stations)
+- Rename existing **Solarpur/Solapur** → **Solapur-1**.
+- Add **Solapur-2** as new station (same EIC/POI, separate package). Both will show in dashboard + have their own station detail pages.
+- All BOI / compliance status rows initialised per the new station.
 
-## 1. BOI Equipment Ordering Status (per-station tab)
-New tab on `/stations/$stationId` called **"BOI Status"** mirroring the uploaded Simhadri sheet:
-- Columns: SL, Specific Name of BOI, No. of Drawings, Scheduled PO Date (L2), Actual/Anticipatory PO Date, Sub-Vendor Category (Approved/DR), Sub-Vendor Details, Inspection Category (I/II/III), Remarks.
-- Pre-seeded with the 31-row BOI master list from the Simhadri sheet (Power Transformer → MISC-CIVIL).
-- Inline edit (editor/admin) for actual PO date, sub-vendor, inspection, remarks.
-- Status chip: Ordered / Pending / Delayed (auto from scheduled vs actual).
-- Plus a **Delivery & Mobilization** sub-section (delivery date, site receipt date, mobilization status) per BOI item.
+## 2. Per-station user accounts (station-scoped editor role)
+- Add `station_id` column to `user_roles` (nullable). When set, that user can ONLY edit data for that one station.
+- New role enum value `station_editor` (or reuse `editor` + station_id binding). Admin still has global edit. All authenticated users still read the full dashboard.
+- New `has_station_access(user, station)` SQL function used in every write RLS policy (`station_task_status`, `station_boi_status`, `station_compliance`, `delay_register`/hindrance_register, `meetings`, `issues`, `boi_documents`, `compliance_documents`).
+- Admin UI: **Users** page (admin only) — create station user (email + temp password via admin invite), assign station, edit/revoke. Generates a unique login per station (e.g. `solapur1@bess.local`) with a generated password shown once.
+- Frontend: `canEdit` becomes `canEditStation(stationId)` — admin true everywhere, station_editor true only for their station.
 
-## 2. Weekly Review Planner
-New top-level route `/weekly-planner`:
-- Calendar grid (Mon–Sun) for any selected week.
-- Each weekday slot holds up to 3 station review assignments (covers your "3 stations/day" rule).
-- Drag-or-dropdown to assign stations; auto-pulls latest progress %, open exceptions, top 3 delayed tasks for the agenda.
-- "Generate Agenda PDF" button per day; "Export Weekly Plan" for the whole week.
-- Persists in new `weekly_review_plan` table.
+## 3. L2 Gantt import from `L2_Schedules.xlsx`
+Spreadsheet has 11 sheets: Ramagundam, Bongaigaon, Tanda, Simhadri, Mouda, Barh, Nabinagar_NPGC, Solapur_2, Solapur_1, Unchahar, Dadri. As instructed, **Simhadri sheet will be skipped**.
+- Parse each sheet, normalize WBS/task/duration/baseline_start/baseline_finish into the existing `l2_tasks` schema.
+- Tasks are currently shared across all stations (one master `l2_tasks` table). To support **different schedules per station** the schema needs to change: I'll move to `station_id` per task row (each station has its own L2 task list). This is the cleanest fit for per-station gantt edits.
+- Migration backfills existing tasks to all stations that don't have an import.
 
-## 3. Delay Analysis Register
-New tab on `/stations/$stationId` called **"Delay Register"**:
-- Auto-populated from tasks where Actual Finish > Planned Finish OR Planned Finish passed with <100%.
-- Editable fields per row: Reason category (Vendor / Clearance / Site / Design / Force Majeure / Other), Root cause, Responsibility (NTPC / Vendor / Statutory), Corrective action, Recovery plan, Recovery date, Status (Open / Mitigated / Closed).
-- Vendors (editor role) can update reason + corrective action; admin can close.
-- Exportable as Excel (per-station and consolidated).
-- New `delay_register` table.
+## 4. Document uploads (BOI + Compliance, max 3 each)
+- New Storage bucket `station-docs` (private). Path: `{station_id}/{type}/{record_id}/{filename}`.
+- New tables `boi_documents(station_boi_status_id, file_path, file_name, uploaded_by, uploaded_at)` and `compliance_documents(station_compliance_id, ...)`. Hard cap of 3 enforced via trigger.
+- UI: per-row upload control showing existing docs (download/delete), with "+ Add document" disabled at 3.
 
-## 4. Due-Date Notifications
-- Bell icon in `AppHeader` with unread count.
-- Generated client-side on data load from: L2 tasks due within 7 days with no actual start, BOI POs due within 7 days, open issues with target_date within 3 days, delay register items with recovery_date within 3 days.
-- Click → deep-link to the relevant station/tab.
-- Per-user dismiss tracked in `notification_dismissals` table.
+## 5. Hindrance Register (rename + activity dropdown)
+- Rename label everywhere: "Delay Register" → "Hindrance Register" (table stays `delay_register` — just relabel).
+- Form: add searchable dropdown of L2 activities (scoped to current station) for `task_id`. Already had task_id field, just upgrade to combobox.
 
-## 5. Edit Audit Trail
-- New `audit_log` table (id, user_id, user_email, station_id, entity_type, entity_id, field, old_value, new_value, action, created_at).
-- DB triggers on `station_task_status`, `issues`, `delay_register`, BOI tables → write to audit_log on INSERT/UPDATE/DELETE.
-- New tab on station page **"Audit Trail"** with filter by user / entity / date. Admin-only full view; editors see their own.
-- Exportable as Excel.
+## 6. Meetings overhaul (per uploaded formats)
+- Update meeting types to match PMS Audit Report Format: **Daily Review, Weekly EIC Meeting, HOP Review w/ Vendors, Periodic HOP Review, Contract Review (CRM), RED/ED(OS) Review, PRT, Management Review**.
+- Each meeting type uses a structured template (sections: Attendees, Brief Details, General Points table, BOI Status table, Action Items table) modelled on the uploaded weekly MoM.
+- Seed each type with **one sample meeting** per station for reference.
+- **PDF download** of MoM via `jspdf` + `jspdf-autotable` — generates formatted MoM matching uploaded sample (header, brief details table, items table, footer).
 
-## 6. Bulk MIS Export
-New section on Home Dashboard **"Bulk MIS"**:
-- Multi-select stations (or "All 15"), multi-select report types (Weekly MIS, Exceptions, BOI Status, Delay Register, Audit Trail, Compliances).
-- Single click → generates one .zip containing all selected reports as separate .xlsx files, named by station.
-- Server function using `jszip` + existing `xlsx` exporters.
-- Also: scheduled "Top Management Pack" — one consolidated workbook with executive summary, all station summaries, top 20 delays, top 10 risks.
+## 7. Home dashboard visualization
+- New panel above the station grid: horizontal bar chart (Recharts) showing each station's % physical progress vs % schedule elapsed, colored by status (green on-track / amber slipping / red delayed).
+- Second mini-chart: stacked bar of task counts (completed / in-progress / delayed / not-started) per station.
 
-## 7. Status of Compliances
-New tab on `/stations/$stationId` called **"Compliances"**:
-- Categories: Statutory (MoEF, CEA, CTE, CTO, Forest, NOC), Safety (HIRA, JSA, PTW, Safety Audit), Quality (QAP, FQP, MQP), Insurance (CAR, WC), Local (PCB, Fire).
-- Per item: Authority, Application date, Approval/expiry date, Status (Not applied / Applied / Under review / Approved / Rejected / Expired), Document ref, Owner, Remarks.
-- Auto-flag items expiring within 30 days → feed notifications.
-- Pre-seeded master list of ~25 standard NTPC BESS compliance items per station.
-- New `compliance_items` table.
-- Cross-station rollup tile on Home Dashboard ("X of Y compliances cleared portfolio-wide").
+## 8. Existing-data side effects
+- After Solapur rename + L2 import, the `gantt-utils` rollups and per-station progress auto-recompute.
+- README updated with the new auth model and import flow.
 
-## Data model additions
-```text
-boi_master           id, sl_no, name, drawings_count, scheduled_po_date, inspection_category, sort_order
-                     -- shared template, seeded from Simhadri sheet (31 rows)
+## Technical notes (for reviewers)
+- `l2_tasks` gains `station_id` (nullable for backward-compat baseline). Existing `station_task_status.task_id` keeps working.
+- Storage bucket created via SQL migration with RLS allowing read by any authenticated user, write by users with station access.
+- Password creation for station users uses Supabase Admin API inside a `requireSupabaseAuth` + admin-check server function; returned password shown to admin once.
+- Recharts already in tree (`src/components/ui/chart.tsx`); jspdf will be added.
 
-station_boi_status   id, station_id, boi_id, actual_po_date, sub_vendor_category,
-                     sub_vendor_details, delivery_date, site_receipt_date,
-                     mobilization_status, remarks, updated_by, updated_at
-                     -- unique (station_id, boi_id)
+## Out of scope (will not touch this turn)
+- Email invitations for station users (admin reads + shares the generated password).
+- Editing the master L2 task list inside the app (still managed via import / admin tools).
+- Bulk re-importing schedules later (one-shot for this turn).
+- Mobile-optimized upload UI.
 
-weekly_review_plan   id, week_start_date, day_of_week, slot, station_id,
-                     agenda_notes, created_by, created_at
-
-delay_register       id, station_id, task_id (nullable), title, reason_category,
-                     root_cause, responsibility, corrective_action, recovery_plan,
-                     recovery_date, status, created_at, updated_at, updated_by
-
-audit_log            id, user_id, user_email, station_id, entity_type, entity_id,
-                     field, old_value, new_value, action, created_at
-
-notification_dismissals  id, user_id, notification_key, dismissed_at
-
-compliance_master    id, category, name, authority, sort_order
-                     -- shared template (~25 items)
-
-station_compliance   id, station_id, compliance_id, application_date,
-                     approval_date, expiry_date, status, document_ref,
-                     owner, remarks, updated_by, updated_at
-                     -- unique (station_id, compliance_id)
-```
-
-All new tables get RLS: read = any authenticated, write = admin/editor (same model as existing tables). Audit log triggers run as `SECURITY DEFINER`.
-
-## UI/UX
-- Station page restructured with shadcn Tabs: **L2 Gantt | BOI Status | Compliances | Delay Register | Issues | Audit Trail**.
-- AppHeader gets: notification bell, weekly-planner nav link.
-- Home Dashboard adds: Bulk MIS panel, Compliance rollup tile, "Today's review stations" strip (from weekly planner).
-- Reuse existing dark navy ops-control theme + status chips.
-
-## Out of scope (this phase)
-- Email/SMS push for notifications (in-app bell only).
-- Auto-routing of weekly plan to Outlook/Teams calendars.
-- Photo upload for BOI delivery / compliance docs (just text refs).
-- Document vault.
-
-Approve and I'll run the migration (7 new tables + audit triggers + seeds), then build the UI in one pass.
+Approve this and I'll execute the migrations + code in one continuous batch.
