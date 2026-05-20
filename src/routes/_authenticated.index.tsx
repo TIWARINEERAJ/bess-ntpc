@@ -143,6 +143,27 @@ function Dashboard() {
         <Kpi icon={<Calendar className="h-4 w-4" />} label="Due in 30 days" value={`${kpis.upcoming}`} unit="tasks" tone="primary" />
       </section>
 
+      <section>
+        <SectionHeading title="Portfolio Progress vs Delays" sub="Per-station physical % complete with delayed-task count" />
+        <Card className="p-4">
+          <div style={{ width: "100%", height: 320 }}>
+            <ResponsiveContainer>
+              <BarChart data={computed.map(s => ({ name: s.name, pct: s.pct, delayed: s.delayed, health: s.health }))} margin={{ top: 8, right: 16, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={70} />
+                <YAxis yAxisId="left" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} label={{ value: "% Complete", angle: -90, position: "insideLeft", fill: "var(--muted-foreground)", fontSize: 10 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} label={{ value: "Delayed", angle: 90, position: "insideRight", fill: "var(--muted-foreground)", fontSize: 10 }} />
+                <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                <Bar yAxisId="left" dataKey="pct" name="% Complete" radius={[3, 3, 0, 0]}>
+                  {computed.map((s, i) => <Cell key={i} fill={`var(--status-${s.health})`} />)}
+                </Bar>
+                <Bar yAxisId="right" dataKey="delayed" name="Delayed tasks" fill="var(--status-red)" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <SectionHeading title="Stations" sub={`${stations.length} sites · Click any card to open the L2 Gantt`} />
