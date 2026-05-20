@@ -55,7 +55,7 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
     if (f.size > 10 * 1024 * 1024) { toast.error("Max 10 MB per file"); return; }
     setUploading(true);
     try {
-      const path = `${kind}/${stationId}/${refId}/${Date.now()}_${f.name}`;
+      const path = `${stationId}/${kind}/${refId}/${Date.now()}_${f.name}`;
       const { error: upErr } = await supabase.storage.from("station-docs").upload(path, f, { contentType: f.type });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
