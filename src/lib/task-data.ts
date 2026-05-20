@@ -3,7 +3,11 @@ import type { L2Task, Status } from "./gantt-utils";
 
 const PAGE_SIZE = 1000;
 
-async function fetchAllPages<T>(queryFactory: () => ReturnType<typeof supabase.from> extends infer _ ? any : never): Promise<T[]> {
+type PagedQuery<T> = {
+  range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+};
+
+async function fetchAllPages<T>(queryFactory: () => PagedQuery<T>): Promise<T[]> {
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await queryFactory().range(from, from + PAGE_SIZE - 1);
@@ -23,17 +27,17 @@ export function groupByStation<T extends { station_id: string }>(rows: T[], stat
 }
 
 export async function fetchAllStationTasks() {
-  return fetchAllPages<L2Task>(() => supabase.from("l2_tasks").select("*").order("station_id").order("sort_order"));
+  return fetchAllPages<L2Task>(() => supabase.from("l2_tasks").select("*").order("station_id").order("sort_order") as unknown as PagedQuery<L2Task>);
 }
 
 export async function fetchStationTasks(stationId: string) {
-  return fetchAllPages<L2Task>(() => supabase.from("l2_tasks").select("*").eq("station_id", stationId).order("sort_order"));
+  return fetchAllPages<L2Task>(() => supabase.from("l2_tasks").select("*").eq("station_id", stationId).order("sort_order") as unknown as PagedQuery<L2Task>);
 }
 
 export async function fetchAllTaskStatuses() {
-  return fetchAllPages<Status>(() => supabase.from("station_task_status").select("*").order("station_id"));
+  return fetchAllPages<Status>(() => supabase.from("station_task_status").select("*").order("station_id") as unknown as PagedQuery<Status>);
 }
 
 export async function fetchStationTaskStatuses(stationId: string) {
-  return fetchAllPages<Status>(() => supabase.from("station_task_status").select("*").eq("station_id", stationId));
+  return fetchAllPages<Status>(() => supabase.from("station_task_status").select("*").eq("station_id", stationId) as unknown as PagedQuery<Status>);
 }
