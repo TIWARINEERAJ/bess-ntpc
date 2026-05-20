@@ -108,6 +108,7 @@ function ComplRow({ m, s, canEdit, onSave }: { m: Master; s: Stat; canEdit: bool
       <td className="px-1 py-1">{inp("document_ref", "text", "w-28")}</td>
       <td className="px-1 py-1">{inp("owner", "text", "w-28")}</td>
       <td className="px-1 py-1">{inp("remarks", "text", "w-36")}</td>
+      <td className="px-1 py-1"><DocumentUploads kind="compliance" stationId={s.station_id} refId={m.id} canEdit={canEdit} compact /></td>
     </tr>
   );
 }
