@@ -294,7 +294,7 @@ export type Database = {
           parent_wbs: string | null
           predecessors: string | null
           sort_order: number
-          station_id: string | null
+          station_id: string
           wbs_code: string
         }
         Insert: {
@@ -307,7 +307,7 @@ export type Database = {
           parent_wbs?: string | null
           predecessors?: string | null
           sort_order?: number
-          station_id?: string | null
+          station_id: string
           wbs_code: string
         }
         Update: {
@@ -320,7 +320,7 @@ export type Database = {
           parent_wbs?: string | null
           predecessors?: string | null
           sort_order?: number
-          station_id?: string | null
+          station_id?: string
           wbs_code?: string
         }
         Relationships: []
