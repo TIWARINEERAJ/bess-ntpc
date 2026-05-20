@@ -15,7 +15,8 @@ export function exportWeeklyMIS(stations: Station[], tasks: L2Task[], statusBySt
   // Summary sheet
   const summary = stations.map(s => {
     const map = buildStatusMap(statusByStation[s.id]);
-    const p = stationProgress(tasks, map);
+    const sTasks = tasks.filter(t => t.station_id === s.id);
+    const p = stationProgress(sTasks, map);
     return {
       Station: s.name, Lot: s.lot, "Capacity (MWh)": s.capacity_mwh, Agency: s.agency ?? "",
       EIC: s.ntpc_eic ?? "", "Progress %": p.pct, "Tasks Completed": p.completed, "Total Tasks": p.total, "Delayed Tasks": p.delayed,
