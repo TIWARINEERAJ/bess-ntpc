@@ -11,6 +11,7 @@ import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2T
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { bulkExport } from "@/lib/bulk-export";
+import { fetchAllStationTasks, fetchAllTaskStatuses, groupByStation } from "@/lib/task-data";
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,19 +39,11 @@ function Dashboard() {
   });
   const tasksQ = useQuery({
     queryKey: ["l2_tasks"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("l2_tasks").select("*").order("sort_order").range(0, 49999);
-      if (error) throw error;
-      return data as L2Task[];
-    },
+    queryFn: fetchAllStationTasks,
   });
   const statusQ = useQuery({
     queryKey: ["all_status"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_task_status").select("*").range(0, 49999);
-      if (error) throw error;
-      return data as Status[];
-    },
+    queryFn: fetchAllTaskStatuses,
   });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
@@ -66,10 +59,7 @@ function Dashboard() {
   }, [stations, allStatus]);
 
   const tasksByStation = useMemo(() => {
-    const o: Record<string, L2Task[]> = {};
-    for (const s of stations) o[s.id] = [];
-    for (const t of tasks) (o[t.station_id] ??= []).push(t);
-    return o;
+    return groupByStation(tasks, stations.map(s => s.id));
   }, [stations, tasks]);
 
   const computed = useMemo(() => {
