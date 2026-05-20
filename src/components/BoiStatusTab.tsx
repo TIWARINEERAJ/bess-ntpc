@@ -90,6 +90,7 @@ function BoiRow({ b, s, chip, canEdit, onSave }: { b: Boi; s: BoiStatus; chip: {
       <td className="px-1 py-1">{cell("mobilization_status", "text", "w-28")}</td>
       <td className="px-2 py-1"><Badge variant="outline" className="text-[10px]" style={{ color: chip.c, borderColor: chip.c }}>{chip.label}</Badge></td>
       <td className="px-1 py-1">{cell("remarks", "text", "w-40")}</td>
+      <td className="px-1 py-1"><DocumentUploads kind="boi" stationId={s.station_id} refId={b.id} canEdit={canEdit} compact /></td>
     </tr>
   );
 }
