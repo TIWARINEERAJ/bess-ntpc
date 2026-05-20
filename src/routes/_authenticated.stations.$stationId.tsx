@@ -25,6 +25,7 @@ import { DelayRegisterTab } from "@/components/DelayRegisterTab";
 import { ComplianceTab } from "@/components/ComplianceTab";
 import { AuditTrailTab } from "@/components/AuditTrailTab";
 import { MeetingsTab } from "@/components/MeetingsTab";
+import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
@@ -47,20 +48,11 @@ function StationPage() {
   });
   const tasksQ = useQuery({
     queryKey: ["l2_tasks", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("l2_tasks").select("*").eq("station_id", stationId).order("sort_order");
-      if (error) throw error;
-      return (data ?? []) as L2Task[];
-    },
+    queryFn: () => fetchStationTasks(stationId),
   });
   const statusQ = useQuery({
     queryKey: ["status", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_task_status").select("*").eq("station_id", stationId);
-      if (error) throw error;
-      return data as Status[];
-    },
+    queryFn: () => fetchStationTaskStatuses(stationId),
   });
 
   const tasks = tasksQ.data ?? [];
