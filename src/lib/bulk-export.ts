@@ -57,7 +57,8 @@ export async function bulkExport(opts: {
     const exc: Array<Record<string, string | number>> = [];
     for (const s of stations) {
       const m = buildStatusMap(opts.statusByStation[s.id]);
-      for (const t of opts.tasks) {
+      const sTasks = opts.tasks.filter(t => t.station_id === s.id);
+      for (const t of sTasks) {
         if (t.is_section) continue;
         const st = m.get(t.id); const cs = computeRowState(t, st);
         if (cs.status === "delayed" || cs.status === "blocked" || cs.slipDays > 0) {
