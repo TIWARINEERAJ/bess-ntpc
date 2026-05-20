@@ -27,7 +27,8 @@ export function exportWeeklyMIS(stations: Station[], tasks: L2Task[], statusBySt
   // Detail per station
   for (const s of stations) {
     const map = buildStatusMap(statusByStation[s.id]);
-    const rows = tasks.map(t => {
+    const sTasks = tasks.filter(t => t.station_id === s.id);
+    const rows = sTasks.map(t => {
       const st = map.get(t.id);
       const cs = computeRowState(t, st);
       return {
