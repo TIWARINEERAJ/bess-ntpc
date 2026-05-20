@@ -9,9 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Calendar, Loader2, Trash2 } from "lucide-react";
+import { Plus, Calendar, Loader2, Trash2, FileDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management";
 
@@ -20,6 +22,29 @@ const TYPE_LABEL: Record<MeetingType, string> = {
   monthly: "Monthly Review",
   hop_vendor: "HOP Review with Vendors",
   management: "Management Review",
+};
+
+const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
+  weekly: {
+    attendees: "NTPC EIC, PM Coordinator, Site Engineer, Agency PM, Sub-vendor reps",
+    agenda: "1. Review last week's planned vs actual\n2. Critical path activities (next 7 days)\n3. BOI / drawing approvals pending\n4. Safety & quality observations\n5. Hindrances / decisions required\n6. Action items for next week",
+    action_items: "Owner — Action — Due date\nNTPC — Issue revised GA drawing for switchyard — DD-MMM\nAgency — Mobilise additional crew for civil works — DD-MMM",
+  },
+  monthly: {
+    attendees: "AGM (Projects), NTPC EIC, PM Coordinator, Engg Taskforce, Agency MD/Director, OEM",
+    agenda: "1. Monthly physical & financial progress vs L2 baseline\n2. Major equipment status (BOI register)\n3. Statutory approvals (CEA / DISCOM / Environment)\n4. Risk register & mitigation plan\n5. Cash flow / invoice status\n6. Look-ahead for next 30 / 60 / 90 days",
+    action_items: "Owner — Action — Due date\nAgency — Submit monthly QAP compliance report — 30 of month\nNTPC — Release pending RA bill — within 15 days",
+  },
+  hop_vendor: {
+    attendees: "Head of Project (HOP-NTPC), GM (Projects), NTPC EIC, EPC Contractor, OEMs (PCS / BESS / Transformer), Civil sub-vendor",
+    agenda: "1. HOP overview & milestone status\n2. Vendor-wise delivery commitments\n3. FAT / inspection schedules\n4. Site mobilisation status by vendor\n5. Issues escalated to HOP for decision\n6. Commitments closing",
+    action_items: "Owner — Action — Due date\nBESS OEM — Confirm FAT date — DD-MMM\nTransformer vendor — Submit dispatch plan — DD-MMM",
+  },
+  management: {
+    attendees: "Director (Projects), ED (Renewables), Regional ED, GM (Projects), HOP, NTPC EIC",
+    agenda: "1. Portfolio-level dashboard review\n2. Project-wise schedule health (RAG)\n3. Critical risks & escalations\n4. Cost & contract status\n5. Regulatory / policy updates\n6. Management directives",
+    action_items: "Owner — Action — Due date\nGM — Submit revised L2 if slip > 30 days — within 2 weeks\nHOP — Resolve pending vendor escalations — DD-MMM",
+  },
 };
 
 type Meeting = {
@@ -55,31 +80,71 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
   );
 }
 
+function downloadMomPdf(m: Meeting, stationName: string) {
+  const doc = new jsPDF();
+  const w = doc.internal.pageSize.getWidth();
+  doc.setFontSize(11); doc.setTextColor(120);
+  doc.text("NTPC BESS — Minutes of Meeting", w / 2, 14, { align: "center" });
+  doc.setFontSize(15); doc.setTextColor(0);
+  doc.text(`${TYPE_LABEL[m.meeting_type]} — ${stationName}`, w / 2, 22, { align: "center" });
+  doc.setFontSize(10); doc.setTextColor(80);
+  doc.text(`Date: ${fmtD(m.meeting_date)}    Next meeting: ${m.next_meeting_date ? fmtD(m.next_meeting_date) : "—"}`, w / 2, 28, { align: "center" });
+
+  autoTable(doc, {
+    startY: 34,
+    theme: "grid",
+    styles: { fontSize: 9, cellPadding: 3, valign: "top" },
+    headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+    columnStyles: { 0: { cellWidth: 35, fontStyle: "bold" } },
+    body: [
+      ["Attendees", m.attendees || "—"],
+      ["Agenda", m.agenda || "—"],
+      ["Minutes / Discussion", m.minutes || "—"],
+      ["Action Items", m.action_items || "—"],
+    ],
+  });
+
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(140);
+    doc.text(`Generated ${new Date().toLocaleString()}  ·  Page ${i} of ${pageCount}`, w / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+  }
+
+  doc.save(`MoM_${stationName.replace(/\s+/g, "-")}_${m.meeting_type}_${m.meeting_date}.pdf`);
+}
+
 function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; meetingType: MeetingType; canEdit: boolean }) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["meetings", stationId, meetingType],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("meetings")
-        .select("*")
-        .eq("station_id", stationId)
-        .eq("meeting_type", meetingType)
+        .from("meetings").select("*").eq("station_id", stationId).eq("meeting_type", meetingType)
         .order("meeting_date", { ascending: false });
       if (error) throw error;
       return data as Meeting[];
     },
   });
+  const stationQ = useQuery({
+    queryKey: ["station", stationId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stations").select("name").eq("id", stationId).single();
+      return data?.name ?? "Station";
+    },
+  });
 
+  const tpl = TEMPLATES[meetingType];
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
+  const blank = {
     meeting_date: new Date().toISOString().slice(0, 10),
     attendees: "",
     agenda: "",
     minutes: "",
     action_items: "",
     next_meeting_date: "",
-  });
+  };
+  const [form, setForm] = useState(blank);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -101,7 +166,7 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       qc.invalidateQueries({ queryKey: ["meetings", stationId, meetingType] });
       toast.success("Meeting logged");
       setOpen(false);
-      setForm({ meeting_date: new Date().toISOString().slice(0, 10), attendees: "", agenda: "", minutes: "", action_items: "", next_meeting_date: "" });
+      setForm(blank);
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -111,26 +176,41 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       const { error } = await supabase.from("meetings").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meetings", stationId, meetingType] });
-      toast.success("Deleted");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meetings", stationId, meetingType] }); toast.success("Deleted"); },
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const useSample = () => setForm(f => ({ ...f, attendees: tpl.attendees, agenda: tpl.agenda, action_items: tpl.action_items }));
   const rows = q.data ?? [];
+  const stationName = stationQ.data ?? "Station";
 
   return (
     <div className="space-y-3">
+      <Card className="border-dashed bg-secondary/30 p-3">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-primary">Standard format · {TYPE_LABEL[meetingType]}</div>
+          <Badge variant="outline" className="text-[10px]">Sample</Badge>
+        </div>
+        <div className="grid gap-2 text-[11px] md:grid-cols-2">
+          <div><span className="text-muted-foreground">Attendees: </span>{tpl.attendees}</div>
+          <div><span className="text-muted-foreground">Agenda: </span><span className="whitespace-pre-wrap">{tpl.agenda}</span></div>
+        </div>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{rows.length} entr{rows.length === 1 ? "y" : "ies"}</div>
         {canEdit && (
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setForm(blank); }}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Log {TYPE_LABEL[meetingType]}</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>New {TYPE_LABEL[meetingType]}</DialogTitle></DialogHeader>
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+              <DialogHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <DialogTitle>New {TYPE_LABEL[meetingType]}</DialogTitle>
+                  <Button size="sm" variant="outline" onClick={useSample}><Sparkles className="mr-1 h-3 w-3" /> Use sample</Button>
+                </div>
+              </DialogHeader>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Meeting date</Label>
@@ -142,19 +222,19 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
                 </div>
                 <div className="col-span-2">
                   <Label>Attendees</Label>
-                  <Input value={form.attendees} onChange={e => setForm({ ...form, attendees: e.target.value })} placeholder="Names / designations" />
+                  <Input value={form.attendees} onChange={e => setForm({ ...form, attendees: e.target.value })} placeholder={tpl.attendees} />
                 </div>
                 <div className="col-span-2">
                   <Label>Agenda</Label>
-                  <Textarea rows={2} value={form.agenda} onChange={e => setForm({ ...form, agenda: e.target.value })} />
+                  <Textarea rows={4} value={form.agenda} onChange={e => setForm({ ...form, agenda: e.target.value })} placeholder={tpl.agenda} />
                 </div>
                 <div className="col-span-2">
                   <Label>Minutes / Discussion</Label>
-                  <Textarea rows={4} value={form.minutes} onChange={e => setForm({ ...form, minutes: e.target.value })} />
+                  <Textarea rows={5} value={form.minutes} onChange={e => setForm({ ...form, minutes: e.target.value })} />
                 </div>
                 <div className="col-span-2">
                   <Label>Action items</Label>
-                  <Textarea rows={3} value={form.action_items} onChange={e => setForm({ ...form, action_items: e.target.value })} placeholder="Owner — Action — Due date" />
+                  <Textarea rows={3} value={form.action_items} onChange={e => setForm({ ...form, action_items: e.target.value })} placeholder={tpl.action_items} />
                 </div>
               </div>
               <Button onClick={() => create.mutate()} disabled={create.isPending || !form.meeting_date}>
@@ -183,11 +263,16 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
                 </div>
                 {m.attendees && <div className="text-xs"><span className="text-muted-foreground">Attendees:</span> {m.attendees}</div>}
               </div>
-              {canEdit && (
-                <Button variant="ghost" size="icon" onClick={() => del.mutate(m.id)} disabled={del.isPending}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => downloadMomPdf(m, stationName)}>
+                  <FileDown className="mr-1 h-3 w-3" /> PDF
                 </Button>
-              )}
+                {canEdit && (
+                  <Button variant="ghost" size="icon" onClick={() => del.mutate(m.id)} disabled={del.isPending}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
             </div>
             {m.agenda && <Section title="Agenda" text={m.agenda} />}
             {m.minutes && <Section title="Minutes" text={m.minutes} />}
