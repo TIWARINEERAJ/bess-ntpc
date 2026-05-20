@@ -67,7 +67,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                <tr>{["Item", "Authority", "Status", "Applied", "Approved", "Expires", "Doc Ref", "Owner", "Remarks"].map(h =>
+                <tr>{["Item", "Authority", "Status", "Applied", "Approved", "Expires", "Doc Ref", "Owner", "Remarks", "Docs"].map(h =>
                   <th key={h} className="border-b border-border px-2 py-1.5 text-left">{h}</th>)}</tr>
               </thead>
               <tbody>
