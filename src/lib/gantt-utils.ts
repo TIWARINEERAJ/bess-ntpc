@@ -80,7 +80,7 @@ export function buildStatusMap(rows: Status[] | undefined): Map<string, Status> 
   return m;
 }
 
-/** Section roll-up for a parent WBS using its child rows */
+/** Section roll-up for a parent WBS using its leaf descendants (weighted by duration) */
 export function sectionRollup(tasks: L2Task[], statusMap: Map<string, Status>, sectionWbs: string) {
   const kids = tasks.filter(t => !t.is_section && (t.parent_wbs === sectionWbs || t.wbs_code.startsWith(sectionWbs + ".")));
   if (kids.length === 0) return { pct: 0, weighted: 0, totalDur: 0 };
@@ -93,6 +93,32 @@ export function sectionRollup(tasks: L2Task[], statusMap: Map<string, Status>, s
     weighted += dur * pct;
   }
   return { pct: Math.round(weighted / totalDur), weighted, totalDur };
+}
+
+/** Full derived rollup for a section: pct (weighted avg), actual_start (earliest child start),
+ * actual_finish (latest child finish — only when ALL leaf children have an actual_finish). */
+export function sectionDerived(tasks: L2Task[], statusMap: Map<string, Status>, sectionWbs: string) {
+  const kids = tasks.filter(t => !t.is_section && (t.parent_wbs === sectionWbs || t.wbs_code.startsWith(sectionWbs + ".")));
+  let totalDur = 0, weighted = 0;
+  const starts: Date[] = [];
+  const finishes: Date[] = [];
+  let allFinished = kids.length > 0;
+  for (const k of kids) {
+    const dur = Math.max(k.duration_days, 1);
+    const st = statusMap.get(k.id);
+    totalDur += dur;
+    weighted += dur * (st?.percent_complete ?? 0);
+    const aS = parseD(st?.actual_start ?? null);
+    const aF = parseD(st?.actual_finish ?? null);
+    if (aS) starts.push(aS);
+    if (aF) finishes.push(aF); else allFinished = false;
+  }
+  return {
+    pct: totalDur ? Math.round(weighted / totalDur) : 0,
+    actual_start: starts.length ? dMin(starts) : null,
+    actual_finish: allFinished && finishes.length ? dMax(finishes) : null,
+    leafCount: kids.length,
+  };
 }
 
 export function stationProgress(tasks: L2Task[], statusMap: Map<string, Status>): { pct: number; completed: number; total: number; delayed: number } {
