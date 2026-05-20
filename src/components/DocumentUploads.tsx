@@ -8,23 +8,44 @@ import { toast } from "sonner";
 type Kind = "boi" | "compliance";
 type Doc = { id: string; station_id: string; file_path: string; file_name: string; file_size: number | null; mime_type: string | null; created_at: string };
 
+async function fetchDocs(kind: Kind, stationId: string, refId: string): Promise<Doc[]> {
+  if (kind === "boi") {
+    const { data, error } = await supabase.from("boi_documents").select("*").eq("station_id", stationId).eq("boi_id", refId).order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Doc[];
+  }
+  const { data, error } = await supabase.from("compliance_documents").select("*").eq("station_id", stationId).eq("compliance_id", refId).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Doc[];
+}
+
+async function insertDoc(kind: Kind, stationId: string, refId: string, row: { file_path: string; file_name: string; file_size: number; mime_type: string; uploaded_by: string | null }) {
+  if (kind === "boi") {
+    const { error } = await supabase.from("boi_documents").insert({ station_id: stationId, boi_id: refId, ...row });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("compliance_documents").insert({ station_id: stationId, compliance_id: refId, ...row });
+    if (error) throw error;
+  }
+}
+
+async function deleteDoc(kind: Kind, id: string) {
+  if (kind === "boi") {
+    const { error } = await supabase.from("boi_documents").delete().eq("id", id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("compliance_documents").delete().eq("id", id);
+    if (error) throw error;
+  }
+}
+
 export function DocumentUploads({ kind, stationId, refId, canEdit, compact = false }: { kind: Kind; stationId: string; refId: string; canEdit: boolean; compact?: boolean }) {
   const qc = useQueryClient();
-  const table = kind === "boi" ? "boi_documents" : "compliance_documents";
-  const fkCol = kind === "boi" ? "boi_id" : "compliance_id";
   const key = ["docs", kind, stationId, refId];
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const q = useQuery({
-    queryKey: key,
-    queryFn: async () => {
-      const qb = supabase.from(table).select("*").eq("station_id", stationId);
-      const { data, error } = await (kind === "boi" ? qb.eq("boi_id", refId) : qb.eq("compliance_id", refId)).order("created_at", { ascending: false });
-      if (error) throw error; return data as Doc[];
-    },
-  });
-
+  const q = useQuery({ queryKey: key, queryFn: () => fetchDocs(kind, stationId, refId) });
   const docs = q.data ?? [];
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,13 +59,12 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
       const { error: upErr } = await supabase.storage.from("station-docs").upload(path, f, { contentType: f.type });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
-      const insertRow: Record<string, unknown> = {
-        station_id: stationId, [fkCol]: refId,
-        file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type,
-        uploaded_by: user?.id ?? null,
-      };
-      const { error: insErr } = await supabase.from(table).insert(insertRow);
-      if (insErr) { await supabase.storage.from("station-docs").remove([path]); throw insErr; }
+      try {
+        await insertDoc(kind, stationId, refId, { file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type || "application/octet-stream", uploaded_by: user?.id ?? null });
+      } catch (e) {
+        await supabase.storage.from("station-docs").remove([path]);
+        throw e;
+      }
       toast.success("Uploaded");
       qc.invalidateQueries({ queryKey: key });
     } catch (err) {
@@ -58,8 +78,7 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
   const del = useMutation({
     mutationFn: async (d: Doc) => {
       await supabase.storage.from("station-docs").remove([d.file_path]);
-      const { error } = await supabase.from(table).delete().eq("id", d.id);
-      if (error) throw error;
+      await deleteDoc(kind, d.id);
     },
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: key }); },
     onError: (e) => toast.error((e as Error).message),
@@ -72,7 +91,7 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
   };
 
   return (
-    <div className={compact ? "flex items-center gap-1" : "space-y-1"}>
+    <div className={compact ? "flex flex-wrap items-center gap-1" : "space-y-1"}>
       {docs.map(d => (
         <div key={d.id} className="flex items-center gap-1 rounded bg-secondary/50 px-1.5 py-0.5 text-[10px]">
           <FileText className="h-3 w-3 text-primary" />
