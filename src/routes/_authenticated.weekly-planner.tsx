@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, X, FileSpreadsheet, ExternalLink } from "luc
 import { format, startOfWeek, addDays, addWeeks } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
 import { buildStatusMap, computeRowState, stationProgress, type L2Task, type Status } from "@/lib/gantt-utils";
+import { fetchAllStationTasks, fetchAllTaskStatuses, groupByStation } from "@/lib/task-data";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -36,13 +37,11 @@ function WeeklyPlanner() {
     const { data, error } = await supabase.from("weekly_review_plan").select("*").eq("week_start_date", weekKey);
     if (error) throw error; return data;
   }});
-  const tasksQ = useQuery({ queryKey: ["l2_tasks"], queryFn: async () => {
-    const { data, error } = await supabase.from("l2_tasks").select("*").order("sort_order");
-    if (error) throw error; return data as L2Task[];
+  const tasksQ = useQuery({ queryKey: ["l2_tasks", "all-stations-paged"], queryFn: async () => {
+    return fetchAllStationTasks();
   }});
-  const statusQ = useQuery({ queryKey: ["all_status"], queryFn: async () => {
-    const { data, error } = await supabase.from("station_task_status").select("*");
-    if (error) throw error; return data as Status[];
+  const statusQ = useQuery({ queryKey: ["all_status", "all-stations-paged"], queryFn: async () => {
+    return fetchAllTaskStatuses();
   }});
 
   const stations = stationsQ.data ?? [];
@@ -55,6 +54,8 @@ function WeeklyPlanner() {
     for (const r of allStatus) (o[r.station_id] ??= []).push(r);
     return o;
   }, [allStatus]);
+
+  const tasksByStation = useMemo(() => groupByStation(tasks, stations.map(s => s.id)), [tasks, stations]);
 
   const assign = useMutation({
     mutationFn: async ({ day, slot, stationId }: { day: number; slot: number; stationId: string }) => {
@@ -90,7 +91,8 @@ function WeeklyPlanner() {
         const item = slotItem(d, s); if (!item) continue;
         const st = stationById(item.station_id); if (!st) continue;
         const m = buildStatusMap(statusByStation[st.id]);
-        const p = stationProgress(tasks, m);
+        const stationTasks = tasksByStation[st.id] ?? [];
+        const p = stationProgress(stationTasks, m);
         rows.push({ Date: format(addDays(weekStart, d), "dd-MMM (EEE)"), Slot: `${s + 1}`,
           Station: st.name, Lot: st.lot, "Progress %": String(p.pct), "Delayed": String(p.delayed),
           EIC: st.ntpc_eic ?? "", Notes: item.agenda_notes ?? "" });
@@ -132,8 +134,9 @@ function WeeklyPlanner() {
                 const item = slotItem(day, slot);
                 const st = item ? stationById(item.station_id) : null;
                 const m = st ? buildStatusMap(statusByStation[st.id]) : null;
-                const p = st && m ? stationProgress(tasks, m) : null;
-                const topDelays = st && m ? tasks.filter(t => !t.is_section).map(t => ({ t, cs: computeRowState(t, m.get(t.id)) })).filter(x => x.cs.status === "delayed").sort((a, b) => b.cs.slipDays - a.cs.slipDays).slice(0, 3) : [];
+                const stationTasks = st ? (tasksByStation[st.id] ?? []) : [];
+                const p = st && m ? stationProgress(stationTasks, m) : null;
+                const topDelays = st && m ? stationTasks.filter(t => !t.is_section).map(t => ({ t, cs: computeRowState(t, m.get(t.id)) })).filter(x => x.cs.status === "delayed").sort((a, b) => b.cs.slipDays - a.cs.slipDays).slice(0, 3) : [];
                 return (
                   <div key={slot} className="rounded-md border border-border/60 bg-card/40 p-2">
                     {!item ? (

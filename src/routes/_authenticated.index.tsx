@@ -11,6 +11,7 @@ import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2T
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { bulkExport } from "@/lib/bulk-export";
+import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,41 +37,24 @@ function Dashboard() {
       return data as Station[];
     },
   });
+  const stations = stationsQ.data ?? [];
+  const stationIds = useMemo(() => stations.map(s => s.id), [stations]);
+  const stationKey = stationIds.join("|");
   const tasksQ = useQuery({
-    queryKey: ["l2_tasks"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("l2_tasks").select("*").order("sort_order").range(0, 49999);
-      if (error) throw error;
-      return data as L2Task[];
-    },
+    queryKey: ["l2_tasks", "by-station", stationKey],
+    queryFn: () => fetchTasksByStation(stationIds),
+    enabled: stationIds.length > 0,
   });
   const statusQ = useQuery({
-    queryKey: ["all_status"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_task_status").select("*").range(0, 49999);
-      if (error) throw error;
-      return data as Status[];
-    },
+    queryKey: ["all_status", "by-station", stationKey],
+    queryFn: () => fetchStatusesByStation(stationIds),
+    enabled: stationIds.length > 0,
   });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
-  const stations = stationsQ.data ?? [];
-  const tasks = tasksQ.data ?? [];
-  const allStatus = statusQ.data ?? [];
-
-  const statusByStation = useMemo(() => {
-    const o: Record<string, Status[]> = {};
-    for (const s of stations) o[s.id] = [];
-    for (const r of allStatus) (o[r.station_id] ??= []).push(r);
-    return o;
-  }, [stations, allStatus]);
-
-  const tasksByStation = useMemo(() => {
-    const o: Record<string, L2Task[]> = {};
-    for (const s of stations) o[s.id] = [];
-    for (const t of tasks) (o[t.station_id] ??= []).push(t);
-    return o;
-  }, [stations, tasks]);
+  const tasksByStation = tasksQ.data ?? {};
+  const statusByStation = statusQ.data ?? {};
+  const tasks = useMemo(() => Object.values(tasksByStation).flat(), [tasksByStation]);
 
   const computed = useMemo(() => {
     return stations.map(s => {

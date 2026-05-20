@@ -19,7 +19,7 @@ export async function loadNotifications(): Promise<Notif[]> {
   const today = new Date();
   const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance] = await Promise.all([
     supabase.from("stations").select("id,name"),
-    supabase.from("l2_tasks").select("id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
+    supabase.from("l2_tasks").select("id,station_id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
     supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start").range(0, 49999),
     supabase.from("boi_master").select("id,name,scheduled_po_date"),
     supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date"),
@@ -35,6 +35,7 @@ export async function loadNotifications(): Promise<Notif[]> {
   (status.data ?? []).forEach(r => stMap.set(`${r.station_id}|${r.task_id}`, { pct: r.percent_complete, started: !!r.actual_start }));
   for (const s of stations.data ?? []) {
     for (const t of tasks.data ?? []) {
+      if (t.station_id !== s.id) continue;
       if (t.is_section) continue;
       const end = d(t.baseline_finish); if (!end) continue;
       const k = stMap.get(`${s.id}|${t.id}`);
