@@ -37,10 +37,10 @@ function WeeklyPlanner() {
     const { data, error } = await supabase.from("weekly_review_plan").select("*").eq("week_start_date", weekKey);
     if (error) throw error; return data;
   }});
-  const tasksQ = useQuery({ queryKey: ["l2_tasks"], queryFn: async () => {
+  const tasksQ = useQuery({ queryKey: ["l2_tasks", "all-stations-paged"], queryFn: async () => {
     return fetchAllStationTasks();
   }});
-  const statusQ = useQuery({ queryKey: ["all_status"], queryFn: async () => {
+  const statusQ = useQuery({ queryKey: ["all_status", "all-stations-paged"], queryFn: async () => {
     return fetchAllTaskStatuses();
   }});
 
