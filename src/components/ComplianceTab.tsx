@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { DocumentUploads } from "@/components/DocumentUploads";
 
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
@@ -66,7 +67,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                <tr>{["Item", "Authority", "Status", "Applied", "Approved", "Expires", "Doc Ref", "Owner", "Remarks"].map(h =>
+                <tr>{["Item", "Authority", "Status", "Applied", "Approved", "Expires", "Doc Ref", "Owner", "Remarks", "Docs"].map(h =>
                   <th key={h} className="border-b border-border px-2 py-1.5 text-left">{h}</th>)}</tr>
               </thead>
               <tbody>
@@ -107,6 +108,7 @@ function ComplRow({ m, s, canEdit, onSave }: { m: Master; s: Stat; canEdit: bool
       <td className="px-1 py-1">{inp("document_ref", "text", "w-28")}</td>
       <td className="px-1 py-1">{inp("owner", "text", "w-28")}</td>
       <td className="px-1 py-1">{inp("remarks", "text", "w-36")}</td>
+      <td className="px-1 py-1"><DocumentUploads kind="compliance" stationId={s.station_id} refId={m.id} canEdit={canEdit} compact /></td>
     </tr>
   );
 }

@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedWeeklyPlannerRouteImport } from './routes/_authenticated.weekly-planner'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedStationsStationIdRouteImport } from './routes/_authenticated.stations.$stationId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -35,6 +36,11 @@ const AuthenticatedWeeklyPlannerRoute =
     path: '/weekly-planner',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedStationsStationIdRoute =
   AuthenticatedStationsStationIdRouteImport.update({
     id: '/stations/$stationId',
@@ -45,11 +51,13 @@ const AuthenticatedStationsStationIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/': typeof AuthenticatedIndexRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
@@ -58,19 +66,26 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/weekly-planner' | '/stations/$stationId'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/weekly-planner'
+    | '/stations/$stationId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/weekly-planner' | '/' | '/stations/$stationId'
+  to: '/login' | '/admin' | '/weekly-planner' | '/' | '/stations/$stationId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/weekly-planner'
     | '/_authenticated/'
     | '/_authenticated/stations/$stationId'
@@ -111,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWeeklyPlannerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/stations/$stationId': {
       id: '/_authenticated/stations/$stationId'
       path: '/stations/$stationId'
@@ -122,12 +144,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedWeeklyPlannerRoute: typeof AuthenticatedWeeklyPlannerRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedStationsStationIdRoute: typeof AuthenticatedStationsStationIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedWeeklyPlannerRoute: AuthenticatedWeeklyPlannerRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedStationsStationIdRoute: AuthenticatedStationsStationIdRoute,

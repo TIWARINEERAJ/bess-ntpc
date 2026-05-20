@@ -34,7 +34,8 @@ export const Route = createFileRoute("/_authenticated/stations/$stationId")({
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
   const qc = useQueryClient();
-  const { canEdit } = useAuth();
+  const { canEditStation } = useAuth();
+  const canEdit = canEditStation(stationId);
 
   const stationQ = useQuery({
     queryKey: ["station", stationId],
@@ -168,7 +169,7 @@ function StationPage() {
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
-          <TabsTrigger value="delays">Delay Register</TabsTrigger>
+          <TabsTrigger value="delays">Hindrance Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
           <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DocumentUploads } from "@/components/DocumentUploads";
 
 type Boi = { id: string; sl_no: number; name: string; drawings_count: number | null; scheduled_po_date: string | null; inspection_category: string | null };
 type BoiStatus = { id?: string; station_id: string; boi_id: string; actual_po_date: string | null; sub_vendor_category: string | null; sub_vendor_details: string | null; delivery_date: string | null; site_receipt_date: string | null; mobilization_status: string | null; remarks: string | null };
@@ -49,7 +50,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
             <tr>
-              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Insp.", "Delivery", "Site Receipt", "Mobilization", "Status", "Remarks"].map(h =>
+              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Insp.", "Delivery", "Site Receipt", "Mobilization", "Status", "Remarks", "Docs"].map(h =>
                 <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
             </tr>
           </thead>
@@ -89,6 +90,7 @@ function BoiRow({ b, s, chip, canEdit, onSave }: { b: Boi; s: BoiStatus; chip: {
       <td className="px-1 py-1">{cell("mobilization_status", "text", "w-28")}</td>
       <td className="px-2 py-1"><Badge variant="outline" className="text-[10px]" style={{ color: chip.c, borderColor: chip.c }}>{chip.label}</Badge></td>
       <td className="px-1 py-1">{cell("remarks", "text", "w-40")}</td>
+      <td className="px-1 py-1"><DocumentUploads kind="boi" stationId={s.station_id} refId={b.id} canEdit={canEdit} compact /></td>
     </tr>
   );
 }
