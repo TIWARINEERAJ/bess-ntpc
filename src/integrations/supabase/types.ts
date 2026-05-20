@@ -544,6 +544,7 @@ export type Database = {
           agency_contacts: Json | null
           capacity_mw: number | null
           capacity_mwh: number
+          completion_date: string | null
           created_at: string
           eic_contact: string | null
           eic_email: string | null
@@ -551,11 +552,15 @@ export type Database = {
           id: string
           lot: string
           name: string
+          noa_date: string | null
           ntpc_eic: string | null
           pm_coordinator: string | null
           poi: string | null
+          project_cost_cr: number | null
           project_start_date: string | null
           sort_order: number | null
+          transformer_qty: number | null
+          transformer_rating: string | null
           updated_at: string
         }
         Insert: {
@@ -563,6 +568,7 @@ export type Database = {
           agency_contacts?: Json | null
           capacity_mw?: number | null
           capacity_mwh: number
+          completion_date?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
@@ -570,11 +576,15 @@ export type Database = {
           id?: string
           lot: string
           name: string
+          noa_date?: string | null
           ntpc_eic?: string | null
           pm_coordinator?: string | null
           poi?: string | null
+          project_cost_cr?: number | null
           project_start_date?: string | null
           sort_order?: number | null
+          transformer_qty?: number | null
+          transformer_rating?: string | null
           updated_at?: string
         }
         Update: {
@@ -582,6 +592,7 @@ export type Database = {
           agency_contacts?: Json | null
           capacity_mw?: number | null
           capacity_mwh?: number
+          completion_date?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
@@ -589,11 +600,15 @@ export type Database = {
           id?: string
           lot?: string
           name?: string
+          noa_date?: string | null
           ntpc_eic?: string | null
           pm_coordinator?: string | null
           poi?: string | null
+          project_cost_cr?: number | null
           project_start_date?: string | null
           sort_order?: number | null
+          transformer_qty?: number | null
+          transformer_rating?: string | null
           updated_at?: string
         }
         Relationships: []
