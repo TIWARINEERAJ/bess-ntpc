@@ -189,8 +189,10 @@ function StationPage() {
                   const cs = computeRowState(t, st);
                   const depth = (t.wbs_code.match(/\./g) || []).length;
                   const hasChildren = tasks.some(c => c.parent_wbs === t.wbs_code);
-                  const roll = t.is_section ? sectionRollup(tasks, statusMap, t.wbs_code) : null;
-                  const pctDisplay = t.is_section ? roll!.pct : (st?.percent_complete ?? 0);
+                  const roll = t.is_section ? sectionDerived(tasks, statusMap, t.wbs_code) : null;
+                  const pctDisplay = t.is_section ? (roll?.pct ?? 0) : (st?.percent_complete ?? 0);
+                  const aStart = t.is_section ? (roll?.actual_start ?? null) : (st?.actual_start ?? null);
+                  const aFinish = t.is_section ? (roll?.actual_finish ?? null) : (st?.actual_finish ?? null);
                   return (
                     <div key={t.id} className={`grid h-8 grid-cols-[70px_minmax(180px,1fr)_44px_44px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
@@ -206,8 +208,8 @@ function StationPage() {
                       <div className="text-right font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : pctDisplay >= 100 ? "var(--status-green)" : "var(--foreground)" }}>{pctDisplay}%</div>
                       <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_start)}</div>
                       <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_finish)}</div>
-                      <div className="font-mono text-[10px]" style={{ color: st?.actual_start ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(st?.actual_start)}</div>
-                      <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : st?.actual_finish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(st?.actual_finish)}</div>
+                      <div className="font-mono text-[10px]" style={{ color: aStart ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(aStart)}</div>
+                      <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : aFinish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(aFinish)}</div>
                     </div>
                   );
                 })}
