@@ -52,7 +52,8 @@ export function exportExceptions(stations: Station[], tasks: L2Task[], statusByS
   const exc: Array<Record<string, string | number>> = [];
   for (const s of stations) {
     const map = buildStatusMap(statusByStation[s.id]);
-    for (const t of tasks) {
+    const sTasks = tasks.filter(t => t.station_id === s.id);
+    for (const t of sTasks) {
       if (t.is_section) continue;
       const st = map.get(t.id);
       const cs = computeRowState(t, st);
