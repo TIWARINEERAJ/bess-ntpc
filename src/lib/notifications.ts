@@ -19,8 +19,8 @@ export async function loadNotifications(): Promise<Notif[]> {
   const today = new Date();
   const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance] = await Promise.all([
     supabase.from("stations").select("id,name"),
-    supabase.from("l2_tasks").select("id,wbs_code,name,baseline_finish,is_section"),
-    supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start"),
+    supabase.from("l2_tasks").select("id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
+    supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start").range(0, 49999),
     supabase.from("boi_master").select("id,name,scheduled_po_date"),
     supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date"),
     supabase.from("issues").select("id,station_id,title,target_date,status"),
