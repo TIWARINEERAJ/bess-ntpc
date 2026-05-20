@@ -65,15 +65,22 @@ function Dashboard() {
     return o;
   }, [stations, allStatus]);
 
+  const tasksByStation = useMemo(() => {
+    const o: Record<string, L2Task[]> = {};
+    for (const s of stations) o[s.id] = [];
+    for (const t of tasks) (o[t.station_id] ??= []).push(t);
+    return o;
+  }, [stations, tasks]);
+
   const computed = useMemo(() => {
     return stations.map(s => {
       const map = buildStatusMap(statusByStation[s.id]);
-      const p = stationProgress(tasks, map);
+      const p = stationProgress(tasksByStation[s.id] ?? [], map);
       let health: "green" | "amber" | "red" = "green";
       if (p.delayed > 0) health = p.delayed >= 5 ? "red" : "amber";
       return { ...s, ...p, health };
     });
-  }, [stations, tasks, statusByStation]);
+  }, [stations, tasksByStation, statusByStation]);
 
   const kpis = useMemo(() => {
     const total = computed.length;
@@ -88,7 +95,7 @@ function Dashboard() {
     let upcoming = 0, exceptions = 0;
     for (const s of stations) {
       const map = buildStatusMap(statusByStation[s.id]);
-      for (const t of tasks) {
+      for (const t of tasksByStation[s.id] ?? []) {
         if (t.is_section) continue;
         const st = map.get(t.id);
         const cs = computeRowState(t, st, today);
@@ -97,14 +104,14 @@ function Dashboard() {
       }
     }
     return { total, green, amber, red, totalMWh, avgPct, upcoming, exceptions };
-  }, [computed, stations, tasks, statusByStation]);
+  }, [computed, stations, tasksByStation, statusByStation]);
 
   const exceptions = useMemo(() => {
     const today = new Date();
     const list: Array<{ station: string; stationId: string; wbs: string; task: string; slip: number; status: RowStatus; owner: string }> = [];
     for (const s of stations) {
       const map = buildStatusMap(statusByStation[s.id]);
-      for (const t of tasks) {
+      for (const t of tasksByStation[s.id] ?? []) {
         if (t.is_section) continue;
         const st = map.get(t.id);
         const cs = computeRowState(t, st, today);
@@ -114,7 +121,7 @@ function Dashboard() {
       }
     }
     return list.sort((a, b) => b.slip - a.slip).slice(0, 12);
-  }, [stations, tasks, statusByStation]);
+  }, [stations, tasksByStation, statusByStation]);
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
