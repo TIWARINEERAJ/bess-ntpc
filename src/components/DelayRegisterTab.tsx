@@ -98,6 +98,17 @@ export function DelayRegisterTab({ stationId, canEdit, tasks, status }: { statio
             <>
               <SheetHeader><SheetTitle>{edit.id ? "Edit Delay" : "New Delay Entry"}</SheetTitle></SheetHeader>
               <div className="mt-6 space-y-3 px-4">
+                <div><Label>Activity (L2 task)</Label>
+                  <Select value={edit.task_id ?? "__none__"} onValueChange={v => setEdit({ ...edit, task_id: v === "__none__" ? null : v })} disabled={!canEdit}>
+                    <SelectTrigger><SelectValue placeholder="Select activity" /></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      <SelectItem value="__none__">— None / general —</SelectItem>
+                      {tasks.filter(t => !t.is_section).map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.wbs_code} · {t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Title</Label><Input value={edit.title} disabled={!canEdit} onChange={e => setEdit({ ...edit, title: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Reason</Label>
