@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
-import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend, Line, LabelList, ReferenceLine } from "recharts";
+import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Dashboard — NTPC BESS L2 Monitor" }] }),
