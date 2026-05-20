@@ -312,20 +312,26 @@ function TaskDrawer({ task, status, onClose, onSave, canEdit, saving }: {
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4 px-4">
+          {task.is_section && (
+            <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-xs text-primary-foreground/90">
+              <AlertCircle className="mr-1 inline h-3 w-3" /> This is a roll-up (section) row. Its % complete and actual dates are derived automatically from its sub-tasks (1.x.1, 1.x.2…). Update the leaf rows below to drive this section.
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="as">Actual Start</Label>
-              <Input id="as" type="date" disabled={!canEdit} value={actualStart} onChange={e => setActualStart(e.target.value)} />
+              <Input id="as" type="date" disabled={!canEdit || task.is_section} value={actualStart} onChange={e => setActualStart(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="af">Actual Finish</Label>
-              <Input id="af" type="date" disabled={!canEdit} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
+              <Input id="af" type="date" disabled={!canEdit || task.is_section} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
             </div>
           </div>
           <div>
             <Label htmlFor="pct">% Complete: <span className="font-mono">{pct}%</span></Label>
-            <input id="pct" type="range" min={0} max={100} disabled={!canEdit} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full" />
+            <input id="pct" type="range" min={0} max={100} disabled={!canEdit || task.is_section} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full" />
           </div>
+
           <div>
             <Label>Status</Label>
             <Select value={statusV} onValueChange={setStatusV} disabled={!canEdit}>
