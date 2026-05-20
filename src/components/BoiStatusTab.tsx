@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DocumentUploads } from "@/components/DocumentUploads";
 
 type Boi = { id: string; sl_no: number; name: string; drawings_count: number | null; scheduled_po_date: string | null; inspection_category: string | null };
 type BoiStatus = { id?: string; station_id: string; boi_id: string; actual_po_date: string | null; sub_vendor_category: string | null; sub_vendor_details: string | null; delivery_date: string | null; site_receipt_date: string | null; mobilization_status: string | null; remarks: string | null };
