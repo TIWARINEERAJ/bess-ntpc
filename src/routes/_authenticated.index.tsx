@@ -47,7 +47,7 @@ function Dashboard() {
   const statusQ = useQuery({
     queryKey: ["all_status"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("station_task_status").select("*");
+      const { data, error } = await supabase.from("station_task_status").select("*").range(0, 49999);
       if (error) throw error;
       return data as Status[];
     },
