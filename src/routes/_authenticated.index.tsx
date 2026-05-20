@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
+import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Dashboard — NTPC BESS L2 Monitor" }] }),
@@ -151,25 +151,64 @@ function Dashboard() {
       </section>
 
       <section>
-        <SectionHeading title="Portfolio Progress vs Delays" sub="Per-station physical % complete with delayed-task count" />
+        <SectionHeading title="Portfolio Progress vs Delays" sub="Weighted % complete per station with delayed-task overlay · portfolio average shown as reference line" />
         <Card className="p-4">
-          <div style={{ width: "100%", height: 320 }}>
+          <div style={{ width: "100%", height: 360 }}>
             <ResponsiveContainer>
-              <BarChart data={computed.map(s => ({ name: s.name, pct: s.pct, delayed: s.delayed, health: s.health }))} margin={{ top: 8, right: 16, left: 0, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <ComposedChart
+                data={computed.map(s => ({ name: s.name, pct: s.pct, remaining: Math.max(0, 100 - s.pct), delayed: s.delayed, health: s.health }))}
+                margin={{ top: 16, right: 24, left: 0, bottom: 70 }}
+                barCategoryGap="22%"
+              >
+                <defs>
+                  <linearGradient id="gradProgress" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="gradRemaining" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--muted)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="var(--muted)" stopOpacity={0.18} />
+                  </linearGradient>
+                  <linearGradient id="gradDelay" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.72 0.22 28)" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="oklch(0.55 0.20 28)" stopOpacity={0.95} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={70} />
-                <YAxis yAxisId="left" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} label={{ value: "% Complete", angle: -90, position: "insideLeft", fill: "var(--muted-foreground)", fontSize: 10 }} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} label={{ value: "Delayed", angle: 90, position: "insideRight", fill: "var(--muted-foreground)", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                <Bar yAxisId="left" dataKey="pct" name="% Complete" radius={[3, 3, 0, 0]}>
-                  {computed.map((s, i) => <Cell key={i} fill={`var(--status-${s.health})`} />)}
+                <YAxis yAxisId="left" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: "oklch(0.72 0.22 28)", fontSize: 10 }} allowDecimals={false} label={{ value: "Delayed tasks", angle: 90, position: "insideRight", fill: "oklch(0.72 0.22 28)", fontSize: 10 }} />
+                <Tooltip
+                  cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
+                  contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(value: number, name: string) => {
+                    if (name === "Remaining") return [`${value}%`, "Remaining"];
+                    if (name === "% Complete") return [`${value}%`, "% Complete"];
+                    return [value, name];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                <ReferenceLine yAxisId="left" y={kpis.avgPct} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
+                  label={{ value: `Portfolio avg ${kpis.avgPct}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
+                <Bar yAxisId="left" dataKey="pct" name="% Complete" stackId="prog" fill="url(#gradProgress)" radius={[0, 0, 0, 0]}>
+                  <LabelList dataKey="pct" position="insideTop" fill="var(--background)" fontSize={9} formatter={(v: number) => v >= 8 ? `${v}%` : ""} />
                 </Bar>
-                <Bar yAxisId="right" dataKey="delayed" name="Delayed tasks" fill="var(--status-red)" radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Bar yAxisId="left" dataKey="remaining" name="Remaining" stackId="prog" fill="url(#gradRemaining)" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="right" dataKey="delayed" name="Delayed tasks" fill="url(#gradDelay)" radius={[4, 4, 0, 0]} maxBarSize={14}>
+                  <LabelList dataKey="delayed" position="top" fill="oklch(0.72 0.22 28)" fontSize={10} formatter={(v: number) => v > 0 ? v : ""} />
+                </Bar>
+              </ComposedChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+            <LegendDot grad="linear-gradient(180deg,oklch(0.78 0.18 195),oklch(0.55 0.16 220))" label="Physical % complete (weighted by duration)" />
+            <LegendDot grad="var(--muted)" label="Remaining to 100%" />
+            <LegendDot grad="linear-gradient(180deg,oklch(0.72 0.22 28),oklch(0.55 0.20 28))" label="Delayed leaf tasks" />
+            <LegendDot grad="var(--primary)" label={`Portfolio avg ${kpis.avgPct}%`} dashed />
           </div>
         </Card>
       </section>
+
 
       <section className="grid gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
@@ -279,6 +318,15 @@ function BulkMisPanel({ stations, tasks, statusByStation }: { stations: Station[
         </div>
       </Card>
     </section>
+  );
+}
+
+function LegendDot({ grad, label, dashed }: { grad: string; label: string; dashed?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: grad, border: dashed ? "1px dashed var(--primary)" : undefined, backgroundImage: dashed ? "none" : undefined }} />
+      <span>{label}</span>
+    </span>
   );
 }
 

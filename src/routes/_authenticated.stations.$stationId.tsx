@@ -312,23 +312,29 @@ function TaskDrawer({ task, status, onClose, onSave, canEdit, saving }: {
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4 px-4">
+          {task.is_section && (
+            <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-xs text-primary-foreground/90">
+              <AlertCircle className="mr-1 inline h-3 w-3" /> This is a roll-up (section) row. Its % complete and actual dates are derived automatically from its sub-tasks (1.x.1, 1.x.2…). Update the leaf rows below to drive this section.
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="as">Actual Start</Label>
-              <Input id="as" type="date" disabled={!canEdit} value={actualStart} onChange={e => setActualStart(e.target.value)} />
+              <Input id="as" type="date" disabled={!canEdit || task.is_section} value={actualStart} onChange={e => setActualStart(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="af">Actual Finish</Label>
-              <Input id="af" type="date" disabled={!canEdit} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
+              <Input id="af" type="date" disabled={!canEdit || task.is_section} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
             </div>
           </div>
           <div>
             <Label htmlFor="pct">% Complete: <span className="font-mono">{pct}%</span></Label>
-            <input id="pct" type="range" min={0} max={100} disabled={!canEdit} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full" />
+            <input id="pct" type="range" min={0} max={100} disabled={!canEdit || task.is_section} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full" />
           </div>
+
           <div>
             <Label>Status</Label>
-            <Select value={statusV} onValueChange={setStatusV} disabled={!canEdit}>
+            <Select value={statusV} onValueChange={setStatusV} disabled={!canEdit || task.is_section}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["not_started", "in_progress", "completed", "delayed", "blocked"].map(s => (
@@ -339,24 +345,24 @@ function TaskDrawer({ task, status, onClose, onSave, canEdit, saving }: {
           </div>
           <div>
             <Label htmlFor="own">Owner</Label>
-            <Input id="own" disabled={!canEdit} value={owner} onChange={e => setOwner(e.target.value)} placeholder="Responsible person / agency" />
+            <Input id="own" disabled={!canEdit || task.is_section} value={owner} onChange={e => setOwner(e.target.value)} placeholder="Responsible person / agency" />
           </div>
           <div>
             <Label htmlFor="rem">Remarks</Label>
-            <Textarea id="rem" disabled={!canEdit} value={remarks} onChange={e => setRemarks(e.target.value)} rows={3} placeholder="Delay reason / notes" />
+            <Textarea id="rem" disabled={!canEdit || task.is_section} value={remarks} onChange={e => setRemarks(e.target.value)} rows={3} placeholder="Delay reason / notes" />
           </div>
-          {canEdit ? (
+          {canEdit && !task.is_section ? (
             <Button className="w-full" disabled={saving} onClick={() => onSave({
               actual_start: actualStart || null, actual_finish: actualFinish || null,
               percent_complete: pct, status: statusV, owner: owner || null, remarks: remarks || null,
             })}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
             </Button>
-          ) : (
+          ) : !canEdit ? (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
               <AlertCircle className="mr-1 inline h-3 w-3" /> Read-only access. Contact admin to update actuals.
             </div>
-          )}
+          ) : null}
         </div>
       </SheetContent>
     </Sheet>
