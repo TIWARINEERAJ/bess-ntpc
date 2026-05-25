@@ -99,9 +99,9 @@ function BoiRow({ b, s, chip, canEdit, onSave }: { b: Boi; s: BoiStatus; chip: {
   );
   const select = (k: keyof BoiStatus, opts: string[], w = "w-28") => (
     <Select
-      value={(local[k] as string) ?? ""}
+      value={(local[k] as string) || "_none"}
       disabled={!canEdit}
-      onValueChange={(v) => { const n = { ...local, [k]: v || null }; setLocal(n); onSave(n); }}
+      onValueChange={(v) => { const n = { ...local, [k]: v === "_none" ? null : v }; setLocal(n); onSave(n); }}
     >
       <SelectTrigger className={`h-7 ${w} text-xs`}><SelectValue placeholder="—" /></SelectTrigger>
       <SelectContent>
