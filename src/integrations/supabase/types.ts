@@ -59,6 +59,7 @@ export type Database = {
       boi_documents: {
         Row: {
           boi_id: string
+          category: string
           created_at: string
           file_name: string
           file_path: string
@@ -70,6 +71,7 @@ export type Database = {
         }
         Insert: {
           boi_id: string
+          category?: string
           created_at?: string
           file_name: string
           file_path: string
@@ -81,6 +83,7 @@ export type Database = {
         }
         Update: {
           boi_id?: string
+          category?: string
           created_at?: string
           file_name?: string
           file_path?: string
@@ -396,7 +399,9 @@ export type Database = {
           actual_po_date: string | null
           boi_id: string
           delivery_date: string | null
+          drawings_status: string | null
           id: string
+          inspection_status: string | null
           mobilization_status: string | null
           remarks: string | null
           site_receipt_date: string | null
@@ -410,7 +415,9 @@ export type Database = {
           actual_po_date?: string | null
           boi_id: string
           delivery_date?: string | null
+          drawings_status?: string | null
           id?: string
+          inspection_status?: string | null
           mobilization_status?: string | null
           remarks?: string | null
           site_receipt_date?: string | null
@@ -424,7 +431,9 @@ export type Database = {
           actual_po_date?: string | null
           boi_id?: string
           delivery_date?: string | null
+          drawings_status?: string | null
           id?: string
+          inspection_status?: string | null
           mobilization_status?: string | null
           remarks?: string | null
           site_receipt_date?: string | null
