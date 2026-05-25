@@ -15,13 +15,14 @@ import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management";
+type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt";
 
 const TYPE_LABEL: Record<MeetingType, string> = {
   weekly: "Weekly Review",
   monthly: "Monthly Review",
   hop_vendor: "HOP Review with Vendors",
   management: "Management Review",
+  prt: "Project Review Team (PRT)",
 };
 
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
@@ -44,6 +45,11 @@ const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action
     attendees: "Director (Projects), ED (Renewables), Regional ED, GM (Projects), HOP, NTPC EIC",
     agenda: "1. Portfolio-level dashboard review\n2. Project-wise schedule health (RAG)\n3. Critical risks & escalations\n4. Cost & contract status\n5. Regulatory / policy updates\n6. Management directives",
     action_items: "Owner — Action — Due date\nGM — Submit revised L2 if slip > 30 days — within 2 weeks\nHOP — Resolve pending vendor escalations — DD-MMM",
+  },
+  prt: {
+    attendees: "Project Review Team Chair, HOP, NTPC EIC, PM Coordinator, Engg Taskforce, Discipline Leads (Civil / Electrical / C&I), Agency PM, OEM reps",
+    agenda: "1. Schedule health vs L2 baseline (critical path)\n2. BOI / drawing & approval status\n3. Quality & inspection (QAP / FQP / MQP) progress\n4. Safety incidents & corrective actions\n5. Statutory & contractual compliance\n6. Open issues, risks & mitigation\n7. Decisions required from PRT",
+    action_items: "Owner — Action — Due date\nEIC — Close pending TQs with agency — DD-MMM\nAgency — Submit recovery plan for slipped milestones — DD-MMM",
   },
 };
 
