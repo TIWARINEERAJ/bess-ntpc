@@ -366,7 +366,7 @@ function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & 
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
           <span className="rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">{s.completed}/{s.total} tasks</span>
-          {s.delayed > 0 && <span className="rounded-full px-2 py-1" style={{ background: `color-mix(in oklab, var(--status-red) 18%, transparent)`, color: "var(--status-red)" }}>{s.delayed} delayed</span>}
+          {s.delayed > 0 && <span className="rounded-full px-2 py-0.5" style={{ background: `color-mix(in oklab, var(--status-red) 18%, transparent)`, color: "var(--status-red)" }}>{s.delayed} delayed</span>}
         </div>
       </Card>
     </Link>
