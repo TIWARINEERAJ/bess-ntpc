@@ -345,30 +345,27 @@ function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & 
   const tone = `var(--status-${s.health})`;
   return (
     <Link to="/stations/$stationId" params={{ stationId: s.id }}>
-      <Card className="group relative overflow-hidden p-4 transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_30%,transparent)]">
+      <Card className="group relative overflow-hidden p-3.5 transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_30%,transparent)]">
         <div className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} />
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="truncate text-base font-semibold">{s.name}</h3>
-              <Badge variant="outline" className="text-[10px]">{s.lot}</Badge>
+              <h3 className="truncate text-[15px] font-semibold tracking-tight">{s.name}</h3>
+              <Badge variant="outline" className="text-[10px] font-medium">{s.lot}</Badge>
             </div>
-            <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
               <span className="font-mono">{Number(s.capacity_mwh).toLocaleString()} MWh</span>
               {s.capacity_mw && <span className="font-mono">{Number(s.capacity_mw)} MW</span>}
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              <span className="text-foreground/80">Agency:</span> {s.agency ?? "—"} · <span className="text-foreground/80">EIC:</span> {s.ntpc_eic ?? "—"}
-            </div>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+          <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <Progress value={s.pct} className="h-2" />
-          <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: tone }}>{s.pct}%</span>
+        <div className="mt-2.5 flex items-center gap-3">
+          <Progress value={s.pct} className="h-1.5" />
+          <span className="font-mono text-xs font-semibold tabular-nums" style={{ color: tone }}>{s.pct}%</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">{s.completed}/{s.total} tasks done</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">{s.completed}/{s.total} tasks</span>
           {s.delayed > 0 && <span className="rounded-full px-2 py-0.5" style={{ background: `color-mix(in oklab, var(--status-red) 18%, transparent)`, color: "var(--status-red)" }}>{s.delayed} delayed</span>}
         </div>
       </Card>
