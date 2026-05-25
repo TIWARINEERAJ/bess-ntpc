@@ -22,11 +22,12 @@ async function fetchDocs(kind: Kind, stationId: string, refId: string, category?
 }
 
 async function insertDoc(kind: Kind, stationId: string, refId: string, row: { file_path: string; file_name: string; file_size: number; mime_type: string; uploaded_by: string | null; category?: string }) {
+  const { category, ...rest } = row;
   if (kind === "boi") {
-    const { error } = await supabase.from("boi_documents").insert({ station_id: stationId, boi_id: refId, category: row.category ?? "general", ...row });
+    const { error } = await supabase.from("boi_documents").insert({ station_id: stationId, boi_id: refId, category: category ?? "general", ...rest });
     if (error) throw error;
   } else {
-    const { error } = await supabase.from("compliance_documents").insert({ station_id: stationId, compliance_id: refId, ...row });
+    const { error } = await supabase.from("compliance_documents").insert({ station_id: stationId, compliance_id: refId, ...rest });
     if (error) throw error;
   }
 }
