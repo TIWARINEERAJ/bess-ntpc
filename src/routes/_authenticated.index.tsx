@@ -348,7 +348,7 @@ function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & 
       <Card className="group relative overflow-hidden p-3.5 transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_30%,transparent)]">
         <div className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} />
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w- 0">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="truncate text-[15px] font-semibold tracking-tight">{s.name}</h3>
               <Badge variant="outline" className="text-[10px] font-medium">{s.lot}</Badge>
