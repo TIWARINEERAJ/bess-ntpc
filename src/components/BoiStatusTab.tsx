@@ -3,13 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 
 type Boi = { id: string; sl_no: number; name: string; drawings_count: number | null; scheduled_po_date: string | null; inspection_category: string | null };
-type BoiStatus = { id?: string; station_id: string; boi_id: string; actual_po_date: string | null; sub_vendor_category: string | null; sub_vendor_details: string | null; delivery_date: string | null; site_receipt_date: string | null; mobilization_status: string | null; remarks: string | null };
+type BoiStatus = {
+  id?: string;
+  station_id: string;
+  boi_id: string;
+  actual_po_date: string | null;
+  sub_vendor_category: string | null;
+  sub_vendor_details: string | null;
+  delivery_date: string | null;
+  site_receipt_date: string | null;
+  mobilization_status: string | null;
+  drawings_status: string | null;
+  inspection_status: string | null;
+  remarks: string | null;
+};
+
+const DRAWING_OPTIONS = ["", "Submitted", "Approved"];
+const INSPECTION_OPTIONS = ["", "Call Raised", "Pending", "Completed"];
 
 function statusChip(b: Boi, s: BoiStatus | undefined) {
   if (!s?.actual_po_date) {
@@ -50,13 +67,18 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
             <tr>
-              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Insp.", "Delivery", "Site Receipt", "Mobilization", "Status", "Remarks", "Docs"].map(h =>
+              {["SL", "BOI Equipment", "Dwgs", "Sched PO", "Actual PO", "Sub-Vendor Cat", "Sub-Vendor", "Drawings", "Inspection", "Delivery", "Site Receipt", "Status", "Remarks", "Docs", "Quality Plan"].map(h =>
                 <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
             </tr>
           </thead>
           <tbody>
             {(masterQ.data ?? []).map(b => {
-              const s = map.get(b.id) ?? { station_id: stationId, boi_id: b.id, actual_po_date: null, sub_vendor_category: null, sub_vendor_details: null, delivery_date: null, site_receipt_date: null, mobilization_status: null, remarks: null };
+              const s = map.get(b.id) ?? {
+                station_id: stationId, boi_id: b.id,
+                actual_po_date: null, sub_vendor_category: null, sub_vendor_details: null,
+                delivery_date: null, site_receipt_date: null, mobilization_status: null,
+                drawings_status: null, inspection_status: null, remarks: null,
+              };
               const chip = statusChip(b, s);
               return <BoiRow key={b.id} b={b} s={s} chip={chip} canEdit={canEdit} onSave={(p) => save.mutate({ ...s, ...p })} />;
             })}
@@ -75,6 +97,18 @@ function BoiRow({ b, s, chip, canEdit, onSave }: { b: Boi; s: BoiStatus; chip: {
       onChange={e => setLocal({ ...local, [k]: e.target.value || null })}
       onBlur={() => dirty && onSave(local)} />
   );
+  const select = (k: keyof BoiStatus, opts: string[], w = "w-28") => (
+    <Select
+      value={(local[k] as string) || "_none"}
+      disabled={!canEdit}
+      onValueChange={(v) => { const n = { ...local, [k]: v === "_none" ? null : v }; setLocal(n); onSave(n); }}
+    >
+      <SelectTrigger className={`h-7 ${w} text-xs`}><SelectValue placeholder="—" /></SelectTrigger>
+      <SelectContent>
+        {opts.map(o => <SelectItem key={o || "_none"} value={o || "_none"}>{o || "—"}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
   return (
     <tr className="border-b border-border/40 hover:bg-secondary/30">
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.sl_no}</td>
@@ -84,13 +118,14 @@ function BoiRow({ b, s, chip, canEdit, onSave }: { b: Boi; s: BoiStatus; chip: {
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
       <td className="px-1 py-1">{cell("sub_vendor_category", "text", "w-20")}</td>
       <td className="px-1 py-1">{cell("sub_vendor_details", "text", "w-36")}</td>
-      <td className="px-2 py-1 text-center text-[10px]" style={{ color: "var(--primary)" }}>{b.inspection_category ?? "—"}</td>
+      <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
+      <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>
       <td className="px-1 py-1">{cell("site_receipt_date", "date", "w-32")}</td>
-      <td className="px-1 py-1">{cell("mobilization_status", "text", "w-28")}</td>
       <td className="px-2 py-1"><Badge variant="outline" className="text-[10px]" style={{ color: chip.c, borderColor: chip.c }}>{chip.label}</Badge></td>
       <td className="px-1 py-1">{cell("remarks", "text", "w-40")}</td>
-      <td className="px-1 py-1"><DocumentUploads kind="boi" stationId={s.station_id} refId={b.id} canEdit={canEdit} compact /></td>
+      <td className="px-1 py-1"><DocumentUploads kind="boi" stationId={s.station_id} refId={b.id} canEdit={canEdit} compact category="general" /></td>
+      <td className="px-1 py-1"><DocumentUploads kind="boi" stationId={s.station_id} refId={b.id} canEdit={canEdit} compact category="quality_plan" /></td>
     </tr>
   );
 }

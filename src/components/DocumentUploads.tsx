@@ -6,11 +6,13 @@ import { Paperclip, Trash2, FileText, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 type Kind = "boi" | "compliance";
-type Doc = { id: string; station_id: string; file_path: string; file_name: string; file_size: number | null; mime_type: string | null; created_at: string };
+type Doc = { id: string; station_id: string; file_path: string; file_name: string; file_size: number | null; mime_type: string | null; created_at: string; category?: string | null };
 
-async function fetchDocs(kind: Kind, stationId: string, refId: string): Promise<Doc[]> {
+async function fetchDocs(kind: Kind, stationId: string, refId: string, category?: string): Promise<Doc[]> {
   if (kind === "boi") {
-    const { data, error } = await supabase.from("boi_documents").select("*").eq("station_id", stationId).eq("boi_id", refId).order("created_at", { ascending: false });
+    let q = supabase.from("boi_documents").select("*").eq("station_id", stationId).eq("boi_id", refId);
+    if (category) q = q.eq("category", category);
+    const { data, error } = await q.order("created_at", { ascending: false });
     if (error) throw error;
     return (data ?? []) as Doc[];
   }
@@ -19,12 +21,13 @@ async function fetchDocs(kind: Kind, stationId: string, refId: string): Promise<
   return (data ?? []) as Doc[];
 }
 
-async function insertDoc(kind: Kind, stationId: string, refId: string, row: { file_path: string; file_name: string; file_size: number; mime_type: string; uploaded_by: string | null }) {
+async function insertDoc(kind: Kind, stationId: string, refId: string, row: { file_path: string; file_name: string; file_size: number; mime_type: string; uploaded_by: string | null; category?: string }) {
+  const { category, ...rest } = row;
   if (kind === "boi") {
-    const { error } = await supabase.from("boi_documents").insert({ station_id: stationId, boi_id: refId, ...row });
+    const { error } = await supabase.from("boi_documents").insert({ station_id: stationId, boi_id: refId, category: category ?? "general", ...rest });
     if (error) throw error;
   } else {
-    const { error } = await supabase.from("compliance_documents").insert({ station_id: stationId, compliance_id: refId, ...row });
+    const { error } = await supabase.from("compliance_documents").insert({ station_id: stationId, compliance_id: refId, ...rest });
     if (error) throw error;
   }
 }
@@ -39,13 +42,13 @@ async function deleteDoc(kind: Kind, id: string) {
   }
 }
 
-export function DocumentUploads({ kind, stationId, refId, canEdit, compact = false }: { kind: Kind; stationId: string; refId: string; canEdit: boolean; compact?: boolean }) {
+export function DocumentUploads({ kind, stationId, refId, canEdit, compact = false, category }: { kind: Kind; stationId: string; refId: string; canEdit: boolean; compact?: boolean; category?: string }) {
   const qc = useQueryClient();
-  const key = ["docs", kind, stationId, refId];
+  const key = ["docs", kind, stationId, refId, category ?? "_"];
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const q = useQuery({ queryKey: key, queryFn: () => fetchDocs(kind, stationId, refId) });
+  const q = useQuery({ queryKey: key, queryFn: () => fetchDocs(kind, stationId, refId, kind === "boi" ? (category ?? "general") : undefined) });
   const docs = q.data ?? [];
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,12 +58,13 @@ export function DocumentUploads({ kind, stationId, refId, canEdit, compact = fal
     if (f.size > 10 * 1024 * 1024) { toast.error("Max 10 MB per file"); return; }
     setUploading(true);
     try {
-      const path = `${stationId}/${kind}/${refId}/${Date.now()}_${f.name}`;
+      const folder = category ? `${kind}-${category}` : kind;
+      const path = `${stationId}/${folder}/${refId}/${Date.now()}_${f.name}`;
       const { error: upErr } = await supabase.storage.from("station-docs").upload(path, f, { contentType: f.type });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
       try {
-        await insertDoc(kind, stationId, refId, { file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type || "application/octet-stream", uploaded_by: user?.id ?? null });
+        await insertDoc(kind, stationId, refId, { file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type || "application/octet-stream", uploaded_by: user?.id ?? null, category });
       } catch (e) {
         await supabase.storage.from("station-docs").remove([path]);
         throw e;
