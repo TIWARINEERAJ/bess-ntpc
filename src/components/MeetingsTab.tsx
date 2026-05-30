@@ -239,6 +239,16 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
 
   return (
     <div className="space-y-3">
+      <Card className="p-3">
+        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          Audio recorder · {TYPE_LABEL[meetingType]}
+        </div>
+        <p className="mb-2 text-[11px] text-muted-foreground">
+          Record this meeting live (mic + Teams/computer audio) or upload an exported Teams recording. Saved recordings appear below.
+        </p>
+        <MeetingRecorder stationId={stationId} meetingType={meetingType} canEdit={canEdit} />
+      </Card>
+
       <Card className="border-dashed bg-secondary/30 p-3">
         <div className="mb-1 flex items-center justify-between gap-2">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-primary">Standard format · {TYPE_LABEL[meetingType]}</div>
