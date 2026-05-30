@@ -177,6 +177,20 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
   };
   const [form, setForm] = useState(blank);
 
+  // CRM commitments: L2 schedule item + committed date
+  const [commitments, setCommitments] = useState<{ item: string; date: string }[]>([]);
+  const [cmtItem, setCmtItem] = useState("");
+  const [cmtDate, setCmtDate] = useState("");
+  const resetCrm = () => { setCommitments([]); setCmtItem(""); setCmtDate(""); };
+  const addCommitment = () => {
+    if (!cmtItem || !cmtDate) { toast.error("Pick an L2 item and a date"); return; }
+    setCommitments((c) => [...c, { item: cmtItem, date: cmtDate }]);
+    setCmtItem(""); setCmtDate("");
+  };
+  const removeCommitment = (i: number) => setCommitments((c) => c.filter((_, idx) => idx !== i));
+  const commitmentsText = () =>
+    commitments.map((c) => `• ${c.item} — ${fmtD(c.date)}`).join("\n");
+
   const create = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
