@@ -276,8 +276,45 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
                   <Label>Attendees</Label>
                   <Input value={form.attendees} onChange={e => setForm({ ...form, attendees: e.target.value })} placeholder={tpl.attendees} />
                 </div>
+                {meetingType === "crm" && (
+                  <div className="col-span-2 space-y-2 rounded-lg border bg-secondary/30 p-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-primary">L2 Schedule — Commitments</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                      <div className="flex-1">
+                        <Label className="text-[11px] text-muted-foreground">L2 schedule item</Label>
+                        <Select value={cmtItem} onValueChange={setCmtItem}>
+                          <SelectTrigger><SelectValue placeholder="Select item" /></SelectTrigger>
+                          <SelectContent>
+                            {CRM_L2_ITEMS.map((it) => (
+                              <SelectItem key={it} value={it}>{it}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:w-40">
+                        <Label className="text-[11px] text-muted-foreground">Committed date</Label>
+                        <Input type="date" value={cmtDate} onChange={(e) => setCmtDate(e.target.value)} />
+                      </div>
+                      <Button type="button" size="sm" variant="secondary" onClick={addCommitment}>
+                        <Plus className="mr-1 h-4 w-4" /> Add
+                      </Button>
+                    </div>
+                    {commitments.length > 0 && (
+                      <div className="space-y-1">
+                        {commitments.map((c, i) => (
+                          <div key={i} className="flex items-center justify-between gap-2 rounded-md bg-background px-2 py-1 text-sm">
+                            <span><span className="text-muted-foreground">{c.item}</span> — {fmtD(c.date)}</span>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCommitment(i)}>
+                              <X className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="col-span-2">
-                  <Label>Agenda</Label>
+                  <Label>Agenda{meetingType === "crm" ? " (additional notes)" : ""}</Label>
                   <Textarea rows={4} value={form.agenda} onChange={e => setForm({ ...form, agenda: e.target.value })} placeholder={tpl.agenda} />
                 </div>
                 <div className="col-span-2">
