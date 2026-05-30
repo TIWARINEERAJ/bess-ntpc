@@ -9,11 +9,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Calendar, Loader2, Trash2, FileDown, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Calendar, Loader2, Trash2, FileDown, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+/** L2 schedule line items captured as commitments in CRM Coordination Review meetings */
+const CRM_L2_ITEMS = [
+  "Site mobilization",
+  "Site clearance and grading work",
+  "BESS Plant layout and SLD submission",
+  "Ordering status — Switch gear",
+  "Ordering status — BESS",
+  "Ordering status — PCS",
+  "Ordering status — Transformer (PCS duty & Auxiliary)",
+  "Ordering status — HT cables",
+  "Ordering status — LT cable",
+  "Ordering status — Communication cable",
+  "Ordering status — BESS EMS system",
+  "Ordering status — SCADA & PPC system",
+  "Ordering status — Earthing & lighting system",
+  "BBU submission for the supplies",
+] as const;
 
 type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
 
@@ -158,15 +177,34 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
   };
   const [form, setForm] = useState(blank);
 
+  // CRM commitments: L2 schedule item + committed date
+  const [commitments, setCommitments] = useState<{ item: string; date: string }[]>([]);
+  const [cmtItem, setCmtItem] = useState("");
+  const [cmtDate, setCmtDate] = useState("");
+  const resetCrm = () => { setCommitments([]); setCmtItem(""); setCmtDate(""); };
+  const addCommitment = () => {
+    if (!cmtItem || !cmtDate) { toast.error("Pick an L2 item and a date"); return; }
+    setCommitments((c) => [...c, { item: cmtItem, date: cmtDate }]);
+    setCmtItem(""); setCmtDate("");
+  };
+  const removeCommitment = (i: number) => setCommitments((c) => c.filter((_, idx) => idx !== i));
+  const commitmentsText = () =>
+    commitments.map((c) => `• ${c.item} — ${fmtD(c.date)}`).join("\n");
+
   const create = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      let agenda = form.agenda;
+      if (meetingType === "crm" && commitments.length) {
+        const block = `Commitment for CRM Meeting (L2 Schedule)\n${commitmentsText()}`;
+        agenda = agenda ? `${agenda}\n\n${block}` : block;
+      }
       const { error } = await supabase.from("meetings").insert({
         station_id: stationId,
         meeting_type: meetingType,
         meeting_date: form.meeting_date,
         attendees: form.attendees || null,
-        agenda: form.agenda || null,
+        agenda: agenda || null,
         minutes: form.minutes || null,
         action_items: form.action_items || null,
         next_meeting_date: form.next_meeting_date || null,
@@ -179,9 +217,11 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       toast.success("Meeting logged");
       setOpen(false);
       setForm(blank);
+      resetCrm();
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
 
   const del = useMutation({
     mutationFn: async (id: string) => {
@@ -212,7 +252,7 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{rows.length} entr{rows.length === 1 ? "y" : "ies"}</div>
         {canEdit && (
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setForm(blank); }}>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(blank); resetCrm(); } }}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Log {TYPE_LABEL[meetingType]}</Button>
             </DialogTrigger>
@@ -236,8 +276,45 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
                   <Label>Attendees</Label>
                   <Input value={form.attendees} onChange={e => setForm({ ...form, attendees: e.target.value })} placeholder={tpl.attendees} />
                 </div>
+                {meetingType === "crm" && (
+                  <div className="col-span-2 space-y-2 rounded-lg border bg-secondary/30 p-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-primary">L2 Schedule — Commitments</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                      <div className="flex-1">
+                        <Label className="text-[11px] text-muted-foreground">L2 schedule item</Label>
+                        <Select value={cmtItem} onValueChange={setCmtItem}>
+                          <SelectTrigger><SelectValue placeholder="Select item" /></SelectTrigger>
+                          <SelectContent>
+                            {CRM_L2_ITEMS.map((it) => (
+                              <SelectItem key={it} value={it}>{it}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:w-40">
+                        <Label className="text-[11px] text-muted-foreground">Committed date</Label>
+                        <Input type="date" value={cmtDate} onChange={(e) => setCmtDate(e.target.value)} />
+                      </div>
+                      <Button type="button" size="sm" variant="secondary" onClick={addCommitment}>
+                        <Plus className="mr-1 h-4 w-4" /> Add
+                      </Button>
+                    </div>
+                    {commitments.length > 0 && (
+                      <div className="space-y-1">
+                        {commitments.map((c, i) => (
+                          <div key={i} className="flex items-center justify-between gap-2 rounded-md bg-background px-2 py-1 text-sm">
+                            <span><span className="text-muted-foreground">{c.item}</span> — {fmtD(c.date)}</span>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCommitment(i)}>
+                              <X className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="col-span-2">
-                  <Label>Agenda</Label>
+                  <Label>Agenda{meetingType === "crm" ? " (additional notes)" : ""}</Label>
                   <Textarea rows={4} value={form.agenda} onChange={e => setForm({ ...form, agenda: e.target.value })} placeholder={tpl.agenda} />
                 </div>
                 <div className="col-span-2">
