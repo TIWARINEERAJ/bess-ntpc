@@ -277,14 +277,14 @@ export function MeetingRecorder({ meetingId, stationId, canEdit }: { meetingId: 
 
       <div className="space-y-2">
         {recordings.map((r) => (
-          <RecordingРRow key={r.id} r={r} canEdit={canEdit} onDelete={() => del.mutate(r)} deleting={del.isPending} cache={playerCache.current} />
+          <RecordingRow key={r.id} r={r} canEdit={canEdit} onDelete={() => del.mutate(r)} deleting={del.isPending} cache={playerCache.current} />
         ))}
       </div>
     </div>
   );
 }
 
-function RecordingРRow({ r, canEdit, onDelete, deleting, cache }: { r: Recording; canEdit: boolean; onDelete: () => void; deleting: boolean; cache: Map<string, string> }) {
+function RecordingRow({ r, canEdit, onDelete, deleting, cache }: { r: Recording; canEdit: boolean; onDelete: () => void; deleting: boolean; cache: Map<string, string> }) {
   const [url, setUrl] = useState<string | null>(cache.get(r.file_path) ?? null);
   const [loading, setLoading] = useState(false);
 
