@@ -15,7 +15,7 @@ import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt";
+type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
 
 const TYPE_LABEL: Record<MeetingType, string> = {
   weekly: "Weekly Review",
@@ -23,6 +23,7 @@ const TYPE_LABEL: Record<MeetingType, string> = {
   hop_vendor: "HOP Review with Vendors",
   management: "Management Review",
   prt: "Project Review Team (PRT)",
+  crm: "CRM Coordination Review (Vendors)",
 };
 
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
@@ -50,6 +51,11 @@ const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action
     attendees: "Project Review Team Chair, HOP, NTPC EIC, PM Coordinator, Engg Taskforce, Discipline Leads (Civil / Electrical / C&I), Agency PM, OEM reps",
     agenda: "1. Schedule health vs L2 baseline (critical path)\n2. BOI / drawing & approval status\n3. Quality & inspection (QAP / FQP / MQP) progress\n4. Safety incidents & corrective actions\n5. Statutory & contractual compliance\n6. Open issues, risks & mitigation\n7. Decisions required from PRT",
     action_items: "Owner — Action — Due date\nEIC — Close pending TQs with agency — DD-MMM\nAgency — Submit recovery plan for slipped milestones — DD-MMM",
+  },
+  crm: {
+    attendees: "NTPC EIC, PM Coordinator, CRM (Contractor Relationship Manager), Agency PM, OEM / Vendor reps (Switchgear / BESS / PCS / Transformer / Cables / EMS / SCADA)",
+    agenda: "L2 Schedule — Commitment for CRM Meeting (Start / End dates per station)\n1.1 Site mobilization\n1.2 Site clearance and grading work\n1.3 BESS Plant layout and SLD submission\n1.4 Ordering status\n    - Switch gear\n    - BESS\n    - PCS\n    - Transformer (PCS duty & Auxiliary)\n    - HT cables / LT cable / Communication cable\n    - BESS EMS system\n    - SCADA & PPC system\n    - Earthing & lighting system\n1.5 BBU submission for the supplies",
+    action_items: "Owner — Action — Due date\nVendor — Confirm ordering status for switchgear / PCS / BESS — DD-MMM\nAgency — Submit BESS layout & SLD — DD-MMM\nAgency — BBU submission for supplies — DD-MMM",
   },
 };
 
