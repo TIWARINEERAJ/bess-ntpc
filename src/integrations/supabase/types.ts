@@ -336,7 +336,8 @@ export type Database = {
           file_path: string
           file_size: number | null
           id: string
-          meeting_id: string
+          meeting_id: string | null
+          meeting_type: string | null
           mime_type: string | null
           station_id: string
           uploaded_by: string | null
@@ -348,7 +349,8 @@ export type Database = {
           file_path: string
           file_size?: number | null
           id?: string
-          meeting_id: string
+          meeting_id?: string | null
+          meeting_type?: string | null
           mime_type?: string | null
           station_id: string
           uploaded_by?: string | null
@@ -360,7 +362,8 @@ export type Database = {
           file_path?: string
           file_size?: number | null
           id?: string
-          meeting_id?: string
+          meeting_id?: string | null
+          meeting_type?: string | null
           mime_type?: string | null
           station_id?: string
           uploaded_by?: string | null
