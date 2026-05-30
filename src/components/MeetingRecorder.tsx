@@ -84,12 +84,13 @@ export function MeetingRecorder({ meetingId, meetingType, stationId, canEdit }: 
     setBusy(true);
     try {
       const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
-      const path = `${stationId}/meeting-audio/${meetingId}/${Date.now()}_${name}.${ext}`;
+      const path = `${stationId}/meeting-audio/${meetingId ?? meetingType ?? "general"}/${Date.now()}_${name}.${ext}`;
       const { error: upErr } = await supabase.storage.from("meeting-audio").upload(path, blob, { contentType: blob.type || "audio/webm" });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("meeting_recordings").insert({
-        meeting_id: meetingId,
+        meeting_id: meetingId ?? null,
+        meeting_type: meetingType ?? null,
         station_id: stationId,
         file_path: path,
         file_name: `${name}.${ext}`,
