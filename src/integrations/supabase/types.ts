@@ -328,6 +328,45 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_recordings: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          meeting_id: string
+          mime_type: string | null
+          station_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          meeting_id: string
+          mime_type?: string | null
+          station_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          meeting_id?: string
+          mime_type?: string | null
+          station_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           action_items: string | null
