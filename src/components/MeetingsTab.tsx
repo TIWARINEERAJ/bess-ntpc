@@ -15,7 +15,7 @@ import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt";
+type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
 
 const TYPE_LABEL: Record<MeetingType, string> = {
   weekly: "Weekly Review",
@@ -23,6 +23,7 @@ const TYPE_LABEL: Record<MeetingType, string> = {
   hop_vendor: "HOP Review with Vendors",
   management: "Management Review",
   prt: "Project Review Team (PRT)",
+  crm: "CRM Coordination Review (Vendors)",
 };
 
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
