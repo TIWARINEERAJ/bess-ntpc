@@ -34,22 +34,26 @@ function pickMime() {
   return "";
 }
 
-export function MeetingRecorder({ meetingId, stationId, canEdit }: { meetingId: string; stationId: string; canEdit: boolean }) {
+export function MeetingRecorder({ meetingId, meetingType, stationId, canEdit }: { meetingId?: string; meetingType?: string; stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
-  const key = ["meeting-recordings", meetingId];
+  const scope = meetingId ?? `type:${meetingType ?? "general"}`;
+  const key = ["meeting-recordings", stationId, scope];
   const q = useQuery({
     queryKey: key,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("meeting_recordings")
-        .select("*")
-        .eq("meeting_id", meetingId)
-        .order("created_at", { ascending: false });
+      let query = supabase.from("meeting_recordings").select("*").eq("station_id", stationId);
+      if (meetingId) {
+        query = query.eq("meeting_id", meetingId);
+      } else {
+        query = query.is("meeting_id", null).eq("meeting_type", meetingType ?? "general");
+      }
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Recording[];
     },
   });
   const recordings = q.data ?? [];
+
 
   const [includeSystem, setIncludeSystem] = useState(true);
   const [recording, setRecording] = useState(false);
@@ -80,12 +84,13 @@ export function MeetingRecorder({ meetingId, stationId, canEdit }: { meetingId: 
     setBusy(true);
     try {
       const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
-      const path = `${stationId}/meeting-audio/${meetingId}/${Date.now()}_${name}.${ext}`;
+      const path = `${stationId}/meeting-audio/${meetingId ?? meetingType ?? "general"}/${Date.now()}_${name}.${ext}`;
       const { error: upErr } = await supabase.storage.from("meeting-audio").upload(path, blob, { contentType: blob.type || "audio/webm" });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("meeting_recordings").insert({
-        meeting_id: meetingId,
+        meeting_id: meetingId ?? null,
+        meeting_type: meetingType ?? null,
         station_id: stationId,
         file_path: path,
         file_name: `${name}.${ext}`,
@@ -196,12 +201,13 @@ export function MeetingRecorder({ meetingId, stationId, canEdit }: { meetingId: 
     if (f.size > 100 * 1024 * 1024) { toast.error("Max 100 MB per recording"); return; }
     setBusy(true);
     try {
-      const path = `${stationId}/meeting-audio/${meetingId}/${Date.now()}_${f.name}`;
+      const path = `${stationId}/meeting-audio/${meetingId ?? meetingType ?? "general"}/${Date.now()}_${f.name}`;
       const { error: upErr } = await supabase.storage.from("meeting-audio").upload(path, f, { contentType: f.type });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("meeting_recordings").insert({
-        meeting_id: meetingId,
+        meeting_id: meetingId ?? null,
+        meeting_type: meetingType ?? null,
         station_id: stationId,
         file_path: path,
         file_name: f.name,
