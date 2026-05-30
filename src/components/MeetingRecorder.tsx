@@ -201,12 +201,13 @@ export function MeetingRecorder({ meetingId, meetingType, stationId, canEdit }: 
     if (f.size > 100 * 1024 * 1024) { toast.error("Max 100 MB per recording"); return; }
     setBusy(true);
     try {
-      const path = `${stationId}/meeting-audio/${meetingId}/${Date.now()}_${f.name}`;
+      const path = `${stationId}/meeting-audio/${meetingId ?? meetingType ?? "general"}/${Date.now()}_${f.name}`;
       const { error: upErr } = await supabase.storage.from("meeting-audio").upload(path, f, { contentType: f.type });
       if (upErr) throw upErr;
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("meeting_recordings").insert({
-        meeting_id: meetingId,
+        meeting_id: meetingId ?? null,
+        meeting_type: meetingType ?? null,
         station_id: stationId,
         file_path: path,
         file_name: f.name,
