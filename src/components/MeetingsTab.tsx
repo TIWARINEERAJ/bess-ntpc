@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { MeetingRecorder } from "@/components/MeetingRecorder";
 
 /** L2 schedule line items captured as commitments in CRM Coordination Review meetings */
 const CRM_L2_ITEMS = [
@@ -366,6 +367,7 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
             {m.agenda && <Section title="Agenda" text={m.agenda} />}
             {m.minutes && <Section title="Minutes" text={m.minutes} />}
             {m.action_items && <Section title="Action items" text={m.action_items} />}
+            <MeetingRecorder meetingId={m.id} stationId={stationId} canEdit={canEdit} />
           </Card>
         ))}
       </div>
