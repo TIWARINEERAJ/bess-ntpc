@@ -34,22 +34,26 @@ function pickMime() {
   return "";
 }
 
-export function MeetingRecorder({ meetingId, stationId, canEdit }: { meetingId: string; stationId: string; canEdit: boolean }) {
+export function MeetingRecorder({ meetingId, meetingType, stationId, canEdit }: { meetingId?: string; meetingType?: string; stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
-  const key = ["meeting-recordings", meetingId];
+  const scope = meetingId ?? `type:${meetingType ?? "general"}`;
+  const key = ["meeting-recordings", stationId, scope];
   const q = useQuery({
     queryKey: key,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("meeting_recordings")
-        .select("*")
-        .eq("meeting_id", meetingId)
-        .order("created_at", { ascending: false });
+      let query = supabase.from("meeting_recordings").select("*").eq("station_id", stationId);
+      if (meetingId) {
+        query = query.eq("meeting_id", meetingId);
+      } else {
+        query = query.is("meeting_id", null).eq("meeting_type", meetingType ?? "general");
+      }
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Recording[];
     },
   });
   const recordings = q.data ?? [];
+
 
   const [includeSystem, setIncludeSystem] = useState(true);
   const [recording, setRecording] = useState(false);
