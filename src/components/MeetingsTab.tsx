@@ -9,11 +9,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Calendar, Loader2, Trash2, FileDown, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Calendar, Loader2, Trash2, FileDown, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+/** L2 schedule line items captured as commitments in CRM Coordination Review meetings */
+const CRM_L2_ITEMS = [
+  "Site mobilization",
+  "Site clearance and grading work",
+  "BESS Plant layout and SLD submission",
+  "Ordering status — Switch gear",
+  "Ordering status — BESS",
+  "Ordering status — PCS",
+  "Ordering status — Transformer (PCS duty & Auxiliary)",
+  "Ordering status — HT cables",
+  "Ordering status — LT cable",
+  "Ordering status — Communication cable",
+  "Ordering status — BESS EMS system",
+  "Ordering status — SCADA & PPC system",
+  "Ordering status — Earthing & lighting system",
+  "BBU submission for the supplies",
+] as const;
 
 type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
 
