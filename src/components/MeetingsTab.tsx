@@ -252,7 +252,7 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{rows.length} entr{rows.length === 1 ? "y" : "ies"}</div>
         {canEdit && (
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setForm(blank); }}>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(blank); resetCrm(); } }}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Log {TYPE_LABEL[meetingType]}</Button>
             </DialogTrigger>
