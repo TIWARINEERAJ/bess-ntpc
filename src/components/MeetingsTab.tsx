@@ -194,12 +194,17 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
   const create = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      let agenda = form.agenda;
+      if (meetingType === "crm" && commitments.length) {
+        const block = `Commitment for CRM Meeting (L2 Schedule)\n${commitmentsText()}`;
+        agenda = agenda ? `${agenda}\n\n${block}` : block;
+      }
       const { error } = await supabase.from("meetings").insert({
         station_id: stationId,
         meeting_type: meetingType,
         meeting_date: form.meeting_date,
         attendees: form.attendees || null,
-        agenda: form.agenda || null,
+        agenda: agenda || null,
         minutes: form.minutes || null,
         action_items: form.action_items || null,
         next_meeting_date: form.next_meeting_date || null,
@@ -212,9 +217,11 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
       toast.success("Meeting logged");
       setOpen(false);
       setForm(blank);
+      resetCrm();
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
 
   const del = useMutation({
     mutationFn: async (id: string) => {
