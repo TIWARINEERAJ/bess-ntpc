@@ -366,6 +366,7 @@ function MeetingsList({ stationId, meetingType, canEdit }: { stationId: string; 
             {m.agenda && <Section title="Agenda" text={m.agenda} />}
             {m.minutes && <Section title="Minutes" text={m.minutes} />}
             {m.action_items && <Section title="Action items" text={m.action_items} />}
+            <MeetingRecorder meetingId={m.id} stationId={stationId} canEdit={canEdit} />
           </Card>
         ))}
       </div>
