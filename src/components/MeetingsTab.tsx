@@ -95,13 +95,24 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
     <div className="space-y-3">
       <Tabs value={type} onValueChange={(v) => setType(v as MeetingType)}>
         <TabsList className="flex-wrap">
-          {(Object.keys(TYPE_LABEL) as MeetingType[]).map((k) => (
+          {MEETING_TYPES.map((k) => (
             <TabsTrigger key={k} value={k}>{TYPE_LABEL[k]}</TabsTrigger>
           ))}
         </TabsList>
-        {(Object.keys(TYPE_LABEL) as MeetingType[]).map((k) => (
+        {MEETING_TYPES.map((k) => (
           <TabsContent key={k} value={k} className="space-y-3">
-            <MeetingsList stationId={stationId} meetingType={k} canEdit={canEdit} />
+            <Tabs defaultValue="records">
+              <TabsList>
+                <TabsTrigger value="records">Minutes &amp; Records</TabsTrigger>
+                <TabsTrigger value="planner">Meeting Planner</TabsTrigger>
+              </TabsList>
+              <TabsContent value="records" className="space-y-3">
+                <MeetingsList stationId={stationId} meetingType={k} canEdit={canEdit} />
+              </TabsContent>
+              <TabsContent value="planner" className="space-y-3">
+                <MeetingPlanner stationId={stationId} meetingType={k} canEdit={canEdit} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         ))}
       </Tabs>
