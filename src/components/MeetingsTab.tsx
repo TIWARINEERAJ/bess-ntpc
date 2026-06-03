@@ -69,6 +69,11 @@ const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action
     agenda: "L2 Schedule — Commitment for CRM Meeting (Start / End dates per station)\n1.1 Site mobilization\n1.2 Site clearance and grading work\n1.3 BESS Plant layout and SLD submission\n1.4 Ordering status\n    - Switch gear\n    - BESS\n    - PCS\n    - Transformer (PCS duty & Auxiliary)\n    - HT cables / LT cable / Communication cable\n    - BESS EMS system\n    - SCADA & PPC system\n    - Earthing & lighting system\n1.5 BBU submission for the supplies",
     action_items: "Owner — Action — Due date\nVendor — Confirm ordering status for switchgear / PCS / BESS — DD-MMM\nAgency — Submit BESS layout & SLD — DD-MMM\nAgency — BBU submission for supplies — DD-MMM",
   },
+  tcm: {
+    attendees: "Engineering Taskforce (Civil / Electrical / C&I), NTPC EIC, Design Lead, OEM/Vendor engineers (PCS / BESS / Transformer / SCADA), Agency Engineering Manager",
+    agenda: "1. Drawing & document submission status (GA, SLD, layouts)\n2. Technical queries (TQ) & clarifications with vendor\n3. Interface / interconnection design coordination\n4. Equipment technical specifications & datasheet approvals\n5. FAT / type-test protocols review\n6. Design changes & deviation requests\n7. Engineering action items & target dates",
+    action_items: "Owner — Action — Due date\nVendor Engg — Resubmit revised SLD with EIC comments — DD-MMM\nEngg Taskforce — Close pending TQs — DD-MMM\nOEM — Share FAT protocol for review — DD-MMM",
+  },
 };
 
 type Meeting = {
