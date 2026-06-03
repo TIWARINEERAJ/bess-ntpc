@@ -35,16 +35,8 @@ const CRM_L2_ITEMS = [
   "BBU submission for the supplies",
 ] as const;
 
-type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
-
-const TYPE_LABEL: Record<MeetingType, string> = {
-  weekly: "Weekly Review",
-  monthly: "Monthly Review",
-  hop_vendor: "HOP Review with Vendors",
-  management: "Management Review",
-  prt: "Project Review Team (PRT)",
-  crm: "CRM Coordination Review (Vendors)",
-};
+import { MEETING_TYPES, TYPE_LABEL, type MeetingType } from "@/lib/meeting-types";
+import { MeetingPlanner } from "@/components/MeetingPlanner";
 
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
   weekly: {
