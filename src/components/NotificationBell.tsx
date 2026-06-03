@@ -38,7 +38,7 @@ export function NotificationBell() {
             <span className="text-sm font-semibold">Due-Date Notifications</span>
             <Badge variant="outline" className="text-[10px]">{count} active</Badge>
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">L2 tasks · BOI POs · Issues · Delays · Compliance expiries</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Meetings · L2 tasks · BOI POs · Issues · Delays · Compliance expiries</p>
         </div>
         <ScrollArea className="h-[420px]">
           {list.length === 0 ? (
