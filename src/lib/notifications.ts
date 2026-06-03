@@ -102,5 +102,25 @@ export async function loadNotifications(): Promise<Notif[]> {
     }
   }
 
+  // Planned meetings coming up within 14 days (status still 'planned')
+  const TYPE_SHORT: Record<string, string> = {
+    weekly: "Weekly", monthly: "Monthly", hop_vendor: "HOP", management: "Management",
+    prt: "PRT", crm: "CRM", tcm: "TCM",
+  };
+  for (const m of (meetingPlans.data ?? []) as any[]) {
+    if (m.status && m.status !== "planned") continue;
+    const date = d(m.planned_date); if (!date) continue;
+    const days = differenceInCalendarDays(date, today);
+    if (days >= 0 && days <= 14) {
+      const label = TYPE_SHORT[m.meeting_type] ?? m.meeting_type;
+      out.push({
+        key: `meeting:${m.id}`, kind: "meeting", severity: days <= 2 ? "high" : "medium",
+        title: `${label} meeting${m.title ? ` — ${m.title}` : ""}`,
+        detail: days === 0 ? `Today at ${sMap.get(m.station_id)}` : `In ${days}d at ${sMap.get(m.station_id)}`,
+        stationId: m.station_id, stationName: sMap.get(m.station_id) ?? "", tab: "meetings", daysUntil: days,
+      });
+    }
+  }
+
   return out.sort((a, b) => a.daysUntil - b.daysUntil);
 }
