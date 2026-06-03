@@ -328,6 +328,48 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_plans: {
+        Row: {
+          agenda: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          meeting_type: string
+          planned_date: string
+          planned_time: string | null
+          station_id: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_type: string
+          planned_date: string
+          planned_time?: string | null
+          station_id: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_type?: string
+          planned_date?: string
+          planned_time?: string | null
+          station_id?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meeting_recordings: {
         Row: {
           created_at: string

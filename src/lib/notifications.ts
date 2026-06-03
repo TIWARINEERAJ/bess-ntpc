@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Notif = {
   key: string;
-  kind: "task" | "boi" | "issue" | "compliance" | "delay";
+  kind: "task" | "boi" | "issue" | "compliance" | "delay" | "meeting";
   severity: "high" | "medium" | "low";
   title: string;
   detail: string;
@@ -17,7 +17,7 @@ function d(s: string | null | undefined) { return s ? parseISO(s) : null; }
 
 export async function loadNotifications(): Promise<Notif[]> {
   const today = new Date();
-  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance] = await Promise.all([
+  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance, meetingPlans] = await Promise.all([
     supabase.from("stations").select("id,name"),
     supabase.from("l2_tasks").select("id,station_id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
     supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start").range(0, 49999),
@@ -26,6 +26,7 @@ export async function loadNotifications(): Promise<Notif[]> {
     supabase.from("issues").select("id,station_id,title,target_date,status"),
     supabase.from("delay_register").select("id,station_id,title,recovery_date,status"),
     supabase.from("station_compliance").select("station_id,compliance_id,expiry_date,status"),
+    (supabase as any).from("meeting_plans").select("id,station_id,meeting_type,title,planned_date,status"),
   ]);
   const sMap = new Map((stations.data ?? []).map(s => [s.id, s.name]));
   const out: Notif[] = [];
@@ -98,6 +99,26 @@ export async function loadNotifications(): Promise<Notif[]> {
         severity: days <= 7 ? "high" : "medium",
         title: `Compliance expiring`, detail: days < 0 ? `Expired ${-days}d ago at ${sMap.get(c.station_id)}` : `Expires in ${days}d at ${sMap.get(c.station_id)}`,
         stationId: c.station_id, stationName: sMap.get(c.station_id) ?? "", tab: "compliance", daysUntil: days });
+    }
+  }
+
+  // Planned meetings coming up within 14 days (status still 'planned')
+  const TYPE_SHORT: Record<string, string> = {
+    weekly: "Weekly", monthly: "Monthly", hop_vendor: "HOP", management: "Management",
+    prt: "PRT", crm: "CRM", tcm: "TCM",
+  };
+  for (const m of (meetingPlans.data ?? []) as any[]) {
+    if (m.status && m.status !== "planned") continue;
+    const date = d(m.planned_date); if (!date) continue;
+    const days = differenceInCalendarDays(date, today);
+    if (days >= 0 && days <= 14) {
+      const label = TYPE_SHORT[m.meeting_type] ?? m.meeting_type;
+      out.push({
+        key: `meeting:${m.id}`, kind: "meeting", severity: days <= 2 ? "high" : "medium",
+        title: `${label} meeting${m.title ? ` — ${m.title}` : ""}`,
+        detail: days === 0 ? `Today at ${sMap.get(m.station_id)}` : `In ${days}d at ${sMap.get(m.station_id)}`,
+        stationId: m.station_id, stationName: sMap.get(m.station_id) ?? "", tab: "meetings", daysUntil: days,
+      });
     }
   }
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Bell, AlertTriangle, Calendar, Package, FileWarning, ShieldCheck } from "lucide-react";
+import { Bell, AlertTriangle, Calendar, Package, FileWarning, ShieldCheck, CalendarClock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,7 @@ const iconFor = (k: Notif["kind"]) => {
   if (k === "boi") return <Package className="h-3.5 w-3.5" />;
   if (k === "issue") return <AlertTriangle className="h-3.5 w-3.5" />;
   if (k === "delay") return <FileWarning className="h-3.5 w-3.5" />;
+  if (k === "meeting") return <CalendarClock className="h-3.5 w-3.5" />;
   return <ShieldCheck className="h-3.5 w-3.5" />;
 };
 
@@ -37,7 +38,7 @@ export function NotificationBell() {
             <span className="text-sm font-semibold">Due-Date Notifications</span>
             <Badge variant="outline" className="text-[10px]">{count} active</Badge>
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">L2 tasks · BOI POs · Issues · Delays · Compliance expiries</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Meetings · L2 tasks · BOI POs · Issues · Delays · Compliance expiries</p>
         </div>
         <ScrollArea className="h-[420px]">
           {list.length === 0 ? (

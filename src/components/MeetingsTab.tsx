@@ -35,16 +35,8 @@ const CRM_L2_ITEMS = [
   "BBU submission for the supplies",
 ] as const;
 
-type MeetingType = "weekly" | "monthly" | "hop_vendor" | "management" | "prt" | "crm";
-
-const TYPE_LABEL: Record<MeetingType, string> = {
-  weekly: "Weekly Review",
-  monthly: "Monthly Review",
-  hop_vendor: "HOP Review with Vendors",
-  management: "Management Review",
-  prt: "Project Review Team (PRT)",
-  crm: "CRM Coordination Review (Vendors)",
-};
+import { MEETING_TYPES, TYPE_LABEL, type MeetingType } from "@/lib/meeting-types";
+import { MeetingPlanner } from "@/components/MeetingPlanner";
 
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
   weekly: {
@@ -77,6 +69,11 @@ const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action
     agenda: "L2 Schedule — Commitment for CRM Meeting (Start / End dates per station)\n1.1 Site mobilization\n1.2 Site clearance and grading work\n1.3 BESS Plant layout and SLD submission\n1.4 Ordering status\n    - Switch gear\n    - BESS\n    - PCS\n    - Transformer (PCS duty & Auxiliary)\n    - HT cables / LT cable / Communication cable\n    - BESS EMS system\n    - SCADA & PPC system\n    - Earthing & lighting system\n1.5 BBU submission for the supplies",
     action_items: "Owner — Action — Due date\nVendor — Confirm ordering status for switchgear / PCS / BESS — DD-MMM\nAgency — Submit BESS layout & SLD — DD-MMM\nAgency — BBU submission for supplies — DD-MMM",
   },
+  tcm: {
+    attendees: "Engineering Taskforce (Civil / Electrical / C&I), NTPC EIC, Design Lead, OEM/Vendor engineers (PCS / BESS / Transformer / SCADA), Agency Engineering Manager",
+    agenda: "1. Drawing & document submission status (GA, SLD, layouts)\n2. Technical queries (TQ) & clarifications with vendor\n3. Interface / interconnection design coordination\n4. Equipment technical specifications & datasheet approvals\n5. FAT / type-test protocols review\n6. Design changes & deviation requests\n7. Engineering action items & target dates",
+    action_items: "Owner — Action — Due date\nVendor Engg — Resubmit revised SLD with EIC comments — DD-MMM\nEngg Taskforce — Close pending TQs — DD-MMM\nOEM — Share FAT protocol for review — DD-MMM",
+  },
 };
 
 type Meeting = {
@@ -98,13 +95,24 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
     <div className="space-y-3">
       <Tabs value={type} onValueChange={(v) => setType(v as MeetingType)}>
         <TabsList className="flex-wrap">
-          {(Object.keys(TYPE_LABEL) as MeetingType[]).map((k) => (
+          {MEETING_TYPES.map((k) => (
             <TabsTrigger key={k} value={k}>{TYPE_LABEL[k]}</TabsTrigger>
           ))}
         </TabsList>
-        {(Object.keys(TYPE_LABEL) as MeetingType[]).map((k) => (
+        {MEETING_TYPES.map((k) => (
           <TabsContent key={k} value={k} className="space-y-3">
-            <MeetingsList stationId={stationId} meetingType={k} canEdit={canEdit} />
+            <Tabs defaultValue="records">
+              <TabsList>
+                <TabsTrigger value="records">Minutes &amp; Records</TabsTrigger>
+                <TabsTrigger value="planner">Meeting Planner</TabsTrigger>
+              </TabsList>
+              <TabsContent value="records" className="space-y-3">
+                <MeetingsList stationId={stationId} meetingType={k} canEdit={canEdit} />
+              </TabsContent>
+              <TabsContent value="planner" className="space-y-3">
+                <MeetingPlanner stationId={stationId} meetingType={k} canEdit={canEdit} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         ))}
       </Tabs>

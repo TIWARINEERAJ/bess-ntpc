@@ -11,6 +11,7 @@ import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2T
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { bulkExport } from "@/lib/bulk-export";
+import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
@@ -207,8 +208,13 @@ function Dashboard() {
             </div>
           )}
         </div>
-        <div>
-          <SectionHeading title="Top Exceptions" sub="Delayed & blocked leaf tasks (sorted by slip days)" />
+        <div className="space-y-6">
+          <div>
+            <SectionHeading title="Upcoming Meetings" sub="Planned reviews across stations · highlighted important dates" />
+            <UpcomingMeetings />
+          </div>
+          <div>
+            <SectionHeading title="Top Exceptions" sub="Delayed & blocked leaf tasks (sorted by slip days)" />
           <Card className="divide-y divide-border/60 p-0">
             {exceptions.length === 0 && !loading && (
               <div className="p-6 text-center text-sm text-muted-foreground">
@@ -232,6 +238,7 @@ function Dashboard() {
               </Link>
             ))}
           </Card>
+          </div>
         </div>
       </section>
 
