@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Notif = {
   key: string;
-  kind: "task" | "boi" | "issue" | "compliance" | "delay";
+  kind: "task" | "boi" | "issue" | "compliance" | "delay" | "meeting";
   severity: "high" | "medium" | "low";
   title: string;
   detail: string;
