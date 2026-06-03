@@ -237,6 +237,7 @@ function Dashboard() {
               </Link>
             ))}
           </Card>
+          </div>
         </div>
       </section>
 
