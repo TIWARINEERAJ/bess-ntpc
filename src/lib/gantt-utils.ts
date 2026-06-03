@@ -145,3 +145,123 @@ export function projectBounds(tasks: L2Task[]): { start: Date; end: Date } {
   const end = ends.length ? dMax(ends) : addDays(start, 365);
   return { start, end };
 }
+
+/* ---------------- Schedule S-curve (ideal/baseline vs actual) ---------------- */
+
+export type SCurvePoint = { date: string; t: number; planned: number; actual: number | null };
+export type SCurveResult = {
+  points: SCurvePoint[];
+  plannedNow: number;
+  actualNow: number;
+  daysBehind: number; // positive = behind ideal schedule
+  start: Date | null;
+  end: Date | null;
+  finishForecastDays: number; // projected calendar-day overrun at completion
+};
+
+function leafSchedule(tasks: L2Task[]) {
+  return tasks.filter(t => !t.is_section && t.baseline_start && t.baseline_finish).map(t => ({
+    dur: Math.max(t.duration_days, 1),
+    start: parseD(t.baseline_start)!,
+    end: parseD(t.baseline_finish)!,
+    isMilestone: t.duration_days === 0,
+    id: t.id,
+  }));
+}
+
+/** Planned (ideal/baseline) cumulative % complete at a given date. */
+export function plannedPctAt(tasks: L2Task[], at: Date): number {
+  const leaves = leafSchedule(tasks);
+  let total = 0, done = 0;
+  for (const l of leaves) {
+    total += l.dur;
+    let frac: number;
+    if (l.isMilestone) frac = at >= l.start ? 1 : 0;
+    else {
+      const span = differenceInCalendarDays(l.end, l.start) || 1;
+      frac = Math.min(1, Math.max(0, differenceInCalendarDays(at, l.start) / span));
+    }
+    done += l.dur * frac;
+  }
+  return total ? (done / total) * 100 : 0;
+}
+
+/** Actual cumulative % complete at a given date (only meaningful for at <= today). */
+export function actualPctAt(tasks: L2Task[], statusMap: Map<string, Status>, at: Date, today: Date): number {
+  const leaves = leafSchedule(tasks);
+  let total = 0, done = 0;
+  for (const l of leaves) {
+    total += l.dur;
+    const st = statusMap.get(l.id);
+    const aStart = parseD(st?.actual_start ?? null);
+    const aFinish = parseD(st?.actual_finish ?? null);
+    const pct = (st?.percent_complete ?? 0) / 100;
+    let frac = 0;
+    if (aFinish && aFinish <= at) frac = 1;
+    else if (aStart && aStart <= at) {
+      const span = differenceInCalendarDays(today, aStart) || 1;
+      const ramp = Math.min(1, Math.max(0, differenceInCalendarDays(at, aStart) / span));
+      frac = pct * ramp;
+    }
+    done += l.dur * frac;
+  }
+  return total ? (done / total) * 100 : 0;
+}
+
+/** Build a monthly S-curve comparing ideal/baseline progress against actual progress. */
+export function computeSCurve(tasks: L2Task[], statusMap: Map<string, Status>, today: Date = new Date()): SCurveResult {
+  const leaves = leafSchedule(tasks);
+  if (leaves.length === 0) {
+    return { points: [], plannedNow: 0, actualNow: 0, daysBehind: 0, start: null, end: null, finishForecastDays: 0 };
+  }
+  const start = dMin(leaves.map(l => l.start));
+  const baselineEnd = dMax(leaves.map(l => l.end));
+  const horizon = today > baselineEnd ? today : baselineEnd;
+
+  const points: SCurvePoint[] = [];
+  let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const last = new Date(horizon.getFullYear(), horizon.getMonth(), 1);
+  while (cursor <= last) {
+    const planned = Math.round(plannedPctAt(tasks, cursor) * 10) / 10;
+    const isPastOrNow = cursor <= today;
+    const actual = isPastOrNow ? Math.round(actualPctAt(tasks, statusMap, cursor, today) * 10) / 10 : null;
+    points.push({ date: format(cursor, "MMM yy"), t: cursor.getTime(), planned, actual });
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+  // ensure a final "today" point so curves meet at the present
+  const plannedNow = Math.round(plannedPctAt(tasks, today) * 10) / 10;
+  const actualNow = Math.round(actualPctAt(tasks, statusMap, today, today) * 10) / 10;
+  points.push({ date: "Now", t: today.getTime(), planned: plannedNow, actual: actualNow });
+
+  // daysBehind: how many days ago the ideal curve already reached today's actual %
+  let daysBehind = 0;
+  if (actualNow < plannedNow) {
+    let d = new Date(start);
+    while (d <= today) {
+      if (plannedPctAt(tasks, d) >= actualNow) break;
+      d = addDays(d, 1);
+    }
+    daysBehind = differenceInCalendarDays(today, d);
+  } else {
+    // ahead of or on schedule: negative = days ahead
+    let d = new Date(today);
+    const cap = addDays(today, 1000);
+    while (d <= cap) {
+      if (plannedPctAt(tasks, d) >= actualNow) break;
+      d = addDays(d, 1);
+    }
+    daysBehind = -differenceInCalendarDays(d, today);
+  }
+
+  // Forecast finish overrun: scale remaining ideal duration by current performance index.
+  const totalSpan = differenceInCalendarDays(baselineEnd, start) || 1;
+  const spi = plannedNow > 0 ? actualNow / plannedNow : 1; // schedule performance index
+  let finishForecastDays = 0;
+  if (spi > 0 && spi < 1) {
+    const forecastSpan = totalSpan / spi;
+    finishForecastDays = Math.round(forecastSpan - totalSpan);
+  }
+
+  return { points, plannedNow, actualNow, daysBehind, start, end: baselineEnd, finishForecastDays };
+}
+
