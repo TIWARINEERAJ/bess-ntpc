@@ -1,5 +1,7 @@
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO, startOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { computeCadence } from "@/lib/meeting-cadence";
+import { TYPE_LABEL, type MeetingType } from "@/lib/meeting-types";
 
 export type Notif = {
   key: string;
