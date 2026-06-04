@@ -19,7 +19,7 @@ function d(s: string | null | undefined) { return s ? parseISO(s) : null; }
 
 export async function loadNotifications(): Promise<Notif[]> {
   const today = new Date();
-  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance, meetingPlans] = await Promise.all([
+  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance, meetingPlans, meetings] = await Promise.all([
     supabase.from("stations").select("id,name"),
     supabase.from("l2_tasks").select("id,station_id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
     supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start").range(0, 49999),
@@ -29,6 +29,7 @@ export async function loadNotifications(): Promise<Notif[]> {
     supabase.from("delay_register").select("id,station_id,title,recovery_date,status"),
     supabase.from("station_compliance").select("station_id,compliance_id,expiry_date,status"),
     (supabase as any).from("meeting_plans").select("id,station_id,meeting_type,title,planned_date,status"),
+    (supabase as any).from("meetings").select("station_id,meeting_type,meeting_date"),
   ]);
   const sMap = new Map((stations.data ?? []).map(s => [s.id, s.name]));
   const out: Notif[] = [];
