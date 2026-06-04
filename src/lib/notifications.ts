@@ -125,5 +125,33 @@ export async function loadNotifications(): Promise<Notif[]> {
     }
   }
 
+  // Cadence reminders: required meetings for THIS month not yet conducted/planned
+  const monthRef = startOfMonth(today);
+  const allMeetings = (meetings.data ?? []) as { station_id: string; meeting_type: string; meeting_date: string }[];
+  const allPlans = (meetingPlans.data ?? []) as { station_id: string; meeting_type: string; planned_date: string; status: string }[];
+  for (const s of stations.data ?? []) {
+    const sm = allMeetings.filter((m) => m.station_id === s.id);
+    const sp = allPlans.filter((p) => p.station_id === s.id);
+    const cadence = computeCadence(sm, sp, monthRef, today);
+    for (const c of cadence) {
+      const label = TYPE_LABEL[c.type as MeetingType] ?? c.type;
+      if (c.state === "overdue") {
+        out.push({
+          key: `cadence:${s.id}:${c.type}`, kind: "meeting", severity: "high",
+          title: `${label} overdue this month`,
+          detail: `Not yet conducted for ${s.name} — schedule it now`,
+          stationId: s.id, stationName: s.name ?? "", tab: "meetings", daysUntil: -1,
+        });
+      } else if (c.frequency === "weekly" && c.state === "due" && !c.thisWeekDone) {
+        out.push({
+          key: `cadence-wk:${s.id}:${c.type}`, kind: "meeting", severity: "medium",
+          title: `${label} pending this week`,
+          detail: `Weekly review not yet held this week for ${s.name}`,
+          stationId: s.id, stationName: s.name ?? "", tab: "meetings", daysUntil: 0,
+        });
+      }
+    }
+  }
+
   return out.sort((a, b) => a.daysUntil - b.daysUntil);
 }
