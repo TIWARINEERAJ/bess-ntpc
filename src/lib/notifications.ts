@@ -1,5 +1,7 @@
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO, startOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { computeCadence } from "@/lib/meeting-cadence";
+import { TYPE_LABEL, type MeetingType } from "@/lib/meeting-types";
 
 export type Notif = {
   key: string;
@@ -17,7 +19,7 @@ function d(s: string | null | undefined) { return s ? parseISO(s) : null; }
 
 export async function loadNotifications(): Promise<Notif[]> {
   const today = new Date();
-  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance, meetingPlans] = await Promise.all([
+  const [stations, tasks, status, boiMaster, boiStatus, issues, delays, compliance, meetingPlans, meetings] = await Promise.all([
     supabase.from("stations").select("id,name"),
     supabase.from("l2_tasks").select("id,station_id,wbs_code,name,baseline_finish,is_section").range(0, 49999),
     supabase.from("station_task_status").select("station_id,task_id,percent_complete,actual_start").range(0, 49999),
@@ -27,6 +29,7 @@ export async function loadNotifications(): Promise<Notif[]> {
     supabase.from("delay_register").select("id,station_id,title,recovery_date,status"),
     supabase.from("station_compliance").select("station_id,compliance_id,expiry_date,status"),
     (supabase as any).from("meeting_plans").select("id,station_id,meeting_type,title,planned_date,status"),
+    (supabase as any).from("meetings").select("station_id,meeting_type,meeting_date"),
   ]);
   const sMap = new Map((stations.data ?? []).map(s => [s.id, s.name]));
   const out: Notif[] = [];
@@ -119,6 +122,34 @@ export async function loadNotifications(): Promise<Notif[]> {
         detail: days === 0 ? `Today at ${sMap.get(m.station_id)}` : `In ${days}d at ${sMap.get(m.station_id)}`,
         stationId: m.station_id, stationName: sMap.get(m.station_id) ?? "", tab: "meetings", daysUntil: days,
       });
+    }
+  }
+
+  // Cadence reminders: required meetings for THIS month not yet conducted/planned
+  const monthRef = startOfMonth(today);
+  const allMeetings = (meetings.data ?? []) as { station_id: string; meeting_type: string; meeting_date: string }[];
+  const allPlans = (meetingPlans.data ?? []) as { station_id: string; meeting_type: string; planned_date: string; status: string }[];
+  for (const s of stations.data ?? []) {
+    const sm = allMeetings.filter((m) => m.station_id === s.id);
+    const sp = allPlans.filter((p) => p.station_id === s.id);
+    const cadence = computeCadence(sm, sp, monthRef, today);
+    for (const c of cadence) {
+      const label = TYPE_LABEL[c.type as MeetingType] ?? c.type;
+      if (c.state === "overdue") {
+        out.push({
+          key: `cadence:${s.id}:${c.type}`, kind: "meeting", severity: "high",
+          title: `${label} overdue this month`,
+          detail: `Not yet conducted for ${s.name} — schedule it now`,
+          stationId: s.id, stationName: s.name ?? "", tab: "meetings", daysUntil: -1,
+        });
+      } else if (c.frequency === "weekly" && c.state === "due" && !c.thisWeekDone) {
+        out.push({
+          key: `cadence-wk:${s.id}:${c.type}`, kind: "meeting", severity: "medium",
+          title: `${label} pending this week`,
+          detail: `Weekly review not yet held this week for ${s.name}`,
+          stationId: s.id, stationName: s.name ?? "", tab: "meetings", daysUntil: 0,
+        });
+      }
     }
   }
 
