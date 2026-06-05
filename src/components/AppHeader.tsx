@@ -22,6 +22,9 @@ export function AppHeader() {
         </Link>
         <nav className="ml-6 hidden gap-1 md:flex">
           <Link to="/" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} activeOptions={{ exact: true }}>Dashboard</Link>
+          <Link to="/drawings" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
+            <FileStack className="h-3.5 w-3.5" /> Drawings
+          </Link>
           <Link to="/schedule-health" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
             <LineChart className="h-3.5 w-3.5" /> Schedule Health
           </Link>
