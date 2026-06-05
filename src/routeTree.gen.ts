@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedWeeklyPlannerRouteImport } from './routes/_authenticated.weekly-planner'
 import { Route as AuthenticatedScheduleHealthRouteImport } from './routes/_authenticated.schedule-health'
+import { Route as AuthenticatedDrawingsRouteImport } from './routes/_authenticated.drawings'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedStationsStationIdRouteImport } from './routes/_authenticated.stations.$stationId'
 
@@ -43,6 +44,11 @@ const AuthenticatedScheduleHealthRoute =
     path: '/schedule-health',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDrawingsRoute = AuthenticatedDrawingsRouteImport.update({
+  id: '/drawings',
+  path: '/drawings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/drawings': typeof AuthenticatedDrawingsRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/drawings': typeof AuthenticatedDrawingsRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/': typeof AuthenticatedIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/drawings': typeof AuthenticatedDrawingsRoute
   '/_authenticated/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin'
+    | '/drawings'
     | '/schedule-health'
     | '/weekly-planner'
     | '/stations/$stationId'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/admin'
+    | '/drawings'
     | '/schedule-health'
     | '/weekly-planner'
     | '/'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/admin'
+    | '/_authenticated/drawings'
     | '/_authenticated/schedule-health'
     | '/_authenticated/weekly-planner'
     | '/_authenticated/'
@@ -151,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScheduleHealthRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/drawings': {
+      id: '/_authenticated/drawings'
+      path: '/drawings'
+      fullPath: '/drawings'
+      preLoaderRoute: typeof AuthenticatedDrawingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -170,6 +189,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedDrawingsRoute: typeof AuthenticatedDrawingsRoute
   AuthenticatedScheduleHealthRoute: typeof AuthenticatedScheduleHealthRoute
   AuthenticatedWeeklyPlannerRoute: typeof AuthenticatedWeeklyPlannerRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -178,6 +198,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedDrawingsRoute: AuthenticatedDrawingsRoute,
   AuthenticatedScheduleHealthRoute: AuthenticatedScheduleHealthRoute,
   AuthenticatedWeeklyPlannerRoute: AuthenticatedWeeklyPlannerRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
@@ -195,13 +216,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

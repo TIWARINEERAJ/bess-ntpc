@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, TrendingUp, Calendar, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
+import { drawingCounts, type StationDrawing } from "@/lib/drawings";
 import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/")({
 type Station = {
   id: string; name: string; lot: string; capacity_mwh: number; capacity_mw: number | null;
   agency: string | null; ntpc_eic: string | null; pm_coordinator: string | null; sort_order: number | null;
+  mdl_total: number;
 };
 
 function Dashboard() {
@@ -50,6 +52,14 @@ function Dashboard() {
     queryKey: ["all_status", "by-station", stationKey],
     queryFn: () => fetchStatusesByStation(stationIds),
     enabled: stationIds.length > 0,
+  });
+  const drawingsQ = useQuery({
+    queryKey: ["all_drawings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_drawings").select("*");
+      if (error) throw error;
+      return data as StationDrawing[];
+    },
   });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
@@ -242,10 +252,77 @@ function Dashboard() {
         </div>
       </section>
 
+      <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
+
       <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
     </div>
   );
 }
+
+function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings: StationDrawing[] }) {
+  const byStation = useMemo(() => {
+    const m = new Map<string, StationDrawing[]>();
+    for (const d of drawings) (m.get(d.station_id) ?? m.set(d.station_id, []).get(d.station_id)!).push(d);
+    return m;
+  }, [drawings]);
+
+  const totals = useMemo(() => {
+    let total = 0, submitted = 0, approved = 0;
+    for (const s of stations) {
+      const c = drawingCounts(s.mdl_total, byStation.get(s.id) ?? []);
+      total += c.total; submitted += c.submitted; approved += c.approved;
+    }
+    const pending = Math.max(0, total - approved);
+    return {
+      total, submitted, approved, pending,
+      submittedPct: total ? Math.round((submitted / total) * 100) : 0,
+      approvedPct: total ? Math.round((approved / total) * 100) : 0,
+    };
+  }, [stations, byStation]);
+
+  return (
+    <section>
+      <SectionHeading title="Drawings — MDL Status" sub="Portfolio submission & approval against the Master Drawing List · open the Drawings page for station & category detail" />
+      <Card className="p-4">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MdlStat label="Total MDL" value={totals.total} tone="var(--primary)" />
+            <MdlStat label="Submitted" value={totals.submitted} sub={`${totals.submittedPct}%`} tone="var(--status-blue)" />
+            <MdlStat label="Approved" value={totals.approved} sub={`${totals.approvedPct}%`} tone="var(--status-green)" />
+            <MdlStat label="Pending" value={totals.pending} tone="var(--status-amber)" />
+          </div>
+          <Link to="/drawings" className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:border-primary/40 hover:text-primary">
+            <FileStack className="h-4 w-4" /> View all drawings <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-4">
+          <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div style={{ width: `${totals.approvedPct}%`, background: "var(--status-green)" }} />
+            <div style={{ width: `${Math.max(0, totals.submittedPct - totals.approvedPct)}%`, background: "var(--status-blue)" }} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "var(--status-green)" }} /> Approved</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "var(--status-blue)" }} /> Submitted (awaiting approval)</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "var(--muted)" }} /> Pending</span>
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function MdlStat({ label, value, sub, tone }: { label: string; value: number; sub?: string; tone: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="font-mono text-2xl font-bold tabular-nums" style={{ color: tone }}>{value.toLocaleString()}</span>
+        {sub && <span className="text-[11px] text-muted-foreground">{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
 
 function BulkMisPanel({ stations, tasks, statusByStation }: { stations: Station[]; tasks: L2Task[]; statusByStation: Record<string, Status[]> }) {
   const REPORTS = [

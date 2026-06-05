@@ -574,6 +574,59 @@ export type Database = {
         }
         Relationships: []
       }
+      station_drawings: {
+        Row: {
+          approved_date: string | null
+          cat: string | null
+          category: string
+          created_at: string
+          drg_desc: string
+          drg_ref: string
+          id: string
+          sort_order: number
+          station_id: string
+          submitted_date: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_date?: string | null
+          cat?: string | null
+          category?: string
+          created_at?: string
+          drg_desc?: string
+          drg_ref?: string
+          id?: string
+          sort_order?: number
+          station_id: string
+          submitted_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_date?: string | null
+          cat?: string | null
+          category?: string
+          created_at?: string
+          drg_desc?: string
+          drg_ref?: string
+          id?: string
+          sort_order?: number
+          station_id?: string
+          submitted_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_drawings_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       station_task_status: {
         Row: {
           actual_finish: string | null
@@ -644,6 +697,7 @@ export type Database = {
           engg_taskforce: string | null
           id: string
           lot: string
+          mdl_total: number
           name: string
           noa_date: string | null
           ntpc_eic: string | null
@@ -668,6 +722,7 @@ export type Database = {
           engg_taskforce?: string | null
           id?: string
           lot: string
+          mdl_total?: number
           name: string
           noa_date?: string | null
           ntpc_eic?: string | null
@@ -692,6 +747,7 @@ export type Database = {
           engg_taskforce?: string | null
           id?: string
           lot?: string
+          mdl_total?: number
           name?: string
           noa_date?: string | null
           ntpc_eic?: string | null

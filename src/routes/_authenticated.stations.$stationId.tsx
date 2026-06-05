@@ -25,6 +25,7 @@ import { DelayRegisterTab } from "@/components/DelayRegisterTab";
 import { ComplianceTab } from "@/components/ComplianceTab";
 import { AuditTrailTab } from "@/components/AuditTrailTab";
 import { MeetingsTab } from "@/components/MeetingsTab";
+import { DrawingsTab } from "@/components/DrawingsTab";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
@@ -160,6 +161,7 @@ function StationPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
+          <TabsTrigger value="mdl">MDL Status</TabsTrigger>
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
           <TabsTrigger value="delays">Hindrance Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
@@ -214,6 +216,7 @@ function StationPage() {
         </TabsContent>
 
         <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="mdl"><DrawingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
         <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
