@@ -216,6 +216,7 @@ function StationPage() {
         </TabsContent>
 
         <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="mdl"><DrawingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
         <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
