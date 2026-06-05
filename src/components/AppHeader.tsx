@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Battery, LogOut, Shield, CalendarDays, Users, LineChart } from "lucide-react";
+import { Battery, LogOut, Shield, CalendarDays, Users, LineChart, FileStack } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
