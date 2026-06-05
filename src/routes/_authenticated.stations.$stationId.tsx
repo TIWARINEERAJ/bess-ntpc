@@ -161,6 +161,7 @@ function StationPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
+          <TabsTrigger value="mdl">MDL Status</TabsTrigger>
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
           <TabsTrigger value="delays">Hindrance Register</TabsTrigger>
           <TabsTrigger value="issues">Issues</TabsTrigger>
