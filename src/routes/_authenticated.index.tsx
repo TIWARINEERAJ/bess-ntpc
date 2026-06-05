@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/")({
 type Station = {
   id: string; name: string; lot: string; capacity_mwh: number; capacity_mw: number | null;
   agency: string | null; ntpc_eic: string | null; pm_coordinator: string | null; sort_order: number | null;
+  mdl_total: number;
 };
 
 function Dashboard() {
