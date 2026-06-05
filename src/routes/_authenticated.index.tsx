@@ -53,6 +53,14 @@ function Dashboard() {
     queryFn: () => fetchStatusesByStation(stationIds),
     enabled: stationIds.length > 0,
   });
+  const drawingsQ = useQuery({
+    queryKey: ["all_drawings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_drawings").select("*");
+      if (error) throw error;
+      return data as StationDrawing[];
+    },
+  });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const tasksByStation = tasksQ.data ?? {};
