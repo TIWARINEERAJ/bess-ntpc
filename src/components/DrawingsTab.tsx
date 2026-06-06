@@ -162,6 +162,8 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
 
 function statusOf(r: StationDrawing) {
   if (r.approved_date) return { label: "Approved", c: "var(--status-green)" };
+  if (isOverdue(r)) return { label: "Overdue", c: "var(--status-red)" };
+  if (isUpcoming(r)) return { label: "Due soon", c: "#8b5cf6" };
   if (r.submitted_date) return { label: "Submitted", c: "var(--status-blue)" };
   return { label: "Pending", c: "var(--status-amber)" };
 }
