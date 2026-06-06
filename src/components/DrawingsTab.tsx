@@ -106,11 +106,13 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <SummaryCard label="Total MDL" value={counts.total} editable={canEdit} onCommit={(v) => v !== mdlTotal && setTotal.mutate(v)} initial={mdlTotal} />
         <SummaryCard label="Submitted" value={counts.submitted} pct={counts.submittedPct} tone="blue" />
         <SummaryCard label="Approved" value={counts.approved} pct={counts.approvedPct} tone="green" />
         <SummaryCard label="Pending" value={counts.pending} tone="amber" />
+        <SummaryCard label="Overdue" value={counts.overdue} tone="red" />
+        <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
 
       <Card className="p-0">
