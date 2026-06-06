@@ -184,12 +184,18 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
     <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
   );
+  const schDate = (k: "sch_date" | "sch_apprvl_date") => (
+    <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs text-muted-foreground" value={local[k] ?? ""}
+      onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
+  );
 
   return (
     <tr className="border-b border-border/40 hover:bg-secondary/30">
       <td className="px-1 py-1">{text("category", "w-44")}</td>
       <td className="px-1 py-1">{text("drg_ref", "w-44")}</td>
       <td className="px-1 py-1">{text("drg_desc", "w-56")}</td>
+      <td className="px-1 py-1">{schDate("sch_date")}</td>
+      <td className="px-1 py-1">{schDate("sch_apprvl_date")}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
       <td className="px-1 py-1">{date("approved_date")}</td>
       <td className="px-1 py-1">
