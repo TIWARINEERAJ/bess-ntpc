@@ -230,8 +230,8 @@ function CategoryTable({ cat, drawings, stations }: { cat: string; drawings: Sta
   );
 }
 
-function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: string; value: number; sub?: string; tone: "primary" | "blue" | "green" | "amber" }) {
-  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : "var(--primary)";
+function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: string; value: number; sub?: string; tone: "primary" | "blue" | "green" | "amber" | "red" | "violet" }) {
+  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : tone === "red" ? "var(--status-red)" : tone === "violet" ? "#8b5cf6" : "var(--primary)";
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
