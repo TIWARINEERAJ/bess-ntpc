@@ -82,11 +82,13 @@ function DrawingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">Submission & approval progress against the MDL across all {stations.length} stations.</p>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Kpi icon={<FileStack className="h-4 w-4" />} label="Total MDL" value={portfolio.total} tone="primary" />
         <Kpi icon={<FileClock className="h-4 w-4" />} label="Submitted" value={portfolio.submitted} sub={`${portfolio.submittedPct}% of MDL`} tone="blue" />
         <Kpi icon={<FileCheck2 className="h-4 w-4" />} label="Approved" value={portfolio.approved} sub={`${portfolio.approvedPct}% of MDL`} tone="green" />
         <Kpi icon={<FileWarning className="h-4 w-4" />} label="Pending" value={portfolio.pending} tone="amber" />
+        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Overdue (uncleared)" value={portfolio.overdue} tone="red" />
+        <Kpi icon={<FileClock className="h-4 w-4" />} label="Due in 2 months" value={portfolio.upcoming} tone="violet" />
       </section>
 
       {loading ? (
