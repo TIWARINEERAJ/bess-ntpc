@@ -266,30 +266,41 @@ function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings
     return m;
   }, [drawings]);
 
+  const perStation = useMemo(() =>
+    stations.map((s) => ({ s, c: drawingCounts(s.mdl_total, byStation.get(s.id) ?? []) })),
+    [stations, byStation]);
+
   const totals = useMemo(() => {
-    let total = 0, submitted = 0, approved = 0;
-    for (const s of stations) {
-      const c = drawingCounts(s.mdl_total, byStation.get(s.id) ?? []);
+    let total = 0, submitted = 0, approved = 0, overdue = 0, upcoming = 0;
+    for (const { c } of perStation) {
       total += c.total; submitted += c.submitted; approved += c.approved;
+      overdue += c.overdue; upcoming += c.upcoming;
     }
     const pending = Math.max(0, total - approved);
     return {
-      total, submitted, approved, pending,
+      total, submitted, approved, pending, overdue, upcoming,
       submittedPct: total ? Math.round((submitted / total) * 100) : 0,
       approvedPct: total ? Math.round((approved / total) * 100) : 0,
     };
-  }, [stations, byStation]);
+  }, [perStation]);
+
+  const attention = useMemo(
+    () => perStation.filter((x) => x.c.overdue > 0 || x.c.upcoming > 0)
+      .sort((a, b) => b.c.overdue - a.c.overdue || b.c.upcoming - a.c.upcoming),
+    [perStation]);
 
   return (
     <section>
       <SectionHeading title="Drawings — MDL Status" sub="Portfolio submission & approval against the Master Drawing List · open the Drawings page for station & category detail" />
       <Card className="p-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             <MdlStat label="Total MDL" value={totals.total} tone="var(--primary)" />
             <MdlStat label="Submitted" value={totals.submitted} sub={`${totals.submittedPct}%`} tone="var(--status-blue)" />
             <MdlStat label="Approved" value={totals.approved} sub={`${totals.approvedPct}%`} tone="var(--status-green)" />
             <MdlStat label="Pending" value={totals.pending} tone="var(--status-amber)" />
+            <MdlStat label="Due, not cleared" value={totals.overdue} tone="var(--status-red)" />
+            <MdlStat label="Upcoming · 2 mo" value={totals.upcoming} tone="#8b5cf6" />
           </div>
           <Link to="/drawings" className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:border-primary/40 hover:text-primary">
             <FileStack className="h-4 w-4" /> View all drawings <ArrowRight className="h-4 w-4" />
@@ -306,6 +317,30 @@ function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "var(--muted)" }} /> Pending</span>
           </div>
         </div>
+
+        {attention.length > 0 && (
+          <div className="mt-5 border-t border-border pt-4">
+            <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Drawings needing attention — by station
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {attention.map(({ s, c }) => (
+                <Link
+                  key={s.id}
+                  to="/stations/$stationId"
+                  params={{ stationId: s.id }}
+                  className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-xs transition-colors hover:border-primary/40"
+                >
+                  <span className="font-medium">{s.name}</span>
+                  <span className="flex items-center gap-3 font-mono">
+                    <span style={{ color: "var(--status-red)" }} title="Overdue, not cleared">{c.overdue} overdue</span>
+                    <span style={{ color: "#8b5cf6" }} title="Due within next 2 months">{c.upcoming} due</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
     </section>
   );
