@@ -583,6 +583,8 @@ export type Database = {
           drg_desc: string
           drg_ref: string
           id: string
+          sch_apprvl_date: string | null
+          sch_date: string | null
           sort_order: number
           station_id: string
           submitted_date: string | null
@@ -597,6 +599,8 @@ export type Database = {
           drg_desc?: string
           drg_ref?: string
           id?: string
+          sch_apprvl_date?: string | null
+          sch_date?: string | null
           sort_order?: number
           station_id: string
           submitted_date?: string | null
@@ -611,6 +615,8 @@ export type Database = {
           drg_desc?: string
           drg_ref?: string
           id?: string
+          sch_apprvl_date?: string | null
+          sch_date?: string | null
           sort_order?: number
           station_id?: string
           submitted_date?: string | null
