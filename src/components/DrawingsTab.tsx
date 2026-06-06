@@ -141,7 +141,7 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
           <table className="w-full text-xs">
             <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Category", "Drg Ref", "Drg Desc", "Submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
+                {["Category", "Drg Ref", "Drg Desc", "Sch. Sub", "Sch. Apprvl", "Submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
                   <th key={i} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
               </tr>
             </thead>
