@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, FileStack } from "lucide-react";
 import { toast } from "sonner";
-import { drawingCounts, uniqueCategories, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, uniqueCategories, isOverdue, isUpcoming, type StationDrawing } from "@/lib/drawings";
 
 const CAT_OPTIONS = ["", "CAT-I", "CAT-II", "CAT-III"];
 
@@ -106,11 +106,13 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <SummaryCard label="Total MDL" value={counts.total} editable={canEdit} onCommit={(v) => v !== mdlTotal && setTotal.mutate(v)} initial={mdlTotal} />
         <SummaryCard label="Submitted" value={counts.submitted} pct={counts.submittedPct} tone="blue" />
         <SummaryCard label="Approved" value={counts.approved} pct={counts.approvedPct} tone="green" />
         <SummaryCard label="Pending" value={counts.pending} tone="amber" />
+        <SummaryCard label="Overdue" value={counts.overdue} tone="red" />
+        <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
 
       <Card className="p-0">
@@ -139,13 +141,13 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
           <table className="w-full text-xs">
             <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Category", "Drg Ref", "Drg Desc", "Submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
+                {["Category", "Drg Ref", "Drg Desc", "Sch. Sub", "Sch. Apprvl", "Submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
                   <th key={i} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {visible.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
+                <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
                 <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} onDelete={() => remove.mutate(r.id)} />
@@ -160,6 +162,8 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
 
 function statusOf(r: StationDrawing) {
   if (r.approved_date) return { label: "Approved", c: "var(--status-green)" };
+  if (isOverdue(r)) return { label: "Overdue", c: "var(--status-red)" };
+  if (isUpcoming(r)) return { label: "Due soon", c: "#8b5cf6" };
   if (r.submitted_date) return { label: "Submitted", c: "var(--status-blue)" };
   return { label: "Pending", c: "var(--status-amber)" };
 }
@@ -180,12 +184,18 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
     <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
   );
+  const schDate = (k: "sch_date" | "sch_apprvl_date") => (
+    <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs text-muted-foreground" value={local[k] ?? ""}
+      onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
+  );
 
   return (
     <tr className="border-b border-border/40 hover:bg-secondary/30">
       <td className="px-1 py-1">{text("category", "w-44")}</td>
       <td className="px-1 py-1">{text("drg_ref", "w-44")}</td>
       <td className="px-1 py-1">{text("drg_desc", "w-56")}</td>
+      <td className="px-1 py-1">{schDate("sch_date")}</td>
+      <td className="px-1 py-1">{schDate("sch_apprvl_date")}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
       <td className="px-1 py-1">{date("approved_date")}</td>
       <td className="px-1 py-1">
@@ -210,10 +220,10 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 }
 
 function SummaryCard({ label, value, pct, tone, editable, onCommit, initial }: {
-  label: string; value: number; pct?: number; tone?: "blue" | "green" | "amber";
+  label: string; value: number; pct?: number; tone?: "blue" | "green" | "amber" | "red" | "violet";
   editable?: boolean; onCommit?: (v: number) => void; initial?: number;
 }) {
-  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : "var(--primary)";
+  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : tone === "red" ? "var(--status-red)" : tone === "violet" ? "#8b5cf6" : "var(--primary)";
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState(String(initial ?? value));
   return (

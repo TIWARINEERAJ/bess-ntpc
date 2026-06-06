@@ -62,9 +62,11 @@ function DrawingsPage() {
     const total = stationCounts.reduce((a, x) => a + x.c.total, 0);
     const submitted = stationCounts.reduce((a, x) => a + x.c.submitted, 0);
     const approved = stationCounts.reduce((a, x) => a + x.c.approved, 0);
+    const overdue = stationCounts.reduce((a, x) => a + x.c.overdue, 0);
+    const upcoming = stationCounts.reduce((a, x) => a + x.c.upcoming, 0);
     const pending = Math.max(0, total - approved);
     return {
-      total, submitted, approved, pending,
+      total, submitted, approved, pending, overdue, upcoming,
       submittedPct: total ? Math.round((submitted / total) * 100) : 0,
       approvedPct: total ? Math.round((approved / total) * 100) : 0,
     };
@@ -80,11 +82,13 @@ function DrawingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">Submission & approval progress against the MDL across all {stations.length} stations.</p>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Kpi icon={<FileStack className="h-4 w-4" />} label="Total MDL" value={portfolio.total} tone="primary" />
         <Kpi icon={<FileClock className="h-4 w-4" />} label="Submitted" value={portfolio.submitted} sub={`${portfolio.submittedPct}% of MDL`} tone="blue" />
         <Kpi icon={<FileCheck2 className="h-4 w-4" />} label="Approved" value={portfolio.approved} sub={`${portfolio.approvedPct}% of MDL`} tone="green" />
         <Kpi icon={<FileWarning className="h-4 w-4" />} label="Pending" value={portfolio.pending} tone="amber" />
+        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Overdue (uncleared)" value={portfolio.overdue} tone="red" />
+        <Kpi icon={<FileClock className="h-4 w-4" />} label="Due in 2 months" value={portfolio.upcoming} tone="violet" />
       </section>
 
       {loading ? (
@@ -120,8 +124,8 @@ function DrawingsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "Pending", "Approval Progress", ""].map((h, i) =>
-                        <th key={i} className={`border-b border-border px-3 py-2 font-semibold ${i >= 2 && i <= 5 ? "text-right" : "text-left"}`}>{h}</th>)}
+                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "Pending", "Overdue", "Due 2mo", "Approval Progress", ""].map((h, i) =>
+                        <th key={i} className={`border-b border-border px-3 py-2 font-semibold ${i >= 2 && i <= 7 ? "text-right" : "text-left"}`}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -136,6 +140,8 @@ function DrawingsPage() {
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{x.c.submitted}</td>
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{x.c.approved}</td>
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{x.c.pending}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{x.c.overdue}</td>
+                        <td className="px-3 py-2 text-right font-mono" style={{ color: "#8b5cf6" }}>{x.c.upcoming}</td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
                             <Progress value={x.c.approvedPct} className="h-1.5 w-28" />
@@ -226,8 +232,8 @@ function CategoryTable({ cat, drawings, stations }: { cat: string; drawings: Sta
   );
 }
 
-function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: string; value: number; sub?: string; tone: "primary" | "blue" | "green" | "amber" }) {
-  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : "var(--primary)";
+function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: string; value: number; sub?: string; tone: "primary" | "blue" | "green" | "amber" | "red" | "violet" }) {
+  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : tone === "red" ? "var(--status-red)" : tone === "violet" ? "#8b5cf6" : "var(--primary)";
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
