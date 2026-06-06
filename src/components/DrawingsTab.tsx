@@ -147,7 +147,7 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
             </thead>
             <tbody>
               {visible.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
+                <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
                 <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} onDelete={() => remove.mutate(r.id)} />
