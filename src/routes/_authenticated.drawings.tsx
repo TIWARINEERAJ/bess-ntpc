@@ -62,9 +62,11 @@ function DrawingsPage() {
     const total = stationCounts.reduce((a, x) => a + x.c.total, 0);
     const submitted = stationCounts.reduce((a, x) => a + x.c.submitted, 0);
     const approved = stationCounts.reduce((a, x) => a + x.c.approved, 0);
+    const overdue = stationCounts.reduce((a, x) => a + x.c.overdue, 0);
+    const upcoming = stationCounts.reduce((a, x) => a + x.c.upcoming, 0);
     const pending = Math.max(0, total - approved);
     return {
-      total, submitted, approved, pending,
+      total, submitted, approved, pending, overdue, upcoming,
       submittedPct: total ? Math.round((submitted / total) * 100) : 0,
       approvedPct: total ? Math.round((approved / total) * 100) : 0,
     };
