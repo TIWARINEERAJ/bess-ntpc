@@ -220,10 +220,10 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 }
 
 function SummaryCard({ label, value, pct, tone, editable, onCommit, initial }: {
-  label: string; value: number; pct?: number; tone?: "blue" | "green" | "amber";
+  label: string; value: number; pct?: number; tone?: "blue" | "green" | "amber" | "red" | "violet";
   editable?: boolean; onCommit?: (v: number) => void; initial?: number;
 }) {
-  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : "var(--primary)";
+  const color = tone === "green" ? "var(--status-green)" : tone === "blue" ? "var(--status-blue)" : tone === "amber" ? "var(--status-amber)" : tone === "red" ? "var(--status-red)" : tone === "violet" ? "#8b5cf6" : "var(--primary)";
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState(String(initial ?? value));
   return (
