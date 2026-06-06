@@ -140,6 +140,8 @@ function DrawingsPage() {
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{x.c.submitted}</td>
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{x.c.approved}</td>
                         <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{x.c.pending}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{x.c.overdue}</td>
+                        <td className="px-3 py-2 text-right font-mono" style={{ color: "#8b5cf6" }}>{x.c.upcoming}</td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
                             <Progress value={x.c.approvedPct} className="h-1.5 w-28" />
