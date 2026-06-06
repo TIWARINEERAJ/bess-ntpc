@@ -124,8 +124,8 @@ function DrawingsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "Pending", "Approval Progress", ""].map((h, i) =>
-                        <th key={i} className={`border-b border-border px-3 py-2 font-semibold ${i >= 2 && i <= 5 ? "text-right" : "text-left"}`}>{h}</th>)}
+                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "Pending", "Overdue", "Due 2mo", "Approval Progress", ""].map((h, i) =>
+                        <th key={i} className={`border-b border-border px-3 py-2 font-semibold ${i >= 2 && i <= 7 ? "text-right" : "text-left"}`}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
