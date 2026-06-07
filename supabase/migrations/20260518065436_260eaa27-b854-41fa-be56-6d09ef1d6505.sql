@@ -21,7 +21,7 @@ CREATE TABLE public.station_boi_status (
   actual_po_date DATE,
   sub_vendor_category TEXT,
   sub_vendor_details TEXT,
-  delivery_date DATE,
+  dispatch_date DATE,
   site_receipt_date DATE,
   mobilization_status TEXT,
   remarks TEXT,
