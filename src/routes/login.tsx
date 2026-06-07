@@ -56,7 +56,7 @@ function LoginPage() {
       <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-10 lg:flex">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_60%)]" />
         <div className="relative flex items-center gap-2 text-sm font-medium">
-          <Battery className="h-5 w-5 text-primary" /> NTPC · Project Management Group
+          <Battery className="h-5 w-5 text-primary" /> NTPC · OS Project Management Group
         </div>
         <div className="relative space-y-4">
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
