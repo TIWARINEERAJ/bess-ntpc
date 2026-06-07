@@ -144,7 +144,7 @@ function Dashboard() {
 
   // Clickable status cards → filter the station list
   const [healthFilter, setHealthFilter] = useState<"green" | "amber" | "red" | null>(null);
-  const stationsRef = useRef<HTMLDivElement>(null);
+  const stationsRef = useRef<HTMLElement>(null);
   const onStatusCardClick = (h: "green" | "amber" | "red") => {
     setHealthFilter((cur) => (cur === h ? null : h));
     requestAnimationFrame(() => stationsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
