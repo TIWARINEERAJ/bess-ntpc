@@ -1,0 +1,2 @@
+DELETE FROM public.station_task_status WHERE station_id IN ('9f72a73f-1a5c-4f32-8282-8dcb627804e4','a51ad5b6-66e1-4adb-b466-6ad6cf19264d');
+DELETE FROM public.l2_tasks WHERE station_id IN ('9f72a73f-1a5c-4f32-8282-8dcb627804e4','a51ad5b6-66e1-4adb-b466-6ad6cf19264d');
