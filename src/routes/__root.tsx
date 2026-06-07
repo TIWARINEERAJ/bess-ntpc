@@ -72,18 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
+      { title: "BESS Dashboard" },
       { name: "description", content: "BESS Insight Portal monitors Battery Energy Storage System projects for NTPC stations." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
+      { property: "og:title", content: "BESS Dashboard" },
       { property: "og:description", content: "BESS Insight Portal monitors Battery Energy Storage System projects for NTPC stations." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:title", content: "BESS Dashboard" },
       { name: "twitter:description", content: "BESS Insight Portal monitors Battery Energy Storage System projects for NTPC stations." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0302e3a-4bd5-4c4d-ba8e-291cb01f7ade/id-preview-78e3743b--f346c879-78a6-41b1-bede-183a50dd5dd0.lovable.app-1779086056536.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0302e3a-4bd5-4c4d-ba8e-291cb01f7ade/id-preview-78e3743b--f346c879-78a6-41b1-bede-183a50dd5dd0.lovable.app-1779086056536.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/db9fc12d-508c-476d-b63f-4ffeff2e88df" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/db9fc12d-508c-476d-b63f-4ffeff2e88df" },
     ],
     links: [
       {
