@@ -174,9 +174,9 @@ function Dashboard() {
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
         <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Avg. Progress" value={`${kpis.avgPct}`} unit="%" tone="primary" />
-        <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" />
-        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="At Risk" value={`${kpis.amber}`} unit="stations" tone="amber" />
-        <Kpi icon={<Zap className="h-4 w-4" />} label="Delayed" value={`${kpis.red}`} unit="stations" tone="red" />
+        <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" onClick={() => onStatusCardClick("green")} active={healthFilter === "green"} />
+        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="At Risk" value={`${kpis.amber}`} unit="stations" tone="amber" onClick={() => onStatusCardClick("amber")} active={healthFilter === "amber"} />
+        <Kpi icon={<Zap className="h-4 w-4" />} label="Delayed" value={`${kpis.red}`} unit="stations" tone="red" onClick={() => onStatusCardClick("red")} active={healthFilter === "red"} />
         <Kpi icon={<Calendar className="h-4 w-4" />} label="Due in 30 days" value={`${kpis.upcoming}`} unit="tasks" tone="primary" />
       </section>
 
