@@ -239,17 +239,28 @@ function Dashboard() {
         </Card>
       </section>
 
+      <AgencyPerformance data={agencyData} />
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid gap-6 xl:grid-cols-3" ref={stationsRef}>
         <div className="xl:col-span-2">
-          <SectionHeading title="Stations" sub={`${stations.length} sites · Click any card to open the L2 Gantt`} />
+          <SectionHeading
+            title={healthFilter ? `Stations — ${healthLabel(healthFilter)}` : "Stations"}
+            sub={healthFilter ? `Showing ${visibleStations.length} ${healthLabel(healthFilter).toLowerCase()} station(s) · click a card to open the L2 Gantt` : `${stations.length} sites · Click any card to open the L2 Gantt`}
+          />
+          {healthFilter && (
+            <button onClick={() => setHealthFilter(null)} className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              Clear filter · show all {computed.length}
+            </button>
+          )}
           {loading ? (
             <div className="grid gap-3 md:grid-cols-2">
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
             </div>
+          ) : visibleStations.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">No stations in this status.</Card>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {computed.map(s => <StationCard key={s.id} s={s} />)}
+              {visibleStations.map(s => <StationCard key={s.id} s={s} />)}
             </div>
           )}
         </div>
