@@ -14,7 +14,7 @@ import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { drawingCounts, type StationDrawing } from "@/lib/drawings";
 import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
@@ -118,6 +118,41 @@ function Dashboard() {
     return list.sort((a, b) => b.slip - a.slip).slice(0, 12);
   }, [stations, tasksByStation, statusByStation]);
 
+  // Per-agency (awarded contractor) performance roll-up
+  const agencyData = useMemo(() => {
+    const m = new Map<string, { agency: string; stations: typeof computed; pctSum: number; delayed: number; green: number; amber: number; red: number }>();
+    for (const s of computed) {
+      const key = cleanAgency(s.agency);
+      let e = m.get(key);
+      if (!e) { e = { agency: key, stations: [], pctSum: 0, delayed: 0, green: 0, amber: 0, red: 0 }; m.set(key, e); }
+      e.stations.push(s);
+      e.pctSum += s.pct;
+      e.delayed += s.delayed;
+      e[s.health] += 1;
+    }
+    return Array.from(m.values())
+      .map((e) => ({
+        agency: e.agency,
+        count: e.stations.length,
+        avgPct: e.stations.length ? Math.round(e.pctSum / e.stations.length) : 0,
+        delayed: e.delayed,
+        green: e.green, amber: e.amber, red: e.red,
+        names: e.stations.map((s) => s.name).join(", "),
+      }))
+      .sort((a, b) => b.avgPct - a.avgPct);
+  }, [computed]);
+
+  // Clickable status cards → filter the station list
+  const [healthFilter, setHealthFilter] = useState<"green" | "amber" | "red" | null>(null);
+  const stationsRef = useRef<HTMLElement>(null);
+  const onStatusCardClick = (h: "green" | "amber" | "red") => {
+    setHealthFilter((cur) => (cur === h ? null : h));
+    requestAnimationFrame(() => stationsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const visibleStations = useMemo(
+    () => (healthFilter ? computed.filter((s) => s.health === healthFilter) : computed),
+    [computed, healthFilter]);
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
@@ -139,9 +174,9 @@ function Dashboard() {
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
         <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Avg. Progress" value={`${kpis.avgPct}`} unit="%" tone="primary" />
-        <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" />
-        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="At Risk" value={`${kpis.amber}`} unit="stations" tone="amber" />
-        <Kpi icon={<Zap className="h-4 w-4" />} label="Delayed" value={`${kpis.red}`} unit="stations" tone="red" />
+        <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" onClick={() => onStatusCardClick("green")} active={healthFilter === "green"} />
+        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="At Risk" value={`${kpis.amber}`} unit="stations" tone="amber" onClick={() => onStatusCardClick("amber")} active={healthFilter === "amber"} />
+        <Kpi icon={<Zap className="h-4 w-4" />} label="Delayed" value={`${kpis.red}`} unit="stations" tone="red" onClick={() => onStatusCardClick("red")} active={healthFilter === "red"} />
         <Kpi icon={<Calendar className="h-4 w-4" />} label="Due in 30 days" value={`${kpis.upcoming}`} unit="tasks" tone="primary" />
       </section>
 
@@ -204,17 +239,28 @@ function Dashboard() {
         </Card>
       </section>
 
+      <AgencyPerformance data={agencyData} />
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid gap-6 xl:grid-cols-3" ref={stationsRef}>
         <div className="xl:col-span-2">
-          <SectionHeading title="Stations" sub={`${stations.length} sites · Click any card to open the L2 Gantt`} />
+          <SectionHeading
+            title={healthFilter ? `Stations — ${healthLabel(healthFilter)}` : "Stations"}
+            sub={healthFilter ? `Showing ${visibleStations.length} ${healthLabel(healthFilter).toLowerCase()} station(s) · click a card to open the L2 Gantt` : `${stations.length} sites · Click any card to open the L2 Gantt`}
+          />
+          {healthFilter && (
+            <button onClick={() => setHealthFilter(null)} className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              Clear filter · show all {computed.length}
+            </button>
+          )}
           {loading ? (
             <div className="grid gap-3 md:grid-cols-2">
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
             </div>
+          ) : visibleStations.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">No stations in this status.</Card>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {computed.map(s => <StationCard key={s.id} s={s} />)}
+              {visibleStations.map(s => <StationCard key={s.id} s={s} />)}
             </div>
           )}
         </div>
@@ -444,10 +490,80 @@ function SectionHeading({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-function Kpi({ icon, label, value, unit, tone }: { icon: React.ReactNode; label: string; value: string; unit?: string; tone: "primary" | "green" | "amber" | "red" }) {
+function cleanAgency(a: string | null): string {
+  if (!a) return "Unassigned";
+  return a.replace(/,\s*\d+\s*$/, "").trim() || "Unassigned";
+}
+
+function healthLabel(h: "green" | "amber" | "red"): string {
+  return h === "green" ? "On Track" : h === "amber" ? "At Risk" : "Delayed";
+}
+
+type AgencyRow = { agency: string; count: number; avgPct: number; delayed: number; green: number; amber: number; red: number; names: string };
+
+function AgencyPerformance({ data }: { data: AgencyRow[] }) {
+  if (data.length === 0) return null;
+  const avgAll = Math.round(data.reduce((a, d) => a + d.avgPct * d.count, 0) / Math.max(1, data.reduce((a, d) => a + d.count, 0)));
+  return (
+    <section>
+      <SectionHeading title="Agency Performance" sub="Average physical progress by awarded EPC contractor · delayed-task load overlaid · portfolio average as reference" />
+      <Card className="p-4">
+        <div style={{ width: "100%", height: Math.max(220, data.length * 46 + 60) }}>
+          <ResponsiveContainer>
+            <ComposedChart layout="vertical" data={data} margin={{ top: 8, right: 32, left: 8, bottom: 8 }} barCategoryGap="28%">
+              <defs>
+                <linearGradient id="gradAgency" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
+                  <stop offset="100%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+              <YAxis type="category" dataKey="agency" width={150} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} interval={0} />
+              <Tooltip
+                cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(value: number, name: string) => name === "Avg progress" ? [`${value}%`, name] : [value, name]}
+                labelFormatter={(label: string) => {
+                  const row = data.find((d) => d.agency === label);
+                  return row ? `${label} · ${row.count} station(s)\n${row.names}` : label;
+                }}
+              />
+              <ReferenceLine x={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
+                label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "top" }} />
+              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[0, 4, 4, 0]} maxBarSize={22}>
+                <LabelList dataKey="avgPct" position="right" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
+              </Bar>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {data.map((d) => (
+            <div key={d.agency} className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-xs">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{d.agency}</div>
+                <div className="truncate text-[10px] text-muted-foreground">{d.names}</div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 font-mono">
+                <span style={{ color: "var(--primary)" }}>{d.avgPct}%</span>
+                {d.delayed > 0 && <span style={{ color: "var(--status-red)" }} title="Delayed tasks">{d.delayed}⚠</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function Kpi({ icon, label, value, unit, tone, onClick, active }: { icon: React.ReactNode; label: string; value: string; unit?: string; tone: "primary" | "green" | "amber" | "red"; onClick?: () => void; active?: boolean }) {
   const colorVar = tone === "primary" ? "var(--primary)" : `var(--status-${tone})`;
   return (
-    <Card className="relative overflow-hidden p-4">
+    <Card
+      onClick={onClick}
+      className={`relative overflow-hidden p-4 ${onClick ? "cursor-pointer transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_25%,transparent)]" : ""}`}
+      style={active ? { boxShadow: `0 0 0 1.5px ${colorVar}`, borderColor: colorVar } : undefined}
+    >
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: colorVar }} />
       <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
         <span style={{ color: colorVar }}>{icon}</span>{label}
@@ -456,6 +572,7 @@ function Kpi({ icon, label, value, unit, tone }: { icon: React.ReactNode; label:
         <span className="font-mono text-3xl font-bold tabular-nums" style={{ color: colorVar }}>{value}</span>
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
+      {onClick && <div className="mt-1 text-[10px] text-muted-foreground">{active ? "Filtering ↓" : "Click to filter ↓"}</div>}
     </Card>
   );
 }
