@@ -31,7 +31,8 @@ function LoginPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
@@ -59,17 +60,20 @@ function LoginPage() {
         </div>
         <div className="relative space-y-4">
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            Battery Energy Storage<br /><span className="text-primary">L2 Monitoring Portal</span>
+            Battery Energy Storage
+            <br />
+            <span className="text-primary">Project Monitoring Portal</span>
           </h1>
           <p className="max-w-md text-sm text-muted-foreground">
-            Real-time tracking of 16 BESS contracts across 15 thermal stations — 5,004 MWh of co-located storage to manage technical-minimum operations.
+            Real-time tracking of 16 BESS contracts across 15 thermal stations — 5,004 MWh of co-located storage to
+            manage technical-minimum operations.
           </p>
           <div className="grid grid-cols-3 gap-3 pt-6">
             {[
               { k: "5,004", v: "MWh contracted" },
               { k: "15", v: "Stations" },
               { k: "16", v: "Contracts" },
-            ].map(s => (
+            ].map((s) => (
               <div key={s.v} className="rounded-lg border border-border/60 bg-card/60 p-3">
                 <div className="font-mono text-2xl font-bold text-primary">{s.k}</div>
                 <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{s.v}</div>
@@ -89,23 +93,41 @@ function LoginPage() {
             {mode === "signup" && (
               <div>
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" value={name} onChange={e => setName(e.target.value)} required />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
             )}
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={6} value={password} onChange={e => setPassword(e.target.value)} required />
+              <Input
+                id="password"
+                type="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
-          <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+          >
             {mode === "signin" ? "No account yet? Create one" : "Have an account? Sign in"}
           </button>
         </Card>
