@@ -14,25 +14,25 @@ A world-class construction monitoring and project management platform for NTPC's
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start v1 (React 19, Vite 7, SSR/SSG) |
-| Styling | Tailwind CSS v4 with custom ops-control dark theme |
-| UI Components | shadcn/ui |
-| Backend / Auth | Lovable Cloud (managed PostgreSQL + auth) |
-| Data Fetching | Supabase client + TanStack server functions |
-| Charts | Custom SVG Gantt engine |
-| Reports | `xlsx` + `jszip` for Excel / ZIP exports |
+| Layer          | Technology                                         |
+| -------------- | -------------------------------------------------- |
+| Framework      | TanStack Start v1 (React 19, Vite 7, SSR/SSG)      |
+| Styling        | Tailwind CSS v4 with custom ops-control dark theme |
+| UI Components  | shadcn/ui                                          |
+| Backend / Auth | Lovable Cloud (managed PostgreSQL + auth)          |
+| Data Fetching  | Supabase client + TanStack server functions        |
+| Charts         | Custom SVG Gantt engine                            |
+| Reports        | `xlsx` + `jszip` for Excel / ZIP exports           |
 
 ---
 
 ## User Roles & Access
 
-| Role | Permissions |
-|------|-------------|
-| **Admin** (NTPC PMG) | Full CRUD, user management, audit trail, bulk exports, close delays |
+| Role                                            | Permissions                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Admin** (NTPC PMG)                            | Full CRUD, user management, audit trail, bulk exports, close delays                  |
 | **Editor** (NTPC EIC / Coordinator / Vendor PM) | Update task status, BOI dates, raise issues, edit delay register, update compliances |
-| **Viewer** (Top Management) | Read-only access to all dashboards, reports, and exports |
+| **Viewer** (Top Management)                     | Read-only access to all dashboards, reports, and exports                             |
 
 Authentication: email/password + Google OAuth. First user to sign up becomes Admin.
 
@@ -41,6 +41,7 @@ Authentication: email/password + Google OAuth. First user to sign up becomes Adm
 ## Features
 
 ### 1. Home Dashboard (`/`)
+
 - **Portfolio KPIs**: Total MWh under construction, overall weighted progress %, stations completed / in-progress / delayed.
 - **Station Health Grid**: 15-station cards with real-time progress bars, delayed-task counters, and quick links.
 - **Compliance Rollup**: "X of Y compliances cleared portfolio-wide" with expiry alerts.
@@ -48,24 +49,27 @@ Authentication: email/password + Google OAuth. First user to sign up becomes Adm
 - **Today's Review Stations**: Strip pulled from the Weekly Planner.
 
 ### 2. Per-Station Detail (`/stations/:stationId`)
+
 Six tabs for complete lifecycle tracking:
 
-| Tab | Purpose |
-|-----|---------|
-| **L2 Gantt** | Full 127-task L2 schedule (WBS 1.1–1.20) with planned vs. actual timelines. Inline edit actual dates, % complete, owner, and remarks via a side drawer. |
-| **BOI Status** | 31 equipment items (Power Transformer → MISC-CIVIL) tracking: scheduled PO date, actual PO date, sub-vendor category & details, inspection category, delivery / site receipt / mobilization status. |
-| **Compliances** | Statutory, Safety, Quality, Insurance, and Local compliances. Tracks application date, approval/expiry, status, document ref, owner, and remarks. Auto-flags expiring within 30 days. |
-| **Delay Register** | Auto-populated from slipped Gantt tasks. Root cause analysis: reason category, responsibility, corrective action, recovery plan, recovery date. Vendor can update; Admin can close. |
-| **Issues** | Vendor / safety issue log with title, description, priority, target date, status, and assigned owner. |
-| **Audit Trail** | Field-level edit history for task status, BOI, compliances, issues, and delays. Filterable by user, entity, and date range. |
+| Tab                | Purpose                                                                                                                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **L2 Gantt**       | Full 127-task L2 schedule (WBS 1.1–1.20) with planned vs. actual timelines. Inline edit actual dates, % complete, owner, and remarks via a side drawer.                                             |
+| **BOI Status**     | 31 equipment items (Power Transformer → MISC-CIVIL) tracking: scheduled PO date, actual PO date, sub-vendor category & details, inspection category, dispatch / site receipt / mobilization status. |
+| **Compliances**    | Statutory, Safety, Quality, Insurance, and Local compliances. Tracks application date, approval/expiry, status, document ref, owner, and remarks. Auto-flags expiring within 30 days.               |
+| **Delay Register** | Auto-populated from slipped Gantt tasks. Root cause analysis: reason category, responsibility, corrective action, recovery plan, recovery date. Vendor can update; Admin can close.                 |
+| **Issues**         | Vendor / safety issue log with title, description, priority, target date, status, and assigned owner.                                                                                               |
+| **Audit Trail**    | Field-level edit history for task status, BOI, compliances, issues, and delays. Filterable by user, entity, and date range.                                                                         |
 
 ### 3. Weekly Review Planner (`/weekly-planner`)
+
 - Calendar grid (Monday–Sunday) for any selected week.
 - Assign up to 3 stations per day (covers the "3 stations/day" review rule).
 - Auto-pulls latest progress %, open exceptions, and top 3 delayed tasks for the daily agenda.
 - **Generate Agenda** per day and **Export Weekly Plan** as Excel.
 
 ### 4. Notifications
+
 - Bell icon in the app header with unread count.
 - Alerts generated client-side for:
   - L2 tasks due within 7 days (not started)
@@ -76,6 +80,7 @@ Six tabs for complete lifecycle tracking:
 - Click any notification to deep-link to the relevant station/tab.
 
 ### 5. MIS & Reports
+
 - **Weekly MIS**: Per-station L2 task detail + summary sheet.
 - **Exception Report**: All delayed/blocked tasks across stations.
 - **Station Export**: Full L2 schedule for a single station.
@@ -87,25 +92,27 @@ Six tabs for complete lifecycle tracking:
 ## Database Schema
 
 ### Core Tables
-| Table | Description |
-|-------|-------------|
-| `stations` | 15 NTPC BESS stations (name, lot, capacity, agency, EIC) |
-| `l2_tasks` | 127-task master template (WBS, baseline dates, durations, predecessors) |
-| `station_task_status` | Per-station actual dates, % complete, status, owner, remarks |
-| `user_roles` | Role assignments (admin / editor / viewer) per user |
+
+| Table                 | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `stations`            | 15 NTPC BESS stations (name, lot, capacity, agency, EIC)                |
+| `l2_tasks`            | 127-task master template (WBS, baseline dates, durations, predecessors) |
+| `station_task_status` | Per-station actual dates, % complete, status, owner, remarks            |
+| `user_roles`          | Role assignments (admin / editor / viewer) per user                     |
 
 ### Phase 2 Tables
-| Table | Description |
-|-------|-------------|
-| `boi_master` | 31 equipment items shared template |
-| `station_boi_status` | Per-station BOI ordering & delivery tracking |
-| `compliance_master` | ~25 compliance categories shared template |
-| `station_compliance` | Per-station compliance application & expiry tracking |
-| `delay_register` | Root-cause delay analysis with recovery plans |
-| `issues` | Vendor / safety issue log |
-| `weekly_review_plan` | Calendar assignments for weekly reviews |
-| `audit_log` | Field-level change history (auto-written by triggers) |
-| `notification_dismissals` | Per-user notification dismiss tracking |
+
+| Table                     | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| `boi_master`              | 31 equipment items shared template                    |
+| `station_boi_status`      | Per-station BOI ordering & dispatch tracking          |
+| `compliance_master`       | ~25 compliance categories shared template             |
+| `station_compliance`      | Per-station compliance application & expiry tracking  |
+| `delay_register`          | Root-cause delay analysis with recovery plans         |
+| `issues`                  | Vendor / safety issue log                             |
+| `weekly_review_plan`      | Calendar assignments for weekly reviews               |
+| `audit_log`               | Field-level change history (auto-written by triggers) |
+| `notification_dismissals` | Per-user notification dismiss tracking                |
 
 ---
 
@@ -147,11 +154,13 @@ src/
 ## Getting Started
 
 1. **Install dependencies**
+
    ```bash
    bun install
    ```
 
 2. **Run the dev server**
+
    ```bash
    bun run dev
    ```
@@ -171,11 +180,11 @@ src/
 
 The following are automatically configured by Lovable Cloud:
 
-| Variable | Purpose |
-|----------|---------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Public anon key (RLS applies) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only admin key (bypasses RLS) |
+| Variable                        | Purpose                              |
+| ------------------------------- | ------------------------------------ |
+| `VITE_SUPABASE_URL`             | Supabase project URL                 |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Public anon key (RLS applies)        |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server-only admin key (bypasses RLS) |
 
 ---
 
