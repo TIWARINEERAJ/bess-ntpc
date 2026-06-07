@@ -230,7 +230,7 @@ INSERT INTO public.compliance_master (category, name, authority, sort_order) VAL
 ('Insurance','Workmen Compensation','Insurer',19),
 ('Insurance','Third Party Liability','Insurer',20),
 ('Local','Fire NOC','State Fire Dept',21),
-('Local','Local PCB NOC','State PCB',22),
+('Local','No Increase in Pollution Load (NIPL)','State PCB',22),
 ('Local','Labour License','Labour Dept',23),
 ('Local','Building Plan Approval','Local Authority',24),
 ('Local','Electrical Inspectorate Approval','CEIG',25);
