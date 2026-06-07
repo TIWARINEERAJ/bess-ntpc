@@ -118,6 +118,41 @@ function Dashboard() {
     return list.sort((a, b) => b.slip - a.slip).slice(0, 12);
   }, [stations, tasksByStation, statusByStation]);
 
+  // Per-agency (awarded contractor) performance roll-up
+  const agencyData = useMemo(() => {
+    const m = new Map<string, { agency: string; stations: typeof computed; pctSum: number; delayed: number; green: number; amber: number; red: number }>();
+    for (const s of computed) {
+      const key = cleanAgency(s.agency);
+      let e = m.get(key);
+      if (!e) { e = { agency: key, stations: [], pctSum: 0, delayed: 0, green: 0, amber: 0, red: 0 }; m.set(key, e); }
+      e.stations.push(s);
+      e.pctSum += s.pct;
+      e.delayed += s.delayed;
+      e[s.health] += 1;
+    }
+    return Array.from(m.values())
+      .map((e) => ({
+        agency: e.agency,
+        count: e.stations.length,
+        avgPct: e.stations.length ? Math.round(e.pctSum / e.stations.length) : 0,
+        delayed: e.delayed,
+        green: e.green, amber: e.amber, red: e.red,
+        names: e.stations.map((s) => s.name).join(", "),
+      }))
+      .sort((a, b) => b.avgPct - a.avgPct);
+  }, [computed]);
+
+  // Clickable status cards → filter the station list
+  const [healthFilter, setHealthFilter] = useState<"green" | "amber" | "red" | null>(null);
+  const stationsRef = useRef<HTMLDivElement>(null);
+  const onStatusCardClick = (h: "green" | "amber" | "red") => {
+    setHealthFilter((cur) => (cur === h ? null : h));
+    requestAnimationFrame(() => stationsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const visibleStations = useMemo(
+    () => (healthFilter ? computed.filter((s) => s.health === healthFilter) : computed),
+    [computed, healthFilter]);
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
