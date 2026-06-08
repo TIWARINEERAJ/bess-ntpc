@@ -166,8 +166,11 @@ function Dashboard() {
           <Button variant="outline" size="sm" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
             <FileWarning className="mr-2 h-4 w-4" /> Exception Report
           </Button>
-          <Button size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Download Weekly MIS
+          <Button variant="outline" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
+          </Button>
+          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation)}>
+            <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>
         </div>
       </section>
