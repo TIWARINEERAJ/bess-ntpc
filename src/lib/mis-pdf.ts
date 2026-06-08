@@ -404,6 +404,23 @@ export function buildWeeklyDoc(
   });
   y += 150 + 16;
 
+  // ---- Station-wise Portfolio Progress vs Delays (grouped columns) ----
+  if (y > pageH - 180) { doc.addPage(); y = margin; }
+  const pdData = [...rows]
+    .sort((a, b) => b.delayed - a.delayed || a.pct - b.pct)
+    .map((r) => ({ label: r.s.name, pct: r.pct, delayed: r.delayed }));
+  drawProgressDelayChart(doc, {
+    x: margin,
+    y,
+    w: contentW,
+    h: 170,
+    title: "Station-wise Portfolio Progress vs Delays",
+    data: pdData,
+  });
+  y += 170 + 16;
+
+
+
   // ---- Station status summary table ----
   const order: Health[] = ["red", "amber", "green"];
   const sorted = [...rows].sort((a, b) => order.indexOf(a.health) - order.indexOf(b.health) || a.pct - b.pct);
