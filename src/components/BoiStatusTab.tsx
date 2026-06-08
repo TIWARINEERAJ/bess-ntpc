@@ -66,6 +66,23 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const STATUS_OPTIONS = ["Overdue", "Pending", "Ordered", "In Transit", "Received"];
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (masterQ.data ?? []).filter((b) => {
+      const s = map.get(b.id);
+      if (statusFilter !== "all" && statusChip(b, s).label !== statusFilter) return false;
+      if (q && !(`${b.name} ${b.sl_no} ${s?.remarks ?? ""} ${s?.drawings_status ?? ""} ${s?.inspection_status ?? ""}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterQ.data, statusQ.data, search, statusFilter]);
+
+
   const save = useMutation({
     mutationFn: async (row: BoiStatus) => {
       const {
