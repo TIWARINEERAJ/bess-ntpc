@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
+import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
+import { exportWeeklyPDF } from "@/lib/mis-pdf";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { drawingCounts, type StationDrawing } from "@/lib/drawings";
@@ -103,7 +104,7 @@ function Dashboard() {
 
   const exceptions = useMemo(() => {
     const today = new Date();
-    const list: Array<{ station: string; stationId: string; wbs: string; task: string; slip: number; status: RowStatus; owner: string }> = [];
+    const list: Array<{ station: string; stationId: string; wbs: string; task: string; slip: number; planFinish: string; status: RowStatus; owner: string }> = [];
     for (const s of stations) {
       const map = buildStatusMap(statusByStation[s.id]);
       for (const t of tasksByStation[s.id] ?? []) {
@@ -111,11 +112,23 @@ function Dashboard() {
         const st = map.get(t.id);
         const cs = computeRowState(t, st, today);
         if (cs.status === "delayed" || cs.status === "blocked") {
-          list.push({ station: s.name, stationId: s.id, wbs: t.wbs_code, task: t.name, slip: cs.slipDays, status: cs.status as RowStatus, owner: st?.owner ?? "—" });
+          list.push({
+            station: s.name, stationId: s.id, wbs: t.wbs_code, task: t.name,
+            slip: cs.slipDays,
+            planFinish: t.baseline_finish ? format(new Date(t.baseline_finish), "dd MMM yy") : "—",
+            status: cs.status as RowStatus, owner: st?.owner ?? "—",
+          });
         }
       }
     }
-    return list.sort((a, b) => b.slip - a.slip).slice(0, 12);
+    // Station-wise: group by station, worst-overdue first within each station, busiest stations on top.
+    list.sort((a, b) =>
+      a.station.localeCompare(b.station) || b.slip - a.slip);
+    const byStation = new Map<string, number>();
+    for (const e of list) byStation.set(e.station, (byStation.get(e.station) ?? 0) + 1);
+    return list
+      .sort((a, b) => (byStation.get(b.station)! - byStation.get(a.station)!) || a.station.localeCompare(b.station) || b.slip - a.slip)
+      .slice(0, 14);
   }, [stations, tasksByStation, statusByStation]);
 
   // Per-agency (awarded contractor) performance roll-up
@@ -165,8 +178,11 @@ function Dashboard() {
           <Button variant="outline" size="sm" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
             <FileWarning className="mr-2 h-4 w-4" /> Exception Report
           </Button>
-          <Button size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Download Weekly MIS
+          <Button variant="outline" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
+          </Button>
+          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation)}>
+            <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>
         </div>
       </section>
@@ -270,7 +286,7 @@ function Dashboard() {
             <UpcomingMeetings />
           </div>
           <div>
-            <SectionHeading title="Top Exceptions" sub="Delayed & blocked leaf tasks (sorted by slip days)" />
+            <SectionHeading title="Station-wise Exceptions" sub="Delayed & blocked activities grouped by station · days overdue against planned finish" />
           <Card className="divide-y divide-border/60 p-0">
             {exceptions.length === 0 && !loading && (
               <div className="p-6 text-center text-sm text-muted-foreground">
@@ -284,11 +300,13 @@ function Dashboard() {
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{e.station} · <span className="font-mono text-xs text-muted-foreground">{e.wbs}</span></div>
                     <div className="mt-0.5 truncate text-xs text-muted-foreground">{e.task}</div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">Owner: {e.owner}</div>
+                    <div className="mt-1 text-[11px] text-muted-foreground">Due {e.planFinish} · Owner: {e.owner}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge status={e.status} />
-                    <div className="font-mono text-xs text-[color:var(--status-red)]">+{e.slip}d</div>
+                    <div className="font-mono text-xs text-[color:var(--status-red)]" title="Days overdue against planned finish">
+                      {e.slip > 0 ? `overdue ${e.slip}d` : "due"}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -508,18 +526,18 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
     <section>
       <SectionHeading title="Agency Performance" sub="Average physical progress by awarded EPC contractor · delayed-task load overlaid · portfolio average as reference" />
       <Card className="p-4">
-        <div style={{ width: "100%", height: Math.max(220, data.length * 46 + 60) }}>
+        <div style={{ width: "100%", height: 360 }}>
           <ResponsiveContainer>
-            <ComposedChart layout="vertical" data={data} margin={{ top: 8, right: 32, left: 8, bottom: 8 }} barCategoryGap="28%">
+            <ComposedChart data={data} margin={{ top: 16, right: 24, left: 0, bottom: 80 }} barCategoryGap="28%">
               <defs>
-                <linearGradient id="gradAgency" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
-                  <stop offset="100%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                <linearGradient id="gradAgency" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                  <stop offset="100%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
-              <YAxis type="category" dataKey="agency" width={150} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} interval={0} />
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="agency" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={80} />
+              <YAxis domain={[0, 100]} unit="%" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
               <Tooltip
                 cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
@@ -529,10 +547,10 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
                   return row ? `${label} · ${row.count} station(s)\n${row.names}` : label;
                 }}
               />
-              <ReferenceLine x={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
-                label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "top" }} />
-              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[0, 4, 4, 0]} maxBarSize={22}>
-                <LabelList dataKey="avgPct" position="right" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
+              <ReferenceLine y={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
+                label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
+              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                <LabelList dataKey="avgPct" position="top" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
               </Bar>
             </ComposedChart>
           </ResponsiveContainer>

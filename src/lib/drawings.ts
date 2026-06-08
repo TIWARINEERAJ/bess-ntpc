@@ -8,9 +8,19 @@ export type StationDrawing = {
   sch_date: string | null;
   sch_apprvl_date: string | null;
   submitted_date: string | null;
+  resubmitted_date: string | null;
   approved_date: string | null;
   sort_order: number;
 };
+
+/** CAT-I / CAT-II classification implies the drawing is approved (no separate approval needed). */
+export function catImpliesApproved(cat: string | null): boolean {
+  if (!cat) return false;
+  const c = cat.toUpperCase().replace(/[\s.]/g, "");
+  return c === "CAT-I" || c === "CATI" || c === "CAT1" ||
+    c === "CAT-II" || c === "CATII" || c === "CAT2";
+}
+
 
 export type DrawingCounts = {
   total: number;
@@ -33,8 +43,14 @@ function startOfToday(): Date {
 }
 
 /** A drawing is "cleared" once it has an approval date. */
+/** A drawing is "cleared" once it has an approval date OR is classified CAT-I / CAT-II. */
 export function isApproved(r: StationDrawing): boolean {
-  return !!r.approved_date;
+  return !!r.approved_date || catImpliesApproved(r.cat);
+}
+
+/** A drawing counts as submitted once it has a submitted or re-submitted date (or is approved). */
+export function isSubmitted(r: StationDrawing): boolean {
+  return !!r.submitted_date || !!r.resubmitted_date || isApproved(r);
 }
 
 /** Overdue = scheduled approval date in the past, still not approved. */
@@ -63,7 +79,7 @@ export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()
 export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): DrawingCounts {
   const today = startOfToday();
   const registered = rows.length;
-  const submitted = rows.filter((r) => !!r.submitted_date).length;
+  const submitted = rows.filter(isSubmitted).length;
   const approved = rows.filter(isApproved).length;
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;

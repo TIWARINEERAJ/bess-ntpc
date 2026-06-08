@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileStack, ArrowRight, FileCheck2, FileClock, FileWarning } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
-import { drawingCounts, uniqueCategories, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, uniqueCategories, isApproved, isSubmitted, type StationDrawing } from "@/lib/drawings";
 
 export const Route = createFileRoute("/_authenticated/drawings")({
   head: () => ({
@@ -173,16 +173,16 @@ function DrawingsPage() {
 function CategoryTable({ cat, drawings, stations }: { cat: string; drawings: StationDrawing[]; stations: StationRow[] }) {
   const [q, setQ] = useState("");
   const nameById = useMemo(() => new Map(stations.map((s) => [s.id, s.name])), [stations]);
-  const sub = drawings.filter((d) => !!d.submitted_date).length;
-  const app = drawings.filter((d) => !!d.approved_date).length;
+  const sub = drawings.filter(isSubmitted).length;
+  const app = drawings.filter(isApproved).length;
   const rows = drawings
     .map((d) => ({ ...d, station: nameById.get(d.station_id) ?? "—" }))
     .filter((d) => !q || d.station.toLowerCase().includes(q.toLowerCase()) || d.drg_ref.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => a.station.localeCompare(b.station));
 
   const status = (d: StationDrawing) =>
-    d.approved_date ? { label: "Approved", c: "var(--status-green)" }
-      : d.submitted_date ? { label: "Submitted", c: "var(--status-blue)" }
+    isApproved(d) ? { label: "Approved", c: "var(--status-green)" }
+      : (d.submitted_date || d.resubmitted_date) ? { label: "Submitted", c: "var(--status-blue)" }
       : { label: "Pending", c: "var(--status-amber)" };
 
   return (
@@ -203,24 +203,25 @@ function CategoryTable({ cat, drawings, stations }: { cat: string; drawings: Sta
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
             <tr>
-              {["Station", "Drg Ref", "Drg Desc", "Submitted", "Approved", "Cat", "Status"].map((h) =>
+              {["Station", "Drg Ref", "Drawing Description", "Submitted", "Re-submitted", "Approved", "Cat", "Status"].map((h) =>
                 <th key={h} className="whitespace-nowrap border-b border-border px-3 py-2 text-left font-semibold">{h}</th>)}
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">No drawings.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">No drawings.</td></tr>}
             {rows.map((d) => {
               const st = status(d);
               return (
-                <tr key={d.id} className="border-b border-border/40 hover:bg-secondary/30">
+                <tr key={d.id} className="border-b border-border/40 align-top hover:bg-secondary/30">
                   <td className="px-3 py-2">
                     <Link to="/stations/$stationId" params={{ stationId: d.station_id }} className="font-medium hover:text-primary">{d.station}</Link>
                   </td>
-                  <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{d.drg_ref || "—"}</td>
-                  <td className="px-3 py-2">{d.drg_desc || "—"}</td>
-                  <td className="px-3 py-2 font-mono text-[10px]">{d.submitted_date ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-[10px]">{d.approved_date ?? "—"}</td>
-                  <td className="px-3 py-2">{d.cat ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px] text-muted-foreground">{d.drg_ref || "—"}</td>
+                  <td className="max-w-[28rem] whitespace-normal break-words px-3 py-2 leading-snug">{d.drg_desc || "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.submitted_date ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.resubmitted_date ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.approved_date ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{d.cat ?? "—"}</td>
                   <td className="px-3 py-2"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
                 </tr>
               );

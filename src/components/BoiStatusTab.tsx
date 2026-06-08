@@ -22,9 +22,7 @@ type BoiStatus = {
   station_id: string;
   boi_id: string;
   actual_po_date: string | null;
-  sub_vendor_category: string | null;
-  sub_vendor_details: string | null;
-  dispatch_date: string | null;
+  delivery_date: string | null;
   site_receipt_date: string | null;
   mobilization_status: string | null;
   drawings_status: string | null;
@@ -42,7 +40,7 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
     return { label: "Pending", c: "var(--status-amber)" };
   }
   if (s.site_receipt_date) return { label: "Received", c: "var(--status-green)" };
-  if (s.dispatch_date) return { label: "In Transit", c: "var(--status-blue)" };
+  if (s.delivery_date) return { label: "In Transit", c: "var(--status-blue)" };
   return { label: "Ordered", c: "var(--status-blue)" };
 }
 
@@ -61,7 +59,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     queryFn: async () => {
       const { data, error } = await supabase.from("station_boi_status").select("*").eq("station_id", stationId);
       if (error) throw error;
-      return data as BoiStatus[];
+      return (data ?? []) as unknown as BoiStatus[];
     },
   });
 
@@ -97,11 +95,9 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                 "Dwgs",
                 "Sched PO",
                 "Actual PO",
-                "Sub-Vendor Cat",
-                "Sub-Vendor",
                 "Drawings",
                 "Inspection",
-                "dispatch",
+                "Dispatch",
                 "Site Receipt",
                 "Status",
                 "Remarks",
@@ -120,9 +116,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                 station_id: stationId,
                 boi_id: b.id,
                 actual_po_date: null,
-                sub_vendor_category: null,
-                sub_vendor_details: null,
-                dispatch_date: null,
+                delivery_date: null,
                 site_receipt_date: null,
                 mobilization_status: null,
                 drawings_status: null,
@@ -202,11 +196,9 @@ function BoiRow({
       <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
-      <td className="px-1 py-1">{cell("sub_vendor_category", "text", "w-20")}</td>
-      <td className="px-1 py-1">{cell("sub_vendor_details", "text", "w-36")}</td>
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
-      <td className="px-1 py-1">{cell("dispatch_date", "date", "w-32")}</td>
+      <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>
       <td className="px-1 py-1">{cell("site_receipt_date", "date", "w-32")}</td>
       <td className="px-2 py-1">
         <Badge variant="outline" className="text-[10px]" style={{ color: chip.c, borderColor: chip.c }}>

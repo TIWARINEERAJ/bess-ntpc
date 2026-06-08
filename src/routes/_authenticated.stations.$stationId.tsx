@@ -170,10 +170,10 @@ function StationPage() {
         </TabsList>
 
         <TabsContent value="gantt" className="space-y-2">
-          <div className="grid grid-cols-[minmax(760px,860px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
+          <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
-              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(180px,1fr)_44px_44px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
                 <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div>
               </div>
@@ -188,15 +188,15 @@ function StationPage() {
                   const aStart = t.is_section ? (roll?.actual_start ?? null) : (st?.actual_start ?? null);
                   const aFinish = t.is_section ? (roll?.actual_finish ?? null) : (st?.actual_finish ?? null);
                   return (
-                    <div key={t.id} className={`grid h-8 grid-cols-[70px_minmax(180px,1fr)_44px_44px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
+                    <div key={t.id} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
                       <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 10 }}>
                         {hasChildren ? (
-                          <button onClick={() => toggle(t.wbs_code)} className="text-muted-foreground hover:text-foreground">
+                          <button onClick={() => toggle(t.wbs_code)} className="shrink-0 self-start pt-0.5 text-muted-foreground hover:text-foreground">
                             {expanded.has(t.wbs_code) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                           </button>
-                        ) : <span className="w-3" />}
-                        <button onClick={() => setOpenTask(t)} className="truncate text-left hover:text-primary">{t.name}</button>
+                        ) : <span className="w-3 shrink-0" />}
+                        <button onClick={() => setOpenTask(t)} className="line-clamp-2 break-words text-left leading-snug hover:text-primary" title={t.name}>{t.name}</button>
                       </div>
                       <div className="text-right font-mono text-[10px] text-muted-foreground">{t.duration_days}d</div>
                       <div className="text-right font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : pctDisplay >= 100 ? "var(--status-green)" : "var(--foreground)" }}>{pctDisplay}%</div>
@@ -210,7 +210,7 @@ function StationPage() {
               </div>
             </div>
             {/* Gantt */}
-            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} />
+            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} />
           </div>
           <Legend />
         </TabsContent>

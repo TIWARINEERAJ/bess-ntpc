@@ -139,7 +139,7 @@ export async function bulkExport(opts: {
           "Sub-Vendor Cat": r?.sub_vendor_category ?? "",
           "Sub-Vendor": r?.sub_vendor_details ?? "",
           Inspection: b.inspection_category ?? "",
-          Dispatch: r?.dispatch_date ?? "",
+          Dispatch: r?.delivery_date ?? "",
           "Site Receipt": r?.site_receipt_date ?? "",
           Mobilization: r?.mobilization_status ?? "",
           Remarks: r?.remarks ?? "",
