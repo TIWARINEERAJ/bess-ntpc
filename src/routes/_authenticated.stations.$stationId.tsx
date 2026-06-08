@@ -159,8 +159,9 @@ function StationPage() {
         </div>
       </Card>
 
-      <Tabs defaultValue="gantt">
+      <Tabs defaultValue="overview">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
           <TabsTrigger value="mdl">MDL Status</TabsTrigger>
@@ -170,6 +171,11 @@ function StationPage() {
           <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview">
+          <StationOverview station={station as unknown as StationRow} canEdit={canEdit} />
+        </TabsContent>
+
 
         <TabsContent value="gantt" className="space-y-2">
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
