@@ -1,13 +1,6 @@
-import { jsPDF } from "jspdf";
 import { writeFileSync } from "fs";
-import { exportWeeklyPDF } from "./src/lib/mis-pdf";
+import { buildWeeklyDoc } from "./src/lib/mis-pdf";
 
-jsPDF.prototype.save = function (this: any) {
-  const buf = Buffer.from(this.output("arraybuffer"));
-  writeFileSync("/dev-server/mis-qa.pdf", buf);
-  console.log("wrote", buf.length, "bytes");
-  return this;
-};
 
 const stations = Array.from({ length: 10 }, (_, i) => ({
   id: `s${i}`, name: `Station ${i + 1}`, lot: `LOT-${(i % 3) + 1}`,
