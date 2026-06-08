@@ -1,56 +1,49 @@
-# Plan — NTPC BESS Portal: 8-part upgrade
+# Plan: Drawing exceptions, editable Cat, weekly trend & world-class MIS report
 
-## 1. Solapur split (16 packages / 15 stations)
-- Rename existing **Solarpur/Solapur** → **Solapur-1**.
-- Add **Solapur-2** as new station (same EIC/POI, separate package). Both will show in dashboard + have their own station detail pages.
-- All BOI / compliance status rows initialised per the new station.
+## 1. MDL register — freeze Category, make "Cat" an editable dropdown
+In `src/components/DrawingsTab.tsx`:
+- Swap the two columns' behaviour. **Category** becomes a frozen read-only display (master, constant). **Cat** becomes an editable `Select` dropdown (options: `CAT-I`, `CAT-II`, `CAT-III`, `CATREL`, plus blank "—"), committing on change like the date fields.
+- Keep all other fields (Drg Ref, Description, Sch. dates) frozen and submission/approval dates editable as today.
 
-## 2. Per-station user accounts (station-scoped editor role)
-- Add `station_id` column to `user_roles` (nullable). When set, that user can ONLY edit data for that one station.
-- New role enum value `station_editor` (or reuse `editor` + station_id binding). Admin still has global edit. All authenticated users still read the full dashboard.
-- New `has_station_access(user, station)` SQL function used in every write RLS policy (`station_task_status`, `station_boi_status`, `station_compliance`, `delay_register`/hindrance_register, `meetings`, `issues`, `boi_documents`, `compliance_documents`).
-- Admin UI: **Users** page (admin only) — create station user (email + temp password via admin invite), assign station, edit/revoke. Generates a unique login per station (e.g. `solapur1@bess.local`) with a generated password shown once.
-- Frontend: `canEdit` becomes `canEditStation(stationId)` — admin true everywhere, station_editor true only for their station.
+## 2. Drawing "submission-overdue" exception logic
+In `src/lib/drawings.ts`:
+- Add `isSubmissionOverdue(r)` → `true` when `sch_date` is in the past AND the drawing has no `submitted_date`/`resubmitted_date` AND is not approved.
+- Extend `DrawingCounts` with `submissionOverdue` and surface it in `drawingCounts()`.
 
-## 3. L2 Gantt import from `L2_Schedules.xlsx`
-Spreadsheet has 11 sheets: Ramagundam, Bongaigaon, Tanda, Simhadri, Mouda, Barh, Nabinagar_NPGC, Solapur_2, Solapur_1, Unchahar, Dadri. As instructed, **Simhadri sheet will be skipped**.
-- Parse each sheet, normalize WBS/task/duration/baseline_start/baseline_finish into the existing `l2_tasks` schema.
-- Tasks are currently shared across all stations (one master `l2_tasks` table). To support **different schedules per station** the schema needs to change: I'll move to `station_id` per task row (each station has its own L2 task list). This is the cleanest fit for per-station gantt edits.
-- Migration backfills existing tasks to all stations that don't have an import.
+In `src/routes/_authenticated.drawings.tsx` (Drawings summary page):
+- Add a KPI card "Submission Overdue" and a station-wise exceptions panel listing drawings whose scheduled submission date has passed without submission (station, ref, description, scheduled date, days overdue), sorted by days overdue.
 
-## 4. Document uploads (BOI + Compliance, max 3 each)
-- New Storage bucket `station-docs` (private). Path: `{station_id}/{type}/{record_id}/{filename}`.
-- New tables `boi_documents(station_boi_status_id, file_path, file_name, uploaded_by, uploaded_at)` and `compliance_documents(station_compliance_id, ...)`. Hard cap of 3 enforced via trigger.
-- UI: per-row upload control showing existing docs (download/delete), with "+ Add document" disabled at 3.
+## 3. Weekly progress snapshots (trend data) — stored in DB
+New table `weekly_progress_snapshots` (migration):
+- Columns: `snapshot_date` (date), `station_id`, `station_name`, `pct`, `delayed`, `completed`, `total`, `health`, plus standard id/created_at. Grant + RLS: authenticated read/insert; service_role all. One row per station per snapshot date (unique on `snapshot_date, station_id`).
+- A public server route `src/routes/api/public/hooks/weekly-snapshot.ts` recomputes each station's progress/health from `l2_tasks` + `station_task_status` (using existing gantt-utils logic, server-side via `supabaseAdmin`) and upserts a snapshot row dated to the current weekend.
+- Schedule it every Sunday via `pg_cron` + `pg_net` (insert tool, anon `apikey` header).
+- Add a **"Capture snapshot now"** button on the dashboard header that calls the same endpoint, so a trend point can be recorded on demand. Trend uses **all** stored snapshots.
 
-## 5. Hindrance Register (rename + activity dropdown)
-- Rename label everywhere: "Delay Register" → "Hindrance Register" (table stays `delay_register` — just relabel).
-- Form: add searchable dropdown of L2 activities (scoped to current station) for `task_id`. Already had task_id field, just upgrade to combobox.
+## 4. Rebuild the Weekly MIS PDF — `src/lib/mis-pdf.ts`
+Make `exportWeeklyPDF` accept extra data (drawings, BOI master+status, meetings/plans, snapshots) and produce a denser, chart-led report. All charts drawn as crisp native vector shapes (jsPDF rects/lines) — no DOM dependency. Larger fonts throughout (body ~9.5→11, headings up accordingly).
 
-## 6. Meetings overhaul (per uploaded formats)
-- Update meeting types to match PMS Audit Report Format: **Daily Review, Weekly EIC Meeting, HOP Review w/ Vendors, Periodic HOP Review, Contract Review (CRM), RED/ED(OS) Review, PRT, Management Review**.
-- Each meeting type uses a structured template (sections: Attendees, Brief Details, General Points table, BOI Status table, Action Items table) modelled on the uploaded weekly MoM.
-- Seed each type with **one sample meeting** per station for reference.
-- **PDF download** of MoM via `jspdf` + `jspdf-autotable` — generates formatted MoM matching uploaded sample (header, brief details table, items table, footer).
+Report structure:
+1. **Header + KPI strip** (larger).
+2. **Charts band (top of report):**
+   - Station health distribution (On Track / At Risk / Delayed) as a column chart.
+   - **Progress trend over weekends** — line/area chart of portfolio avg % from `weekly_progress_snapshots` (all weeks).
+   - **Agency performance** as a full-width column chart (avg progress per agency) sized to use the whole page width.
+3. **Station Status Summary** table (grouped by health).
+4. **Drawings Exceptions** — drawings overdue from scheduled submission date (station, ref, scheduled sub date, days overdue).
+5. **BOI Exceptions** — BOI items past `scheduled_po_date` with no `actual_po_date` (station, equipment, scheduled PO, days overdue).
+6. **L2 Station-wise exceptions** (existing, retained).
+7. **Meetings** — Upcoming planned meetings and Last concluded meetings (type, station, date).
+8. Footer page numbers.
 
-## 7. Home dashboard visualization
-- New panel above the station grid: horizontal bar chart (Recharts) showing each station's % physical progress vs % schedule elapsed, colored by status (green on-track / amber slipping / red delayed).
-- Second mini-chart: stacked bar of task counts (completed / in-progress / delayed / not-started) per station.
+## 5. Wire data into the dashboard
+In `src/routes/_authenticated.index.tsx`:
+- Add queries for BOI master+status, meetings + meeting_plans, and weekly snapshots.
+- Pass them to `exportWeeklyPDF(...)`.
+- Add the "Capture snapshot now" button and optionally a small on-screen trend chart fed by snapshots.
 
-## 8. Existing-data side effects
-- After Solapur rename + L2 import, the `gantt-utils` rollups and per-station progress auto-recompute.
-- README updated with the new auth model and import flow.
-
-## Technical notes (for reviewers)
-- `l2_tasks` gains `station_id` (nullable for backward-compat baseline). Existing `station_task_status.task_id` keeps working.
-- Storage bucket created via SQL migration with RLS allowing read by any authenticated user, write by users with station access.
-- Password creation for station users uses Supabase Admin API inside a `requireSupabaseAuth` + admin-check server function; returned password shown to admin once.
-- Recharts already in tree (`src/components/ui/chart.tsx`); jspdf will be added.
-
-## Out of scope (will not touch this turn)
-- Email invitations for station users (admin reads + shares the generated password).
-- Editing the master L2 task list inside the app (still managed via import / admin tools).
-- Bulk re-importing schedules later (one-shot for this turn).
-- Mobile-optimized upload UI.
-
-Approve this and I'll execute the migrations + code in one continuous batch.
+## Technical notes
+- Cat dropdown values come from existing data (`CAT-I/CAT-II/CAT-III/CATREL`).
+- Snapshot server route uses `supabaseAdmin` and the existing `buildStatusMap`/`stationProgress` logic ported to run server-side.
+- PDF charts are computed and drawn manually (bars, axis ticks, trend polyline) for reliability in the browser export.
+- No change to BOI/meeting schemas; meetings reads from `meetings` (concluded) and `meeting_plans` (upcoming).
