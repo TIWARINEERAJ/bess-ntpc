@@ -295,6 +295,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
     if (isSection && derived) {
       setActualStart(fmtIso(derived.actual_start));
       setActualFinish(fmtIso(derived.actual_finish));
+      setCommittedDate(status?.committed_date ?? "");
       setPct(derived.pct);
       setStatusV(sectionStatus);
       setOwner(status?.owner ?? "");
@@ -302,6 +303,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
     } else {
       setActualStart(status?.actual_start ?? "");
       setActualFinish(status?.actual_finish ?? "");
+      setCommittedDate(status?.committed_date ?? "");
       setPct(status?.percent_complete ?? 0);
       setStatusV(status?.status ?? "not_started");
       setOwner(status?.owner ?? "");
