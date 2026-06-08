@@ -389,11 +389,21 @@ export function buildWeeklyDoc(
   const contentW = pageW - margin * 2;
   const stationName = new Map(stations.map((s) => [s.id, s.name]));
 
+  const analytics = computePortfolioAnalytics(stations, tasks, statusByStation, today);
+  const idealById = new Map(analytics.stations.map((a) => [a.id, a]));
+
   const rows = stations.map((s) => {
     const map = buildStatusMap(statusByStation[s.id]);
     const sTasks = tasks.filter((t) => t.station_id === s.id);
     const p = stationProgress(sTasks, map);
-    return { s, ...p, health: healthOf(p.delayed) };
+    const a = idealById.get(s.id);
+    return {
+      s,
+      ...p,
+      health: healthOf(p.delayed),
+      ideal: a?.ideal ?? 0,
+      forecastOverrunDays: a?.forecastOverrunDays ?? 0,
+    };
   });
 
   const total = rows.length;
@@ -401,6 +411,9 @@ export function buildWeeklyDoc(
   const amber = rows.filter((r) => r.health === "amber").length;
   const red = rows.filter((r) => r.health === "red").length;
   const avgPct = total ? Math.round(rows.reduce((a, r) => a + r.pct, 0) / total) : 0;
+  const idealPct = analytics.totals.idealProgress;
+  const daysBehind = analytics.totals.daysBehind;
+  const forecastOverrun = analytics.totals.forecastOverrunDays;
 
   // ---- Header ----
   doc.setFillColor(...BRAND);
