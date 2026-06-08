@@ -104,7 +104,7 @@ function Dashboard() {
     },
   });
   const complMasterQ = useQuery({
-    queryKey: ["compl_master"],
+    queryKey: ["compl_master_mini"],
     queryFn: async () => {
       const { data, error } = await supabase.from("compliance_master").select("id,category,name").order("sort_order");
       if (error) throw error;
