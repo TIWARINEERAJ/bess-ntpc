@@ -17,6 +17,7 @@ import { Route as AuthenticatedScheduleHealthRouteImport } from './routes/_authe
 import { Route as AuthenticatedDrawingsRouteImport } from './routes/_authenticated.drawings'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedStationsStationIdRouteImport } from './routes/_authenticated.stations.$stationId'
+import { Route as ApiPublicHooksWeeklySnapshotRouteImport } from './routes/api/public/hooks/weekly-snapshot'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -60,6 +61,12 @@ const AuthenticatedStationsStationIdRoute =
     path: '/stations/$stationId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicHooksWeeklySnapshotRoute =
+  ApiPublicHooksWeeklySnapshotRouteImport.update({
+    id: '/api/public/hooks/weekly-snapshot',
+    path: '/api/public/hooks/weekly-snapshot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
+  '/api/public/hooks/weekly-snapshot': typeof ApiPublicHooksWeeklySnapshotRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/': typeof AuthenticatedIndexRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
+  '/api/public/hooks/weekly-snapshot': typeof ApiPublicHooksWeeklySnapshotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +98,7 @@ export interface FileRoutesById {
   '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
+  '/api/public/hooks/weekly-snapshot': typeof ApiPublicHooksWeeklySnapshotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/schedule-health'
     | '/weekly-planner'
     | '/stations/$stationId'
+    | '/api/public/hooks/weekly-snapshot'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/weekly-planner'
     | '/'
     | '/stations/$stationId'
+    | '/api/public/hooks/weekly-snapshot'
   id:
     | '__root__'
     | '/_authenticated'
@@ -119,11 +131,13 @@ export interface FileRouteTypes {
     | '/_authenticated/weekly-planner'
     | '/_authenticated/'
     | '/_authenticated/stations/$stationId'
+    | '/api/public/hooks/weekly-snapshot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksWeeklySnapshotRoute: typeof ApiPublicHooksWeeklySnapshotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -184,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStationsStationIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/hooks/weekly-snapshot': {
+      id: '/api/public/hooks/weekly-snapshot'
+      path: '/api/public/hooks/weekly-snapshot'
+      fullPath: '/api/public/hooks/weekly-snapshot'
+      preLoaderRoute: typeof ApiPublicHooksWeeklySnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -212,7 +233,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksWeeklySnapshotRoute: ApiPublicHooksWeeklySnapshotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
