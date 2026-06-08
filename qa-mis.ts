@@ -1,6 +1,14 @@
+import { jsPDF } from "jspdf";
+import { writeFileSync } from "fs";
 import { exportWeeklyPDF } from "./src/lib/mis-pdf";
 
-// minimal jsdom-free QA: jsPDF runs in node; override save to write to /tmp
+jsPDF.prototype.save = function (this: any) {
+  const buf = Buffer.from(this.output("arraybuffer"));
+  writeFileSync("/dev-server/mis-qa.pdf", buf);
+  console.log("wrote", buf.length, "bytes");
+  return this;
+};
+
 const stations = Array.from({ length: 10 }, (_, i) => ({
   id: `s${i}`, name: `Station ${i + 1}`, lot: `LOT-${(i % 3) + 1}`,
   capacity_mwh: 500 + i * 10, agency: ["EPC Alpha Ltd, 1", "Beta Power", "Gamma Infra"][i % 3], ntpc_eic: `EIC ${i}`,
@@ -28,17 +36,4 @@ const snapshots: any[] = [];
 const dates = ["2026-05-03", "2026-05-10", "2026-05-17", "2026-05-24", "2026-05-31", "2026-06-07"];
 dates.forEach((d, di) => stations.forEach((s, si) => snapshots.push({ snapshot_date: d, station_id: s.id, pct: 20 + di * 8 + si })));
 
-// stub doc.save to write file in node
-import { writeFileSync } from "fs";
-const jspdfMod: any = await import("jspdf");
-const JsClass = jspdfMod.jsPDF ?? jspdfMod.default;
-JsClass.prototype.save = function (this: any) {
-  console.log("OVERRIDE save called");
-  const buf = Buffer.from(this.output("arraybuffer"));
-  writeFileSync("/dev-server/mis-qa.pdf", buf);
-  console.log("wrote bytes:", buf.length);
-  return this;
-};
-
 exportWeeklyPDF(stations as any, tasks, statusByStation, { drawings: drawings as any, boiMaster, boiStatus, meetings, plans, snapshots });
-console.log("written /tmp/mis-qa.pdf");
