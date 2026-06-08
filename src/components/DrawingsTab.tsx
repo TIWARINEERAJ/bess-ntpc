@@ -9,9 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, FileStack } from "lucide-react";
 import { toast } from "sonner";
-import { drawingCounts, uniqueCategories, isOverdue, isUpcoming, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, uniqueCategories, isApproved, isOverdue, isUpcoming, type StationDrawing } from "@/lib/drawings";
 
-const CAT_OPTIONS = ["", "CAT-I", "CAT-II", "CAT-III"];
 
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
