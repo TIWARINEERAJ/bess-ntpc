@@ -30,6 +30,8 @@ export type DrawingCounts = {
   pending: number;
   /** scheduled approval date has passed and the drawing is not yet approved */
   overdue: number;
+  /** scheduled SUBMISSION date has passed and the drawing is not yet submitted */
+  submissionOverdue: number;
   /** scheduled approval falls within the next 2 months and not yet approved */
   upcoming: number;
   submittedPct: number;
@@ -59,6 +61,12 @@ export function isOverdue(r: StationDrawing, today = startOfToday()): boolean {
   return new Date(r.sch_apprvl_date) < today;
 }
 
+/** Submission overdue = scheduled SUBMISSION date in the past, still not submitted (and not approved). */
+export function isSubmissionOverdue(r: StationDrawing, today = startOfToday()): boolean {
+  if (isSubmitted(r) || !r.sch_date) return false;
+  return new Date(r.sch_date) < today;
+}
+
 /** Upcoming = scheduled approval within the next `months` months, not approved, not already overdue. */
 export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()): boolean {
   if (isApproved(r) || !r.sch_apprvl_date) return false;
@@ -82,6 +90,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
   const submitted = rows.filter(isSubmitted).length;
   const approved = rows.filter(isApproved).length;
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
+  const submissionOverdue = rows.filter((r) => isSubmissionOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;
   const total = Math.max(mdlTotal, registered);
   const pending = Math.max(0, total - approved);
@@ -92,6 +101,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
     approved,
     pending,
     overdue,
+    submissionOverdue,
     upcoming,
     submittedPct: total ? Math.round((submitted / total) * 100) : 0,
     approvedPct: total ? Math.round((approved / total) * 100) : 0,

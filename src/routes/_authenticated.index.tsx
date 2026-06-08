@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
+import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack, Camera } from "lucide-react";
+import { toast } from "sonner";
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
@@ -60,6 +61,46 @@ function Dashboard() {
       const { data, error } = await supabase.from("station_drawings").select("*");
       if (error) throw error;
       return data as StationDrawing[];
+    },
+  });
+  const boiMasterQ = useQuery({
+    queryKey: ["boi_master"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("boi_master").select("id,sl_no,name,scheduled_po_date").order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const boiStatusQ = useQuery({
+    queryKey: ["all_boi_status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const meetingsQ = useQuery({
+    queryKey: ["all_meetings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meetings").select("station_id,meeting_type,meeting_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const plansQ = useQuery({
+    queryKey: ["all_meeting_plans"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("meeting_plans").select("station_id,meeting_type,planned_date,title").eq("status", "planned");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const snapshotsQ = useQuery({
+    queryKey: ["progress_snapshots"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("weekly_progress_snapshots").select("snapshot_date,station_id,pct").order("snapshot_date");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -166,6 +207,22 @@ function Dashboard() {
     () => (healthFilter ? computed.filter((s) => s.health === healthFilter) : computed),
     [computed, healthFilter]);
 
+  const [capturing, setCapturing] = useState(false);
+  const captureSnapshot = async () => {
+    setCapturing(true);
+    try {
+      const res = await fetch("/api/public/hooks/weekly-snapshot", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Snapshot failed");
+      toast.success(`Snapshot captured for ${json.stations} stations`);
+      snapshotsQ.refetch();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCapturing(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
@@ -181,9 +238,20 @@ function Dashboard() {
           <Button variant="outline" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
           </Button>
-          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation)}>
+          <Button variant="outline" size="sm" disabled={capturing} onClick={captureSnapshot}>
+            <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
+          </Button>
+          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation, {
+            drawings: drawingsQ.data ?? [],
+            boiMaster: boiMasterQ.data ?? [],
+            boiStatus: boiStatusQ.data ?? [],
+            meetings: meetingsQ.data ?? [],
+            plans: plansQ.data ?? [],
+            snapshots: snapshotsQ.data ?? [],
+          })}>
             <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>
+
         </div>
       </section>
 
