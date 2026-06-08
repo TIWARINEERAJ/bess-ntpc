@@ -482,6 +482,7 @@ export type Database = {
         Row: {
           actual_po_date: string | null
           boi_id: string
+          committed_date: string | null
           delivery_date: string | null
           drawings_status: string | null
           id: string
@@ -498,6 +499,7 @@ export type Database = {
         Insert: {
           actual_po_date?: string | null
           boi_id: string
+          committed_date?: string | null
           delivery_date?: string | null
           drawings_status?: string | null
           id?: string
@@ -514,6 +516,7 @@ export type Database = {
         Update: {
           actual_po_date?: string | null
           boi_id?: string
+          committed_date?: string | null
           delivery_date?: string | null
           drawings_status?: string | null
           id?: string
@@ -533,6 +536,7 @@ export type Database = {
         Row: {
           application_date: string | null
           approval_date: string | null
+          committed_date: string | null
           compliance_id: string
           document_ref: string | null
           expiry_date: string | null
@@ -547,6 +551,7 @@ export type Database = {
         Insert: {
           application_date?: string | null
           approval_date?: string | null
+          committed_date?: string | null
           compliance_id: string
           document_ref?: string | null
           expiry_date?: string | null
@@ -561,6 +566,7 @@ export type Database = {
         Update: {
           application_date?: string | null
           approval_date?: string | null
+          committed_date?: string | null
           compliance_id?: string
           document_ref?: string | null
           expiry_date?: string | null
