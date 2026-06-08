@@ -79,7 +79,7 @@ export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()
 export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): DrawingCounts {
   const today = startOfToday();
   const registered = rows.length;
-  const submitted = rows.filter((r) => !!r.submitted_date).length;
+  const submitted = rows.filter(isSubmitted).length;
   const approved = rows.filter(isApproved).length;
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;
