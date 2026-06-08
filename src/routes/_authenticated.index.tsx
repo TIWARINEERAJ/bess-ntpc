@@ -24,7 +24,9 @@ import { useMemo, useRef, useState } from "react";
 import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
-import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Sparkles, LineChart as LineChartIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Dashboard — NTPC BESS L2 Monitor" }] }),
@@ -334,16 +336,8 @@ function Dashboard() {
 
   const runWeeklyExport = async (kind: "pdf" | "docx") => {
     setExporting(kind);
-    let narrative: MisNarrative | null = null;
     try {
-      toast.loading("Generating AI narrative…", { id: "mis-export" });
-      narrative = await callNarrative({ data: buildNarrativeInput() });
-    } catch (e) {
-      console.error(e);
-      toast.error("AI narrative unavailable — exporting without it", { id: "mis-export" });
-    }
-    try {
-      const extras: WeeklyPdfExtras = { ...buildExtras(), narrative };
+      const extras: WeeklyPdfExtras = buildExtras();
       if (kind === "pdf") exportWeeklyPDF(stations, tasks, statusByStation, extras);
       else await exportWeeklyDOCX(stations, tasks, statusByStation, extras);
       toast.success(`Weekly MIS (${kind.toUpperCase()}) downloaded`, { id: "mis-export" });
@@ -353,6 +347,7 @@ function Dashboard() {
       setExporting(null);
     }
   };
+
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
