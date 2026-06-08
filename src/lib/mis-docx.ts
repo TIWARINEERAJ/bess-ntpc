@@ -140,7 +140,6 @@ export async function exportWeeklyDOCX(
         ["Average Progress (Actual)", `${t.avgProgress}%`],
         ["Ideal / Baseline Progress", `${t.idealProgress}%`],
         ["Schedule Variance", `${t.daysBehind >= 0 ? `${t.daysBehind} days behind` : `${Math.abs(t.daysBehind)} days ahead`}`],
-        ["Forecast Time Over-run", t.forecastOverrunDays > 0 ? `+${t.forecastOverrunDays} days` : "On / ahead of baseline"],
         ["On Track / At Risk / Delayed", `${t.onTrack} / ${t.atRisk} / ${t.delayed}`],
       ].map(([k, v]) => [cell(k, { bold: true }), cell(v)]),
     ),
@@ -167,7 +166,7 @@ export async function exportWeeklyDOCX(
   content.push(h2("Station Status Summary"));
   content.push(
     buildTable(
-      ["Station", "Lot", "Agency", "EIC", "Actual %", "Ideal %", "Var.", "Forecast O/R", "Tasks Done", "Delayed", "Status"],
+      ["Station", "Lot", "Agency", "EIC", "Actual %", "Ideal %", "Var.", "Tasks Done", "Delayed", "Status"],
       sorted.map((r) => {
         const v = r.pct - r.ideal;
         return [
@@ -178,7 +177,6 @@ export async function exportWeeklyDOCX(
           cell(`${r.pct}%`, { align: AlignmentType.RIGHT }),
           cell(`${r.ideal}%`, { align: AlignmentType.RIGHT }),
           cell(`${v >= 0 ? "+" : ""}${v}%`, { align: AlignmentType.RIGHT, color: v >= 0 ? GREEN : v >= -10 ? AMBER : RED, bold: true }),
-          cell(r.forecastOverrunDays > 0 ? `+${r.forecastOverrunDays}d` : "—", { align: AlignmentType.RIGHT, color: r.forecastOverrunDays > 0 ? RED : undefined }),
           cell(`${r.completed}/${r.total}`, { align: AlignmentType.RIGHT }),
           cell(String(r.delayed), { align: AlignmentType.RIGHT }),
           cell(HEALTH_LABEL[r.health], { bold: true, color: HEALTH_HEX[r.health] }),
