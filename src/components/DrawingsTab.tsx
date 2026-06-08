@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileStack } from "lucide-react";
+import { Plus, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 
@@ -108,19 +108,6 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("station_drawings").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["station_drawings", stationId] });
-      qc.invalidateQueries({ queryKey: ["all_drawings"] });
-      toast.success("Drawing removed");
-    },
-    onError: (e) => toast.error((e as Error).message),
-  });
-
   const setTotal = useMutation({
     mutationFn: async (val: number) => {
       const { error } = await supabase.from("stations").update({ mdl_total: val }).eq("id", stationId);
@@ -208,20 +195,19 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
               <col style={{ width: "9%" }} />
               <col style={{ width: "7%" }} />
               <col style={{ width: "8%" }} />
-              {canEdit && <col style={{ width: "4%" }} />}
             </colgroup>
             <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Category", "Drg Ref", "Drawing Description", "Sch. Sub", "Sch. Apprvl", "Submitted", "Re-submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
+                {["Category", "Drg Ref", "Drawing Description", "Sch. Sub", "Sch. Apprvl", "Submitted", "Re-submitted", "Approved", "Cat", "Status"].map((h, i) =>
                   <th key={i} className="border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {visible.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
+                <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
-                <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} onDelete={() => remove.mutate(r.id)} />
+                <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} />
               ))}
             </tbody>
           </table>
@@ -241,8 +227,8 @@ function statusOf(r: StationDrawing) {
 
 const CAT_OPTIONS = ["CAT-I", "CAT-II", "CAT-III", "CATREL"];
 
-function DrawingRow({ row, canEdit, onSave, onDelete }: {
-  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void; onDelete: () => void;
+function DrawingRow({ row, canEdit, onSave }: {
+  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void;
 }) {
   const [local, setLocal] = useState<StationDrawing>(row);
   const st = statusOf(local);
@@ -286,13 +272,6 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
       <td className="px-1 py-1">{date("approved_date")}</td>
       <td className="px-1 py-1 align-middle">{catSelect}</td>
       <td className="px-2 py-1.5 align-middle"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
-      {canEdit && (
-        <td className="px-1 py-1">
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-[color:var(--status-red)]" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </td>
-      )}
     </tr>
   );
 }

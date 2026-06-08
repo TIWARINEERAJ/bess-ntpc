@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 
@@ -22,6 +22,7 @@ type BoiStatus = {
   station_id: string;
   boi_id: string;
   actual_po_date: string | null;
+  committed_date: string | null;
   delivery_date: string | null;
   site_receipt_date: string | null;
   mobilization_status: string | null;
@@ -65,6 +66,23 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const STATUS_OPTIONS = ["Overdue", "Pending", "Ordered", "In Transit", "Received"];
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (masterQ.data ?? []).filter((b) => {
+      const s = map.get(b.id);
+      if (statusFilter !== "all" && statusChip(b, s).label !== statusFilter) return false;
+      if (q && !(`${b.name} ${b.sl_no} ${s?.remarks ?? ""} ${s?.drawings_status ?? ""} ${s?.inspection_status ?? ""}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterQ.data, statusQ.data, search, statusFilter]);
+
+
   const save = useMutation({
     mutationFn: async (row: BoiStatus) => {
       const {
@@ -85,6 +103,24 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
 
   return (
     <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="text-xs text-muted-foreground">{visible.length} of {(masterQ.data ?? []).length} items shown</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search equipment / remarks…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-56 text-xs"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {STATUS_OPTIONS.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -95,6 +131,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                 "Dwgs",
                 "Sched PO",
                 "Actual PO",
+                "Committed",
                 "Drawings",
                 "Inspection",
                 "Dispatch",
@@ -111,11 +148,12 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
             </tr>
           </thead>
           <tbody>
-            {(masterQ.data ?? []).map((b) => {
+            {visible.map((b) => {
               const s = map.get(b.id) ?? {
                 station_id: stationId,
                 boi_id: b.id,
                 actual_po_date: null,
+                committed_date: null,
                 delivery_date: null,
                 site_receipt_date: null,
                 mobilization_status: null,
@@ -196,6 +234,7 @@ function BoiRow({
       <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
+      <td className="px-1 py-1">{cell("committed_date", "date", "w-32")}</td>
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>
