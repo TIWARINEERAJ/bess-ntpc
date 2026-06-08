@@ -148,7 +148,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
             </tr>
           </thead>
           <tbody>
-            {(masterQ.data ?? []).map((b) => {
+            {visible.map((b) => {
               const s = map.get(b.id) ?? {
                 station_id: stationId,
                 boi_id: b.id,
