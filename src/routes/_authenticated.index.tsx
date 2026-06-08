@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
+import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack } from "lucide-react";
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
