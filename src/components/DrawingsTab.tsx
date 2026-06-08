@@ -141,13 +141,13 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
           <table className="w-full text-xs">
             <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Category", "Drg Ref", "Drg Desc", "Sch. Sub", "Sch. Apprvl", "Submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
+                {["Category", "Drg Ref", "Drawing Description", "Sch. Sub", "Sch. Apprvl", "Submitted", "Re-submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
                   <th key={i} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {visible.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
                 <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} onDelete={() => remove.mutate(r.id)} />
@@ -161,10 +161,10 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
 }
 
 function statusOf(r: StationDrawing) {
-  if (r.approved_date) return { label: "Approved", c: "var(--status-green)" };
+  if (isApproved(r)) return { label: "Approved", c: "var(--status-green)" };
   if (isOverdue(r)) return { label: "Overdue", c: "var(--status-red)" };
   if (isUpcoming(r)) return { label: "Due soon", c: "#8b5cf6" };
-  if (r.submitted_date) return { label: "Submitted", c: "var(--status-blue)" };
+  if (r.submitted_date || r.resubmitted_date) return { label: "Submitted", c: "var(--status-blue)" };
   return { label: "Pending", c: "var(--status-amber)" };
 }
 
@@ -175,39 +175,38 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
   const dirty = JSON.stringify(local) !== JSON.stringify(row);
   const st = statusOf(local);
 
-  const text = (k: keyof StationDrawing, w = "w-40") => (
-    <Input disabled={!canEdit} className={`h-7 ${w} bg-transparent text-xs`} value={(local[k] as string) ?? ""}
-      onChange={(e) => setLocal({ ...local, [k]: e.target.value || (k === "drg_ref" || k === "drg_desc" || k === "category" ? "" : null) })}
+  // Editable category — width fits its own content (max ~14rem).
+  const category = (
+    <Input disabled={!canEdit} className="h-7 w-[min(14rem,100%)] min-w-24 bg-transparent text-xs" value={local.category ?? ""}
+      style={{ width: `${Math.max(6, Math.min(28, (local.category?.length ?? 6) + 2))}ch` }}
+      onChange={(e) => setLocal({ ...local, category: e.target.value })}
       onBlur={() => dirty && onSave(local)} />
   );
-  const date = (k: "submitted_date" | "approved_date") => (
+  // Editable actual-date fields (commit immediately).
+  const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
     <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
   );
-  const schDate = (k: "sch_date" | "sch_apprvl_date") => (
-    <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs text-muted-foreground" value={local[k] ?? ""}
-      onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
+  // Frozen master fields — read-only display, never editable.
+  const frozenText = (v: string | null | undefined, cls = "") => (
+    <span className={`block text-xs text-foreground/90 ${cls}`}>{v || "—"}</span>
+  );
+  const frozenDate = (v: string | null | undefined) => (
+    <span className="block whitespace-nowrap font-mono text-[10px] text-muted-foreground">{v || "—"}</span>
   );
 
   return (
-    <tr className="border-b border-border/40 hover:bg-secondary/30">
-      <td className="px-1 py-1">{text("category", "w-44")}</td>
-      <td className="px-1 py-1">{text("drg_ref", "w-44")}</td>
-      <td className="px-1 py-1">{text("drg_desc", "w-56")}</td>
-      <td className="px-1 py-1">{schDate("sch_date")}</td>
-      <td className="px-1 py-1">{schDate("sch_apprvl_date")}</td>
+    <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
+      <td className="px-1 py-1">{category}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "whitespace-nowrap font-mono text-[10px] text-muted-foreground")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "min-w-[18rem] max-w-[28rem] whitespace-normal break-words leading-snug")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_apprvl_date)}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
+      <td className="px-1 py-1">{date("resubmitted_date")}</td>
       <td className="px-1 py-1">{date("approved_date")}</td>
-      <td className="px-1 py-1">
-        <Select value={local.cat || "_none"} disabled={!canEdit}
-          onValueChange={(v) => { const n = { ...local, cat: v === "_none" ? null : v }; setLocal(n); onSave(n); }}>
-          <SelectTrigger className="h-7 w-24 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-          <SelectContent>
-            {CAT_OPTIONS.map((o) => <SelectItem key={o || "_none"} value={o || "_none"}>{o || "—"}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </td>
-      <td className="px-2 py-1"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.cat, "whitespace-nowrap")}</td>
+      <td className="px-2 py-1.5 align-middle"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
       {canEdit && (
         <td className="px-1 py-1">
           <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-[color:var(--status-red)]" onClick={onDelete}>
