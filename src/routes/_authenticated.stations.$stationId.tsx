@@ -100,6 +100,7 @@ function StationPage() {
         station_id: stationId, task_id: payload.task_id,
         actual_start: payload.actual_start ?? existing?.actual_start ?? null,
         actual_finish: payload.actual_finish ?? existing?.actual_finish ?? null,
+        committed_date: payload.committed_date !== undefined ? payload.committed_date : (existing?.committed_date ?? null),
         percent_complete: payload.percent_complete ?? existing?.percent_complete ?? 0,
         status: payload.status ?? existing?.status ?? "not_started",
         remarks: payload.remarks ?? existing?.remarks ?? null,
