@@ -26,6 +26,7 @@ import { ComplianceTab } from "@/components/ComplianceTab";
 import { AuditTrailTab } from "@/components/AuditTrailTab";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { DrawingsTab } from "@/components/DrawingsTab";
+import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
