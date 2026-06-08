@@ -279,6 +279,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
 }) {
   const [actualStart, setActualStart] = useState("");
   const [actualFinish, setActualFinish] = useState("");
+  const [committedDate, setCommittedDate] = useState("");
   const [pct, setPct] = useState(0);
   const [statusV, setStatusV] = useState<string>("not_started");
   const [owner, setOwner] = useState("");
