@@ -553,8 +553,7 @@ export function buildWeeklyDoc(
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
   const scCaption =
-    `Actual ${avgPct}% vs ideal ${idealPct}% · ${daysBehind >= 0 ? `${daysBehind} days behind` : `${Math.abs(daysBehind)} days ahead of`} baseline` +
-    (forecastOverrun > 0 ? ` · forecast completion over-run ≈ ${forecastOverrun} days` : ` · on track to finish on baseline`);
+    `Actual ${avgPct}% vs ideal ${idealPct}% · ${daysBehind >= 0 ? `${daysBehind} days behind` : `${Math.abs(daysBehind)} days ahead of`} baseline`;
   doc.text(scCaption, margin + 14, y + 178);
   y += 180 + 18;
 
