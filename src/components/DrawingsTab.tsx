@@ -259,7 +259,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
       disabled={!canEdit}
       onValueChange={(v) => { const n = { ...local, cat: v === "_none" ? null : v }; setLocal(n); onSave(n); }}
     >
-      <SelectTrigger className="h-7 w-24 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+      <SelectTrigger className="h-7 w-full min-w-0 px-1 text-[11px]"><SelectValue placeholder="—" /></SelectTrigger>
       <SelectContent>
         <SelectItem value="_none">—</SelectItem>
         {CAT_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
