@@ -145,22 +145,8 @@ export async function exportWeeklyDOCX(
     ),
   );
 
-  // Executive Narrative
-  const narrative = extras.narrative;
-  if (narrative) {
-    content.push(h2("Executive Narrative & Analysis"));
-    for (const p of narrative.executiveSummary.split(/\n\n+/)) {
-      if (p.trim()) content.push(para(p.trim()));
-    }
-    content.push(para("Key Insights", { bold: true, color: BRAND, size: 24 }));
-    narrative.keyInsights.forEach((i) => content.push(bullet(i)));
-    content.push(para("Top Risks", { bold: true, color: RED, size: 24 }));
-    narrative.risks.forEach((i) => content.push(bullet(i, RED)));
-    content.push(para("Recommendations", { bold: true, color: GREEN, size: 24 }));
-    narrative.recommendations.forEach((i) => content.push(bullet(i, GREEN)));
-    content.push(para("Outlook", { bold: true, color: BRAND, size: 24 }));
-    content.push(para(narrative.outlook));
-  }
+
+
 
   // Station Status Summary
   content.push(h2("Station Status Summary"));
@@ -339,3 +325,4 @@ export async function exportWeeklyDOCX(
 }
 
 void cleanAgency;
+void bullet;
