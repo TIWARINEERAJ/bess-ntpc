@@ -634,7 +634,7 @@ export function buildWeeklyDoc(
   sectionTitle(doc, "Station Status Summary", margin, y);
   autoTable(doc, {
     startY: y + 8,
-    head: [["Station", "Lot", "Agency", "EIC", "Actual %", "Ideal %", "Var.", "Forecast O/R", "Tasks Done", "Delayed", "Status"]],
+    head: [["Station", "Lot", "Agency", "EIC", "Actual %", "Ideal %", "Var.", "Tasks Done", "Delayed", "Status"]],
     body: sorted.map((r) => [
       r.s.name,
       r.s.lot,
@@ -643,7 +643,6 @@ export function buildWeeklyDoc(
       `${r.pct}%`,
       `${r.ideal}%`,
       `${r.pct - r.ideal >= 0 ? "+" : ""}${r.pct - r.ideal}%`,
-      r.forecastOverrunDays > 0 ? `+${r.forecastOverrunDays}d` : "—",
       `${r.completed}/${r.total}`,
       String(r.delayed),
       HEALTH_LABEL[r.health],
@@ -653,7 +652,7 @@ export function buildWeeklyDoc(
     alternateRowStyles: { fillColor: [246, 248, 249] },
     columnStyles: {
       4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
-      7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" },
+      7: { halign: "right" }, 8: { halign: "right" },
     },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
@@ -664,10 +663,7 @@ export function buildWeeklyDoc(
           data.cell.styles.textColor = v >= 0 ? HEALTH_RGB.green : v >= -10 ? HEALTH_RGB.amber : HEALTH_RGB.red;
           data.cell.styles.fontStyle = "bold";
         }
-        if (data.column.index === 7 && r.forecastOverrunDays > 0) {
-          data.cell.styles.textColor = HEALTH_RGB.red;
-        }
-        if (data.column.index === 10) {
+        if (data.column.index === 9) {
           data.cell.styles.textColor = HEALTH_RGB[r.health];
           data.cell.styles.fontStyle = "bold";
         }
