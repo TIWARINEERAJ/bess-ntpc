@@ -402,7 +402,6 @@ export function buildWeeklyDoc(
       ...p,
       health: healthOf(p.delayed),
       ideal: a?.ideal ?? 0,
-      forecastOverrunDays: a?.forecastOverrunDays ?? 0,
     };
   });
 
@@ -413,7 +412,6 @@ export function buildWeeklyDoc(
   const avgPct = total ? Math.round(rows.reduce((a, r) => a + r.pct, 0) / total) : 0;
   const idealPct = analytics.totals.idealProgress;
   const daysBehind = analytics.totals.daysBehind;
-  const forecastOverrun = analytics.totals.forecastOverrunDays;
 
   // ---- Header ----
   doc.setFillColor(...BRAND);
@@ -429,13 +427,11 @@ export function buildWeeklyDoc(
   // ---- KPI strip ----
   let y = 78;
   const varColor: RGB = avgPct >= idealPct ? HEALTH_RGB.green : avgPct >= idealPct - 10 ? HEALTH_RGB.amber : HEALTH_RGB.red;
-  const fcColor: RGB = forecastOverrun <= 0 ? HEALTH_RGB.green : forecastOverrun <= 30 ? HEALTH_RGB.amber : HEALTH_RGB.red;
   const kpis: Array<[string, string, RGB]> = [
     ["Stations", String(total), BRAND],
     ["Avg. Progress", `${avgPct}%`, BRAND],
     ["Ideal / Baseline", `${idealPct}%`, MUTED],
     ["Schedule Var.", `${daysBehind >= 0 ? "-" : "+"}${Math.abs(daysBehind)}d`, varColor],
-    ["Forecast Over-run", `${forecastOverrun > 0 ? "+" : ""}${forecastOverrun}d`, fcColor],
     ["On Track", String(green), HEALTH_RGB.green],
     ["At Risk", String(amber), HEALTH_RGB.amber],
     ["Delayed", String(red), HEALTH_RGB.red],
