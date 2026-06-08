@@ -196,8 +196,10 @@ export function actualPctAt(tasks: L2Task[], statusMap: Map<string, Status>, at:
     const aStart = parseD(st?.actual_start ?? null);
     const aFinish = parseD(st?.actual_finish ?? null);
     const pct = (st?.percent_complete ?? 0) / 100;
+    const isDone = pct >= 1 || st?.status === "completed";
     let frac = 0;
     if (aFinish && aFinish <= at) frac = 1;
+    else if (isDone && aStart && aStart <= at) frac = 1;
     else if (aStart && aStart <= at) {
       const span = differenceInCalendarDays(today, aStart) || 1;
       const ramp = Math.min(1, Math.max(0, differenceInCalendarDays(at, aStart) / span));
