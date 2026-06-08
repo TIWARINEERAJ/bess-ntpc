@@ -1,0 +1,1 @@
+ALTER TABLE public.station_task_status ADD COLUMN IF NOT EXISTS committed_date date;

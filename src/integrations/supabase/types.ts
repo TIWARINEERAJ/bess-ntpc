@@ -640,6 +640,7 @@ export type Database = {
         Row: {
           actual_finish: string | null
           actual_start: string | null
+          committed_date: string | null
           id: string
           owner: string | null
           percent_complete: number
@@ -653,6 +654,7 @@ export type Database = {
         Insert: {
           actual_finish?: string | null
           actual_start?: string | null
+          committed_date?: string | null
           id?: string
           owner?: string | null
           percent_complete?: number
@@ -666,6 +668,7 @@ export type Database = {
         Update: {
           actual_finish?: string | null
           actual_start?: string | null
+          committed_date?: string | null
           id?: string
           owner?: string | null
           percent_complete?: number
