@@ -96,14 +96,53 @@ function DrawingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">Submission & approval progress against the MDL across all {stations.length} stations.</p>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <Kpi icon={<FileStack className="h-4 w-4" />} label="Total MDL" value={portfolio.total} tone="primary" />
         <Kpi icon={<FileClock className="h-4 w-4" />} label="Submitted" value={portfolio.submitted} sub={`${portfolio.submittedPct}% of MDL`} tone="blue" />
         <Kpi icon={<FileCheck2 className="h-4 w-4" />} label="Approved" value={portfolio.approved} sub={`${portfolio.approvedPct}% of MDL`} tone="green" />
         <Kpi icon={<FileWarning className="h-4 w-4" />} label="Pending" value={portfolio.pending} tone="amber" />
-        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Overdue (uncleared)" value={portfolio.overdue} tone="red" />
+        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Submission Overdue" value={portfolio.submissionOverdue} sub="past scheduled sub. date" tone="red" />
+        <Kpi icon={<FileWarning className="h-4 w-4" />} label="Approval Overdue" value={portfolio.overdue} tone="red" />
         <Kpi icon={<FileClock className="h-4 w-4" />} label="Due in 2 months" value={portfolio.upcoming} tone="violet" />
       </section>
+
+      {!loading && submissionExceptions.length > 0 && (
+        <Card className="p-0">
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <FileWarning className="h-4 w-4 text-[color:var(--status-red)]" />
+              Drawings Exceptions — Submission Overdue
+            </div>
+            <Badge variant="outline" className="text-[10px]" style={{ color: "var(--status-red)", borderColor: "var(--status-red)" }}>
+              {submissionExceptions.length} drawings
+            </Badge>
+          </div>
+          <div className="max-h-[360px] overflow-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-sidebar/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
+                <tr>
+                  {["Station", "Drg Ref", "Drawing Description", "Category", "Sch. Submission", "Days Overdue"].map((h, i) =>
+                    <th key={h} className={`whitespace-nowrap border-b border-border px-3 py-2 font-semibold ${i === 5 ? "text-right" : "text-left"}`}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {submissionExceptions.slice(0, 200).map((d) => (
+                  <tr key={d.id} className="border-b border-border/40 align-top hover:bg-secondary/30">
+                    <td className="px-3 py-2">
+                      <Link to="/stations/$stationId" params={{ stationId: d.station_id }} className="font-medium hover:text-primary">{d.station}</Link>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px] text-muted-foreground">{d.drg_ref || "—"}</td>
+                    <td className="max-w-[26rem] whitespace-normal break-words px-3 py-2 leading-snug">{d.drg_desc || "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{d.category}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.sch_date}</td>
+                    <td className="px-3 py-2 text-right font-mono font-semibold text-[color:var(--status-red)]">{d.daysOverdue}d</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {loading ? (
         <Skeleton className="h-[480px]" />
