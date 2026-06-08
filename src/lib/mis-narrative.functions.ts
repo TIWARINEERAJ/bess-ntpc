@@ -58,15 +58,15 @@ function fallback(input: MisNarrativeInput): MisNarrative {
       `${input.exceptions.l2Overdue} L2 activities, ${input.exceptions.drawingsOverdue} drawings and ${input.exceptions.boiOverdue} BOI items are overdue.`,
       `${input.exceptions.compliancePending} statutory compliance items remain pending.`,
     ],
-    risks: input.stations.filter((s) => s.health === "red").slice(0, 5).map((s) => `${s.name}: ${s.delayed} delayed activities, forecast over-run ~${s.forecastOverrunDays}d.`),
+    risks: input.stations.filter((s) => s.health === "red").slice(0, 5).map((s) => `${s.name}: ${s.delayed} delayed activities.`),
     recommendations: [
       "Prioritise recovery plans for delayed stations and expedite overdue drawing submissions.",
       "Escalate overdue BOI purchase orders to protect downstream installation windows.",
     ],
     outlook:
-      t.forecastOverrunDays > 0
-        ? `At the current performance index, portfolio completion is forecast to over-run the baseline by about ${t.forecastOverrunDays} days.`
-        : `The portfolio is currently forecast to complete on or ahead of the baseline schedule.`,
+      t.daysBehind > 0
+        ? `The portfolio is currently tracking approximately ${t.daysBehind} days behind the baseline schedule. Focus on recovery actions to close the gap.`
+        : `The portfolio is currently tracking on or ahead of the baseline schedule.`,
   };
 }
 
@@ -78,7 +78,7 @@ export const generateMisNarrative = createServerFn({ method: "POST" })
 
     const prompt = `You are a senior project controls analyst preparing the executive narrative for a weekly MIS report covering NTPC's portfolio of Battery Energy Storage System (BESS) projects co-located at thermal stations.
 
-Analyse the structured status data below and write a crisp, board-ready narrative. Be specific, quantitative and reference station names. Highlight schedule variance (actual vs ideal/baseline progress), the forecast time over-run, the biggest risks (from delayed stations, overdue drawings/BOI, pending compliance) and what the engineering remarks/delay root-causes reveal.
+Analyse the structured status data below and write a crisp, board-ready narrative. Be specific, quantitative and reference station names. Highlight schedule variance (actual vs ideal/baseline progress), the biggest risks (from delayed stations, overdue drawings/BOI, pending compliance) and what the engineering remarks/delay root-causes reveal.
 
 Return ONLY valid JSON with this exact shape (no markdown, no code fences):
 {
@@ -86,7 +86,7 @@ Return ONLY valid JSON with this exact shape (no markdown, no code fences):
   "keyInsights": ["3-5 short bullet strings"],
   "risks": ["3-5 short bullet strings, most critical first"],
   "recommendations": ["3-5 short actionable bullet strings"],
-  "outlook": "1 short paragraph on the forecast completion outlook"
+  "outlook": "1 short paragraph on the completion outlook"
 }
 
 STATUS DATA (JSON):
