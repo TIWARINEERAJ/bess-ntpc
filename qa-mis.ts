@@ -30,10 +30,13 @@ dates.forEach((d, di) => stations.forEach((s, si) => snapshots.push({ snapshot_d
 
 // stub doc.save to write file in node
 import { writeFileSync } from "fs";
-const jspdfMod = await import("jspdf");
-jspdfMod.jsPDF.prototype.save = function (this: any) {
+const jspdfMod: any = await import("jspdf");
+const JsClass = jspdfMod.jsPDF ?? jspdfMod.default;
+JsClass.prototype.save = function (this: any) {
+  console.log("OVERRIDE save called");
   const buf = Buffer.from(this.output("arraybuffer"));
   writeFileSync("/dev-server/mis-qa.pdf", buf);
+  console.log("wrote bytes:", buf.length);
   return this;
 };
 
