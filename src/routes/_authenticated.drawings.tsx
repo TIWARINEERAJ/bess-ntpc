@@ -63,14 +63,28 @@ function DrawingsPage() {
     const submitted = stationCounts.reduce((a, x) => a + x.c.submitted, 0);
     const approved = stationCounts.reduce((a, x) => a + x.c.approved, 0);
     const overdue = stationCounts.reduce((a, x) => a + x.c.overdue, 0);
+    const submissionOverdue = stationCounts.reduce((a, x) => a + x.c.submissionOverdue, 0);
     const upcoming = stationCounts.reduce((a, x) => a + x.c.upcoming, 0);
     const pending = Math.max(0, total - approved);
     return {
-      total, submitted, approved, pending, overdue, upcoming,
+      total, submitted, approved, pending, overdue, submissionOverdue, upcoming,
       submittedPct: total ? Math.round((submitted / total) * 100) : 0,
       approvedPct: total ? Math.round((approved / total) * 100) : 0,
     };
   }, [stationCounts]);
+
+  const submissionExceptions = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const nameById = new Map(stations.map((s) => [s.id, s.name]));
+    return drawings
+      .filter((d) => isSubmissionOverdue(d, today))
+      .map((d) => ({
+        ...d,
+        station: nameById.get(d.station_id) ?? "—",
+        daysOverdue: Math.max(0, Math.round((today.getTime() - new Date(d.sch_date as string).getTime()) / 86400000)),
+      }))
+      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+  }, [drawings, stations]);
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
