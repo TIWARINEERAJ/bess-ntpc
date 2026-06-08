@@ -188,6 +188,108 @@ function drawLineChart(
   });
 }
 
+/** S-curve: planned/ideal (baseline) cumulative % vs actual cumulative %. */
+function drawSCurveChart(
+  doc: jsPDF,
+  opts: { x: number; y: number; w: number; h: number; title: string; points: SCurvePt[] },
+) {
+  const { x, y, w, h, title, points } = opts;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.setTextColor(...INK);
+  doc.text(title, x, y);
+
+  // legend
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  const lx = x + w - 200;
+  doc.setDrawColor(...MUTED); doc.setLineWidth(2);
+  doc.line(lx, y - 3, lx + 16, y - 3);
+  doc.setTextColor(...MUTED); doc.text("Ideal / Baseline", lx + 20, y);
+  doc.setDrawColor(...BRAND); doc.setLineWidth(2);
+  doc.line(lx + 100, y - 3, lx + 116, y - 3);
+  doc.text("Actual", lx + 120, y);
+
+  const top = y + 14;
+  const chartH = h - 40;
+  const baseY = top + chartH;
+  const maxV = 100;
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(160, 160, 160);
+  for (const v of [0, 25, 50, 75, 100]) {
+    const yy = baseY - (v / maxV) * chartH;
+    doc.setDrawColor(235, 235, 235);
+    doc.setLineWidth(0.4);
+    doc.line(x, yy, x + w, yy);
+    doc.text(`${v}`, x - 4, yy + 2, { align: "right" });
+  }
+
+  if (points.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("No baseline schedule available to plot the S-curve.", x + 6, top + chartH / 2);
+    return;
+  }
+
+  const n = points.length;
+  const step = n > 1 ? w / (n - 1) : 0;
+  const px = (i: number) => (n > 1 ? x + step * i : x + w / 2);
+  const py = (v: number) => baseY - (Math.min(100, Math.max(0, v)) / maxV) * chartH;
+
+  // planned line
+  doc.setDrawColor(...MUTED);
+  doc.setLineWidth(1.4);
+  for (let i = 0; i < n - 1; i++) {
+    doc.line(px(i), py(points[i].planned), px(i + 1), py(points[i + 1].planned));
+  }
+  // actual line (only where defined)
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(1.8);
+  for (let i = 0; i < n - 1; i++) {
+    const a = points[i].actual;
+    const b = points[i + 1].actual;
+    if (a == null || b == null) continue;
+    doc.line(px(i), py(a), px(i + 1), py(b));
+  }
+  // actual area fill
+  doc.setFillColor(...BRAND);
+  doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
+  for (let i = 0; i < n - 1; i++) {
+    const a = points[i].actual;
+    const b = points[i + 1].actual;
+    if (a == null || b == null) continue;
+    doc.triangle(px(i), baseY, px(i), py(a), px(i + 1), py(b), "F");
+    doc.triangle(px(i), baseY, px(i + 1), py(b), px(i + 1), baseY, "F");
+  }
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+
+  // x labels (sparse)
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  const everyN = Math.ceil(n / 12);
+  points.forEach((p, i) => {
+    if (i === 0 || i === n - 1 || i % everyN === 0) {
+      doc.text(p.label, px(i), baseY + 9, { align: "center", angle: 0 });
+    }
+  });
+  // endpoint markers with values
+  const lastActualIdx = [...points].reverse().findIndex((p) => p.actual != null);
+  if (lastActualIdx !== -1) {
+    const idx = n - 1 - lastActualIdx;
+    const v = points[idx].actual!;
+    doc.setFillColor(...BRAND); doc.circle(px(idx), py(v), 2.2, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...BRAND);
+    doc.text(`${v}%`, px(idx), py(v) - 5, { align: "center" });
+  }
+  const lastPlanned = points[n - 1].planned;
+  doc.setFillColor(...MUTED); doc.circle(px(n - 1), py(lastPlanned), 2, "F");
+}
+
+
+
 /** Grouped columns: per station a Progress% bar (left scale 0-100) and a Delays bar (right scale). */
 function drawProgressDelayChart(
   doc: jsPDF,
