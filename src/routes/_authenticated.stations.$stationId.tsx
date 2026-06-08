@@ -378,6 +378,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
           {canEdit && !task.is_section ? (
             <Button className="w-full" disabled={saving} onClick={() => onSave({
               actual_start: actualStart || null, actual_finish: actualFinish || null,
+              committed_date: committedDate || null,
               percent_complete: pct, status: statusV, owner: owner || null, remarks: remarks || null,
             })}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
