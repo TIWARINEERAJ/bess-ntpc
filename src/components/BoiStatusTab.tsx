@@ -103,6 +103,24 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
 
   return (
     <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="text-xs text-muted-foreground">{visible.length} of {(masterQ.data ?? []).length} items shown</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search equipment / remarks…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-56 text-xs"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {STATUS_OPTIONS.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
