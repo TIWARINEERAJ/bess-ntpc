@@ -542,6 +542,94 @@ export function buildWeeklyDoc(
   });
   y += 170 + 16;
 
+  // ---- Portfolio S-Curve: ideal/baseline vs actual ----
+  if (y > pageH - 200) { doc.addPage(); y = margin; }
+  drawSCurveChart(doc, {
+    x: margin + 14,
+    y,
+    w: contentW - 14,
+    h: 180,
+    title: "Portfolio S-Curve — Ideal / Baseline vs Actual Cumulative Progress",
+    points: analytics.sCurve,
+  });
+  // schedule variance caption
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  const scCaption =
+    `Actual ${avgPct}% vs ideal ${idealPct}% · ${daysBehind >= 0 ? `${daysBehind} days behind` : `${Math.abs(daysBehind)} days ahead of`} baseline` +
+    (forecastOverrun > 0 ? ` · forecast completion over-run ≈ ${forecastOverrun} days` : ` · on track to finish on baseline`);
+  doc.text(scCaption, margin + 14, y + 178);
+  y += 180 + 18;
+
+  // ---- AI Executive Narrative ----
+  const narrative = extras.narrative;
+  if (narrative) {
+    doc.addPage();
+    let ny = margin + 4;
+    sectionTitle(doc, "Executive Narrative & Analysis", margin, ny, "AI-generated synthesis of portfolio status, exceptions and engineering remarks");
+    ny += 24;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...INK);
+    const summaryLines = doc.splitTextToSize(narrative.executiveSummary, contentW);
+    doc.text(summaryLines, margin, ny);
+    ny += summaryLines.length * 13 + 12;
+
+    // three-column band: insights / risks / recommendations
+    const colW = (contentW - 32) / 3;
+    const cols: Array<{ title: string; items: string[]; color: RGB }> = [
+      { title: "Key Insights", items: narrative.keyInsights, color: BRAND },
+      { title: "Top Risks", items: narrative.risks, color: HEALTH_RGB.red },
+      { title: "Recommendations", items: narrative.recommendations, color: HEALTH_RGB.green },
+    ];
+    const colTop = ny;
+    let maxColBottom = ny;
+    cols.forEach((c, ci) => {
+      const cx = margin + ci * (colW + 16);
+      let cy = colTop;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(c.color[0], c.color[1], c.color[2]);
+      doc.text(c.title.toUpperCase(), cx, cy);
+      cy += 6;
+      doc.setDrawColor(c.color[0], c.color[1], c.color[2]);
+      doc.setLineWidth(1.2);
+      doc.line(cx, cy, cx + colW, cy);
+      cy += 12;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...INK);
+      for (const item of c.items) {
+        const lines = doc.splitTextToSize(`•  ${item}`, colW);
+        doc.text(lines, cx, cy);
+        cy += lines.length * 12 + 4;
+      }
+      maxColBottom = Math.max(maxColBottom, cy);
+    });
+    ny = maxColBottom + 10;
+
+    // outlook box
+    if (ny > pageH - 90) { doc.addPage(); ny = margin; }
+    doc.setFillColor(245, 249, 250);
+    doc.setDrawColor(...BRAND_LIGHT);
+    const outLines = doc.splitTextToSize(narrative.outlook, contentW - 24);
+    const boxH = outLines.length * 12 + 30;
+    doc.roundedRect(margin, ny, contentW, boxH, 5, 5, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND);
+    doc.text("OUTLOOK", margin + 12, ny + 16);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...INK);
+    doc.text(outLines, margin + 12, ny + 30);
+    y = ny + boxH + 18;
+  }
+
+
+
 
 
   // ---- Station status summary table ----
