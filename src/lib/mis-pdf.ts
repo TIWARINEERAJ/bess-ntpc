@@ -562,5 +562,5 @@ export function buildWeeklyDoc(
     doc.text(`NTPC BESS Weekly MIS · Page ${i} of ${pageCount}`, pageW - margin, pageH - 14, { align: "right" });
   }
 
-  doc.save(`NTPC-BESS-Weekly-MIS-${format(today, "yyyyMMdd")}.pdf`);
+  return doc;
 }
