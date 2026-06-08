@@ -185,7 +185,67 @@ function drawLineChart(
   });
 }
 
-function sectionTitle(doc: jsPDF, text: string, x: number, y: number, sub?: string) {
+/** Grouped columns: per station a Progress% bar (left scale 0-100) and a Delays bar (right scale). */
+function drawProgressDelayChart(
+  doc: jsPDF,
+  opts: { x: number; y: number; w: number; h: number; title: string; data: { label: string; pct: number; delayed: number }[] },
+) {
+  const { x, y, w, h, title, data } = opts;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.setTextColor(...INK);
+  doc.text(title, x, y);
+
+  // legend
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  const lx = x + w - 150;
+  doc.setFillColor(...BRAND); doc.rect(lx, y - 7, 9, 9, "F");
+  doc.setTextColor(...MUTED); doc.text("Progress %", lx + 13, y);
+  doc.setFillColor(...HEALTH_RGB.red); doc.rect(lx + 78, y - 7, 9, 9, "F");
+  doc.text("Delays", lx + 91, y);
+
+  const top = y + 14;
+  const chartH = h - 40;
+  const baseY = top + chartH;
+  doc.setDrawColor(215, 215, 215);
+  doc.setLineWidth(0.6);
+  doc.line(x, baseY, x + w, baseY);
+
+  const n = Math.max(1, data.length);
+  const slot = w / n;
+  const groupW = Math.min(34, slot * 0.6);
+  const barW = groupW / 2 - 1;
+  const maxDelay = Math.max(1, ...data.map((d) => d.delayed));
+
+  data.forEach((d, i) => {
+    const cx = x + slot * i + slot / 2;
+    // progress bar (0-100 scale)
+    const ph = (Math.min(100, Math.max(0, d.pct)) / 100) * chartH;
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(cx - groupW / 2, baseY - ph, barW, Math.max(0.6, ph), 1, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(...BRAND);
+    doc.text(`${d.pct}`, cx - groupW / 2 + barW / 2, baseY - ph - 2.5, { align: "center" });
+    // delay bar (scaled to maxDelay)
+    const dh = (d.delayed / maxDelay) * chartH;
+    doc.setFillColor(...HEALTH_RGB.red);
+    doc.roundedRect(cx + 1, baseY - dh, barW, Math.max(d.delayed > 0 ? 1.2 : 0, dh), 1, 1, "F");
+    if (d.delayed > 0) {
+      doc.setTextColor(...HEALTH_RGB.red);
+      doc.text(`${d.delayed}`, cx + 1 + barW / 2, baseY - dh - 2.5, { align: "center" });
+    }
+    // label
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...MUTED);
+    const lines = doc.splitTextToSize(d.label, slot - 2);
+    doc.text(lines.slice(0, 2), cx, baseY + 9, { align: "center" });
+  });
+}
+
+
   doc.setTextColor(...INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
