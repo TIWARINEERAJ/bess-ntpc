@@ -30,6 +30,8 @@ export type DrawingCounts = {
   pending: number;
   /** scheduled approval date has passed and the drawing is not yet approved */
   overdue: number;
+  /** scheduled SUBMISSION date has passed and the drawing is not yet submitted */
+  submissionOverdue: number;
   /** scheduled approval falls within the next 2 months and not yet approved */
   upcoming: number;
   submittedPct: number;
