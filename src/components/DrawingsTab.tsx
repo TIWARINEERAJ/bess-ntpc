@@ -227,8 +227,8 @@ function statusOf(r: StationDrawing) {
 
 const CAT_OPTIONS = ["CAT-I", "CAT-II", "CAT-III", "CATREL"];
 
-function DrawingRow({ row, canEdit, onSave, onDelete }: {
-  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void; onDelete: () => void;
+function DrawingRow({ row, canEdit, onSave }: {
+  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void;
 }) {
   const [local, setLocal] = useState<StationDrawing>(row);
   const st = statusOf(local);
@@ -272,13 +272,6 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
       <td className="px-1 py-1">{date("approved_date")}</td>
       <td className="px-1 py-1 align-middle">{catSelect}</td>
       <td className="px-2 py-1.5 align-middle"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
-      {canEdit && (
-        <td className="px-1 py-1">
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-[color:var(--status-red)]" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </td>
-      )}
     </tr>
   );
 }
