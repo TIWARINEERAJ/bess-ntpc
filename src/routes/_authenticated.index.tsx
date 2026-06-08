@@ -508,18 +508,18 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
     <section>
       <SectionHeading title="Agency Performance" sub="Average physical progress by awarded EPC contractor · delayed-task load overlaid · portfolio average as reference" />
       <Card className="p-4">
-        <div style={{ width: "100%", height: Math.max(220, data.length * 46 + 60) }}>
+        <div style={{ width: "100%", height: 360 }}>
           <ResponsiveContainer>
-            <ComposedChart layout="vertical" data={data} margin={{ top: 8, right: 32, left: 8, bottom: 8 }} barCategoryGap="28%">
+            <ComposedChart data={data} margin={{ top: 16, right: 24, left: 0, bottom: 80 }} barCategoryGap="28%">
               <defs>
-                <linearGradient id="gradAgency" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
-                  <stop offset="100%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                <linearGradient id="gradAgency" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                  <stop offset="100%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
-              <YAxis type="category" dataKey="agency" width={150} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} interval={0} />
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="agency" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={80} />
+              <YAxis domain={[0, 100]} unit="%" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
               <Tooltip
                 cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
@@ -529,10 +529,10 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
                   return row ? `${label} · ${row.count} station(s)\n${row.names}` : label;
                 }}
               />
-              <ReferenceLine x={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
-                label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "top" }} />
-              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[0, 4, 4, 0]} maxBarSize={22}>
-                <LabelList dataKey="avgPct" position="right" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
+              <ReferenceLine y={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
+                label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
+              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                <LabelList dataKey="avgPct" position="top" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
               </Bar>
             </ComposedChart>
           </ResponsiveContainer>
