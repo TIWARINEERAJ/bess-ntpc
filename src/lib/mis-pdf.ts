@@ -448,12 +448,12 @@ export function buildWeeklyDoc(
     doc.roundedRect(x, y, kpiW, 50, 5, 5, "FD");
     doc.setTextColor(...MUTED);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.text(k[0].toUpperCase(), x + 12, y + 18);
+    doc.setFontSize(7.5);
+    doc.text(k[0].toUpperCase(), x + 10, y + 17);
     doc.setTextColor(k[2][0], k[2][1], k[2][2]);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text(k[1], x + 12, y + 41);
+    doc.setFontSize(18);
+    doc.text(k[1], x + 10, y + 40);
   });
   y += 70;
 
