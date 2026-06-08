@@ -202,6 +202,16 @@ export function exportWeeklyPDF(
   statusByStation: Record<string, Status[]>,
   extras: WeeklyPdfExtras = {},
 ) {
+  const doc = buildWeeklyDoc(stations, tasks, statusByStation, extras);
+  doc.save(`NTPC-BESS-Weekly-MIS-${format(new Date(), "yyyyMMdd")}.pdf`);
+}
+
+export function buildWeeklyDoc(
+  stations: Station[],
+  tasks: L2Task[],
+  statusByStation: Record<string, Status[]>,
+  extras: WeeklyPdfExtras = {},
+): jsPDF {
   const today = new Date();
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
