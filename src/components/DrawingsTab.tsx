@@ -42,9 +42,41 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   const mdlTotal = stationQ.data ?? 0;
   const counts = useMemo(() => drawingCounts(mdlTotal, rows), [mdlTotal, rows]);
   const categories = useMemo(() => uniqueCategories(rows), [rows]);
+  const catClasses = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.cat).filter(Boolean))).sort() as string[],
+    [rows],
+  );
 
   const [filter, setFilter] = useState<string>("all");
-  const visible = filter === "all" ? rows : rows.filter((r) => r.category === filter);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [catFilter, setCatFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  const matchesStatus = (r: StationDrawing) => {
+    switch (statusFilter) {
+      case "approved": return isApproved(r);
+      case "submitted": return isSubmitted(r) && !isApproved(r);
+      case "pending": return !isSubmitted(r);
+      case "overdue": return isOverdue(r);
+      case "sub_overdue": return isSubmissionOverdue(r);
+      case "upcoming": return isUpcoming(r);
+      default: return true;
+    }
+  };
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (filter !== "all" && r.category !== filter) return false;
+      if (catFilter !== "all") {
+        if (catFilter === "_none" ? !!r.cat : r.cat !== catFilter) return false;
+      }
+      if (!matchesStatus(r)) return false;
+      if (q && !(`${r.drg_ref} ${r.drg_desc} ${r.category} ${r.cat ?? ""}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, filter, catFilter, statusFilter, search]);
 
   const save = useMutation({
     mutationFn: async (row: Partial<StationDrawing> & { id: string }) => {
