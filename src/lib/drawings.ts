@@ -43,8 +43,14 @@ function startOfToday(): Date {
 }
 
 /** A drawing is "cleared" once it has an approval date. */
+/** A drawing is "cleared" once it has an approval date OR is classified CAT-I / CAT-II. */
 export function isApproved(r: StationDrawing): boolean {
-  return !!r.approved_date;
+  return !!r.approved_date || catImpliesApproved(r.cat);
+}
+
+/** A drawing counts as submitted once it has a submitted or re-submitted date (or is approved). */
+export function isSubmitted(r: StationDrawing): boolean {
+  return !!r.submitted_date || !!r.resubmitted_date || isApproved(r);
 }
 
 /** Overdue = scheduled approval date in the past, still not approved. */
