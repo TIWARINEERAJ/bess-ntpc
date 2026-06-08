@@ -276,9 +276,9 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 
   return (
     <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "whitespace-nowrap font-medium")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "whitespace-nowrap font-mono text-[10px] text-muted-foreground")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "min-w-[18rem] max-w-[28rem] whitespace-normal break-words leading-snug")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "break-words font-medium")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "break-all font-mono text-[10px] text-muted-foreground")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_apprvl_date)}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
