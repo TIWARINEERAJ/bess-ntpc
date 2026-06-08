@@ -261,7 +261,6 @@ function Dashboard() {
     }
   };
 
-  const callNarrative = useServerFn(generateMisNarrative);
   const [exporting, setExporting] = useState<null | "pdf" | "docx">(null);
 
   const buildExtras = (): WeeklyPdfExtras => ({
