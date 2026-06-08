@@ -59,7 +59,7 @@ async function captureSnapshot() {
   });
 
   if (rows.length) {
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from("weekly_progress_snapshots")
       .upsert(rows, { onConflict: "snapshot_date,station_id" });
     if (error) throw new Error(error.message);
