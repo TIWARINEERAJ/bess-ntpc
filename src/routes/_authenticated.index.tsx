@@ -221,9 +221,20 @@ function Dashboard() {
           <Button variant="outline" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
           </Button>
-          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation)}>
+          <Button variant="outline" size="sm" disabled={capturing} onClick={captureSnapshot}>
+            <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
+          </Button>
+          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation, {
+            drawings: drawingsQ.data ?? [],
+            boiMaster: boiMasterQ.data ?? [],
+            boiStatus: boiStatusQ.data ?? [],
+            meetings: meetingsQ.data ?? [],
+            plans: plansQ.data ?? [],
+            snapshots: snapshotsQ.data ?? [],
+          })}>
             <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>
+
         </div>
       </section>
 
