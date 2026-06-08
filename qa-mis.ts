@@ -30,10 +30,9 @@ dates.forEach((d, di) => stations.forEach((s, si) => snapshots.push({ snapshot_d
 
 // stub doc.save to write file in node
 const jspdfMod = await import("jspdf");
-const origSave = jspdfMod.jsPDF.prototype.save;
 jspdfMod.jsPDF.prototype.save = function (this: any) {
   const buf = Buffer.from(this.output("arraybuffer"));
-  require("fs").writeFileSync("/tmp/mis-qa.pdf", buf);
+  Bun.write("/dev-server/mis-qa.pdf", buf);
   return this;
 };
 
