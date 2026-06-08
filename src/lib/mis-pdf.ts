@@ -532,7 +532,7 @@ export function buildWeeklyDoc(
   });
 
   // ---- L2 station-wise exceptions ----
-  const l2Exc: Array<{ station: string; wbs: string; task: string; planFinish: string; daysOverdue: number; status: RowStatus; owner: string }> = [];
+  const l2Exc: Array<{ station: string; wbs: string; task: string; planFinish: string; committed: string; daysOverdue: number; status: RowStatus; owner: string }> = [];
   for (const r of rows) {
     const map = buildStatusMap(statusByStation[r.s.id]);
     for (const t of tasks.filter((t) => t.station_id === r.s.id)) {
@@ -546,6 +546,7 @@ export function buildWeeklyDoc(
           wbs: t.wbs_code,
           task: t.name,
           planFinish: t.baseline_finish ? format(new Date(t.baseline_finish), "dd-MMM-yy") : "—",
+          committed: st?.committed_date ? format(new Date(st.committed_date), "dd-MMM-yy") : "—",
           daysOverdue: Math.max(overdueDays, cs.slipDays),
           status: cs.status as RowStatus,
           owner: st?.owner ?? "—",
