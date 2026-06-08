@@ -62,6 +62,46 @@ function Dashboard() {
       return data as StationDrawing[];
     },
   });
+  const boiMasterQ = useQuery({
+    queryKey: ["boi_master"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("boi_master").select("id,sl_no,name,scheduled_po_date").order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const boiStatusQ = useQuery({
+    queryKey: ["all_boi_status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const meetingsQ = useQuery({
+    queryKey: ["all_meetings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meetings").select("station_id,meeting_type,meeting_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const plansQ = useQuery({
+    queryKey: ["all_meeting_plans"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("meeting_plans").select("station_id,meeting_type,planned_date,title").eq("status", "planned");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const snapshotsQ = useQuery({
+    queryKey: ["progress_snapshots"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("weekly_progress_snapshots").select("snapshot_date,station_id,pct").order("snapshot_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const tasksByStation = tasksQ.data ?? {};
