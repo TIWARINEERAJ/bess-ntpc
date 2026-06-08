@@ -264,6 +264,8 @@ function Dashboard() {
             meetings: meetingsQ.data ?? [],
             plans: plansQ.data ?? [],
             snapshots: snapshotsQ.data ?? [],
+            complianceMaster: complMasterQ.data ?? [],
+            complianceStatus: complStatusQ.data ?? [],
           })}>
             <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>
