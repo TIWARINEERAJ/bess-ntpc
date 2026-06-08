@@ -562,17 +562,17 @@ export function buildWeeklyDoc(
   sectionTitle(doc, "L2 Schedule Exceptions — Activities Overdue", margin, exY, "Delayed / blocked leaf activities, sorted by station and days overdue");
   autoTable(doc, {
     startY: exY + 20,
-    head: [["Station", "WBS", "Activity", "Planned Finish", "Days Overdue", "Status", "Owner"]],
+    head: [["Station", "WBS", "Activity", "Planned Finish", "Committed", "Days Overdue", "Status", "Owner"]],
     body: l2Exc.length
-      ? l2Exc.slice(0, 80).map((e) => [e.station, e.wbs, e.task, e.planFinish, `${e.daysOverdue}d`, statusLabel(e.status), e.owner])
-      : [["—", "—", "No exceptions. All activities on schedule.", "—", "—", "—", "—"]],
+      ? l2Exc.slice(0, 80).map((e) => [e.station, e.wbs, e.task, e.planFinish, e.committed, `${e.daysOverdue}d`, statusLabel(e.status), e.owner])
+      : [["—", "—", "No exceptions. All activities on schedule.", "—", "—", "—", "—", "—"]],
     styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
     headStyles: { fillColor: HEALTH_RGB.red, textColor: 255, fontSize: 9 },
     alternateRowStyles: { fillColor: [252, 246, 246] },
-    columnStyles: { 2: { cellWidth: 280 }, 4: { halign: "right" } },
+    columnStyles: { 2: { cellWidth: 250 }, 5: { halign: "right" } },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
-      if (data.section === "body" && data.column.index === 4 && l2Exc.length) {
+      if (data.section === "body" && data.column.index === 5 && l2Exc.length) {
         data.cell.styles.textColor = HEALTH_RGB.red;
         data.cell.styles.fontStyle = "bold";
       }
