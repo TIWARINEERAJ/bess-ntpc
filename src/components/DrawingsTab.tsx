@@ -249,7 +249,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 
   // Editable actual-date fields (commit immediately).
   const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
-    <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
+    <Input type="date" disabled={!canEdit} className="h-7 w-full min-w-0 bg-transparent px-1 text-[11px]" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
   );
   // Editable category-class (Cat) dropdown — commits immediately.
