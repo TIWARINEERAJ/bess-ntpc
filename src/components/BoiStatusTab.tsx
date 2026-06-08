@@ -22,6 +22,7 @@ type BoiStatus = {
   station_id: string;
   boi_id: string;
   actual_po_date: string | null;
+  committed_date: string | null;
   delivery_date: string | null;
   site_receipt_date: string | null;
   mobilization_status: string | null;
