@@ -583,6 +583,7 @@ export type Database = {
           drg_desc: string
           drg_ref: string
           id: string
+          resubmitted_date: string | null
           sch_apprvl_date: string | null
           sch_date: string | null
           sort_order: number
@@ -599,6 +600,7 @@ export type Database = {
           drg_desc?: string
           drg_ref?: string
           id?: string
+          resubmitted_date?: string | null
           sch_apprvl_date?: string | null
           sch_date?: string | null
           sort_order?: number
@@ -615,6 +617,7 @@ export type Database = {
           drg_desc?: string
           drg_ref?: string
           id?: string
+          resubmitted_date?: string | null
           sch_apprvl_date?: string | null
           sch_date?: string | null
           sort_order?: number

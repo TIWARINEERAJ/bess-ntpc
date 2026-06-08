@@ -1,0 +1,1 @@
+ALTER TABLE public.station_drawings ADD COLUMN IF NOT EXISTS resubmitted_date date;
