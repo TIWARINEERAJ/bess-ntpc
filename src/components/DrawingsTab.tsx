@@ -151,14 +151,40 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <FileStack className="h-4 w-4 text-primary" /> Master Drawing List Register
-            <Badge variant="outline" className="text-[10px]">{counts.registered} of {counts.total} listed</Badge>
+            <Badge variant="outline" className="text-[10px]">{visible.length} of {counts.registered} shown</Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="Search ref / description…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 w-48 text-xs"
+            />
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="h-8 w-56 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-44 text-xs"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
                 {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="sub_overdue">Sub. overdue</SelectItem>
+                <SelectItem value="overdue">Apprvl overdue</SelectItem>
+                <SelectItem value="upcoming">Due in 2 mo</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={catFilter} onValueChange={setCatFilter}>
+              <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Cat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cat</SelectItem>
+                <SelectItem value="_none">No Cat</SelectItem>
+                {catClasses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
             {canEdit && (
