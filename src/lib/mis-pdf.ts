@@ -12,6 +12,8 @@ import {
 } from "./gantt-utils";
 import { isSubmissionOverdue, type StationDrawing } from "./drawings";
 import { TYPE_SHORT } from "./meeting-types";
+import { computePortfolioAnalytics, type SCurvePt } from "./mis-analytics";
+import type { MisNarrative } from "./mis-narrative.functions";
 
 type Station = {
   id: string;
@@ -39,6 +41,7 @@ export type WeeklyPdfExtras = {
   snapshots?: Snapshot[];
   complianceMaster?: ComplMaster[];
   complianceStatus?: ComplStatus[];
+  narrative?: MisNarrative | null;
 };
 
 type Health = "green" | "amber" | "red";
