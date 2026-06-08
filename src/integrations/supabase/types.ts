@@ -795,6 +795,56 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_progress_snapshots: {
+        Row: {
+          completed: number
+          created_at: string
+          delayed: number
+          health: string
+          id: string
+          pct: number
+          snapshot_date: string
+          station_id: string
+          station_name: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          completed?: number
+          created_at?: string
+          delayed?: number
+          health?: string
+          id?: string
+          pct?: number
+          snapshot_date: string
+          station_id: string
+          station_name: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          completed?: number
+          created_at?: string
+          delayed?: number
+          health?: string
+          id?: string
+          pct?: number
+          snapshot_date?: string
+          station_id?: string
+          station_name?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_progress_snapshots_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_review_plan: {
         Row: {
           agenda_notes: string | null
