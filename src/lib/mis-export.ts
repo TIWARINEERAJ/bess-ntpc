@@ -61,6 +61,7 @@ export function exportExceptions(stations: Station[], tasks: L2Task[], statusByS
         exc.push({
           Station: s.name, Lot: s.lot, WBS: t.wbs_code, Task: t.name,
           "Planned Finish": t.baseline_finish ?? "", "Actual Finish": st?.actual_finish ?? "",
+          "Committed Date": st?.committed_date ?? "",
           "Slip (days)": cs.slipDays, "% Complete": st?.percent_complete ?? 0,
           Status: statusLabel(cs.status as RowStatus),
           Owner: st?.owner ?? "", Remarks: st?.remarks ?? "",

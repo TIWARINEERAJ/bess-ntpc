@@ -100,6 +100,7 @@ function StationPage() {
         station_id: stationId, task_id: payload.task_id,
         actual_start: payload.actual_start ?? existing?.actual_start ?? null,
         actual_finish: payload.actual_finish ?? existing?.actual_finish ?? null,
+        committed_date: payload.committed_date !== undefined ? payload.committed_date : (existing?.committed_date ?? null),
         percent_complete: payload.percent_complete ?? existing?.percent_complete ?? 0,
         status: payload.status ?? existing?.status ?? "not_started",
         remarks: payload.remarks ?? existing?.remarks ?? null,
@@ -173,9 +174,9 @@ function StationPage() {
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
-              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
-                <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div>
+                <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div><div>Committed</div>
               </div>
               <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
                 {visibleTasks.map(t => {
@@ -188,7 +189,7 @@ function StationPage() {
                   const aStart = t.is_section ? (roll?.actual_start ?? null) : (st?.actual_start ?? null);
                   const aFinish = t.is_section ? (roll?.actual_finish ?? null) : (st?.actual_finish ?? null);
                   return (
-                    <div key={t.id} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
+                    <div key={t.id} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
                       <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 10 }}>
                         {hasChildren ? (
@@ -204,6 +205,7 @@ function StationPage() {
                       <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_finish)}</div>
                       <div className="font-mono text-[10px]" style={{ color: aStart ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(aStart)}</div>
                       <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : aFinish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(aFinish)}</div>
+                      <div className="font-mono text-[10px]" style={{ color: st?.committed_date ? "var(--status-amber)" : "var(--muted-foreground)" }}>{fmtD(st?.committed_date ?? null)}</div>
                     </div>
                   );
                 })}
@@ -277,6 +279,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
 }) {
   const [actualStart, setActualStart] = useState("");
   const [actualFinish, setActualFinish] = useState("");
+  const [committedDate, setCommittedDate] = useState("");
   const [pct, setPct] = useState(0);
   const [statusV, setStatusV] = useState<string>("not_started");
   const [owner, setOwner] = useState("");
@@ -292,6 +295,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
     if (isSection && derived) {
       setActualStart(fmtIso(derived.actual_start));
       setActualFinish(fmtIso(derived.actual_finish));
+      setCommittedDate(status?.committed_date ?? "");
       setPct(derived.pct);
       setStatusV(sectionStatus);
       setOwner(status?.owner ?? "");
@@ -299,6 +303,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
     } else {
       setActualStart(status?.actual_start ?? "");
       setActualFinish(status?.actual_finish ?? "");
+      setCommittedDate(status?.committed_date ?? "");
       setPct(status?.percent_complete ?? 0);
       setStatusV(status?.status ?? "not_started");
       setOwner(status?.owner ?? "");
@@ -342,6 +347,11 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
             </div>
           </div>
           <div>
+            <Label htmlFor="cd">Committed Date</Label>
+            <Input id="cd" type="date" disabled={!canEdit || task.is_section} value={committedDate} onChange={e => setCommittedDate(e.target.value)} />
+            <p className="mt-1 text-[10px] text-muted-foreground">Committed / promised completion date for this activity.</p>
+          </div>
+          <div>
             <Label htmlFor="pct">% Complete: <span className="font-mono">{pct}%</span></Label>
             <input id="pct" type="range" min={0} max={100} disabled={!canEdit || task.is_section} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full" />
           </div>
@@ -368,6 +378,7 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
           {canEdit && !task.is_section ? (
             <Button className="w-full" disabled={saving} onClick={() => onSave({
               actual_start: actualStart || null, actual_finish: actualFinish || null,
+              committed_date: committedDate || null,
               percent_complete: pct, status: statusV, owner: owner || null, remarks: remarks || null,
             })}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
