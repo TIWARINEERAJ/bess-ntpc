@@ -8,9 +8,19 @@ export type StationDrawing = {
   sch_date: string | null;
   sch_apprvl_date: string | null;
   submitted_date: string | null;
+  resubmitted_date: string | null;
   approved_date: string | null;
   sort_order: number;
 };
+
+/** CAT-I / CAT-II classification implies the drawing is approved (no separate approval needed). */
+export function catImpliesApproved(cat: string | null): boolean {
+  if (!cat) return false;
+  const c = cat.toUpperCase().replace(/[\s.]/g, "");
+  return c === "CAT-I" || c === "CATI" || c === "CAT1" ||
+    c === "CAT-II" || c === "CATII" || c === "CAT2";
+}
+
 
 export type DrawingCounts = {
   total: number;
