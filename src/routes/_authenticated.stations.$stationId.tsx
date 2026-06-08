@@ -174,9 +174,9 @@ function StationPage() {
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
-              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-10 grid grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] gap-2 border-b border-border bg-sidebar/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
-                <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div>
+                <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div><div>Committed</div>
               </div>
               <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
                 {visibleTasks.map(t => {
