@@ -10,6 +10,7 @@ import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, Trend
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
+import { exportWeeklyPDF } from "@/lib/mis-pdf";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { drawingCounts, type StationDrawing } from "@/lib/drawings";
