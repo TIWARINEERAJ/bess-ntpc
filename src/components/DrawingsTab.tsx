@@ -167,6 +167,8 @@ function statusOf(r: StationDrawing) {
   return { label: "Pending", c: "var(--status-amber)" };
 }
 
+const CAT_OPTIONS = ["CAT-I", "CAT-II", "CAT-III", "CATREL"];
+
 function DrawingRow({ row, canEdit, onSave, onDelete }: {
   row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void; onDelete: () => void;
 }) {
@@ -174,17 +176,24 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
   const dirty = JSON.stringify(local) !== JSON.stringify(row);
   const st = statusOf(local);
 
-  // Editable category — width fits its own content (max ~14rem).
-  const category = (
-    <Input disabled={!canEdit} className="h-7 w-[min(14rem,100%)] min-w-24 bg-transparent text-xs" value={local.category ?? ""}
-      style={{ width: `${Math.max(6, Math.min(28, (local.category?.length ?? 6) + 2))}ch` }}
-      onChange={(e) => setLocal({ ...local, category: e.target.value })}
-      onBlur={() => dirty && onSave(local)} />
-  );
   // Editable actual-date fields (commit immediately).
   const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
     <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
+  );
+  // Editable category-class (Cat) dropdown — commits immediately.
+  const catSelect = (
+    <Select
+      value={local.cat ?? "_none"}
+      disabled={!canEdit}
+      onValueChange={(v) => { const n = { ...local, cat: v === "_none" ? null : v }; setLocal(n); onSave(n); }}
+    >
+      <SelectTrigger className="h-7 w-24 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="_none">—</SelectItem>
+        {CAT_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+      </SelectContent>
+    </Select>
   );
   // Frozen master fields — read-only display, never editable.
   const frozenText = (v: string | null | undefined, cls = "") => (
@@ -196,7 +205,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 
   return (
     <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
-      <td className="px-1 py-1">{category}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "whitespace-nowrap font-medium")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "whitespace-nowrap font-mono text-[10px] text-muted-foreground")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "min-w-[18rem] max-w-[28rem] whitespace-normal break-words leading-snug")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
@@ -204,7 +213,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
       <td className="px-1 py-1">{date("submitted_date")}</td>
       <td className="px-1 py-1">{date("resubmitted_date")}</td>
       <td className="px-1 py-1">{date("approved_date")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.cat, "whitespace-nowrap")}</td>
+      <td className="px-1 py-1 align-middle">{catSelect}</td>
       <td className="px-2 py-1.5 align-middle"><Badge variant="outline" className="text-[10px]" style={{ color: st.c, borderColor: st.c }}>{st.label}</Badge></td>
       {canEdit && (
         <td className="px-1 py-1">
