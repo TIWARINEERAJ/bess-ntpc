@@ -377,7 +377,17 @@ function Dashboard() {
         </div>
       </section>
 
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="ai-summary">
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> AI Summary
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
         <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Avg. Progress" value={`${kpis.avgPct}`} unit="%" tone="primary" />
         <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" onClick={() => onStatusCardClick("green")} active={healthFilter === "green"} />
@@ -509,7 +519,14 @@ function Dashboard() {
       <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
 
       <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
+        </TabsContent>
+
+        <TabsContent value="ai-summary">
+          <AiSummaryTab stations={stations} tasks={tasks} statusByStation={statusByStation} narrativeInput={buildNarrativeInput} loading={loading} />
+        </TabsContent>
+      </Tabs>
     </div>
+
   );
 }
 
