@@ -20,6 +20,7 @@ export type Status = {
   task_id: string;
   actual_start: string | null;
   actual_finish: string | null;
+  committed_date: string | null;
   percent_complete: number;
   status: string;
   remarks: string | null;
