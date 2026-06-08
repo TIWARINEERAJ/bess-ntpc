@@ -18,7 +18,7 @@ async function fetchAll<T>(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const out: T[] = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabaseAdmin.from(table).select(select).range(from, from + PAGE - 1);
+    const { data, error } = await (supabaseAdmin as any).from(table).select(select).range(from, from + PAGE - 1);
     if (error) throw new Error(error.message);
     const page = (data ?? []) as unknown as T[];
     out.push(...page);
