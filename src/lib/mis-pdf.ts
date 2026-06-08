@@ -12,7 +12,7 @@ import {
 } from "./gantt-utils";
 import { isSubmissionOverdue, type StationDrawing } from "./drawings";
 import { TYPE_SHORT } from "./meeting-types";
-import { computePortfolioAnalytics, type SCurvePt } from "./mis-analytics";
+import { computePortfolioAnalytics } from "./mis-analytics";
 import type { MisNarrative } from "./mis-narrative.functions";
 
 type Station = {
@@ -188,105 +188,6 @@ function drawLineChart(
   });
 }
 
-/** S-curve: planned/ideal (baseline) cumulative % vs actual cumulative %. */
-function drawSCurveChart(
-  doc: jsPDF,
-  opts: { x: number; y: number; w: number; h: number; title: string; points: SCurvePt[] },
-) {
-  const { x, y, w, h, title, points } = opts;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12.5);
-  doc.setTextColor(...INK);
-  doc.text(title, x, y);
-
-  // legend
-  doc.setFontSize(8.5);
-  doc.setFont("helvetica", "normal");
-  const lx = x + w - 200;
-  doc.setDrawColor(...MUTED); doc.setLineWidth(2);
-  doc.line(lx, y - 3, lx + 16, y - 3);
-  doc.setTextColor(...MUTED); doc.text("Ideal / Baseline", lx + 20, y);
-  doc.setDrawColor(...BRAND); doc.setLineWidth(2);
-  doc.line(lx + 100, y - 3, lx + 116, y - 3);
-  doc.text("Actual", lx + 120, y);
-
-  const top = y + 14;
-  const chartH = h - 40;
-  const baseY = top + chartH;
-  const maxV = 100;
-
-  doc.setFontSize(7.5);
-  doc.setTextColor(160, 160, 160);
-  for (const v of [0, 25, 50, 75, 100]) {
-    const yy = baseY - (v / maxV) * chartH;
-    doc.setDrawColor(235, 235, 235);
-    doc.setLineWidth(0.4);
-    doc.line(x, yy, x + w, yy);
-    doc.text(`${v}`, x - 4, yy + 2, { align: "right" });
-  }
-
-  if (points.length === 0) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    doc.setTextColor(...MUTED);
-    doc.text("No baseline schedule available to plot the S-curve.", x + 6, top + chartH / 2);
-    return;
-  }
-
-  const n = points.length;
-  const step = n > 1 ? w / (n - 1) : 0;
-  const px = (i: number) => (n > 1 ? x + step * i : x + w / 2);
-  const py = (v: number) => baseY - (Math.min(100, Math.max(0, v)) / maxV) * chartH;
-
-  // planned line
-  doc.setDrawColor(...MUTED);
-  doc.setLineWidth(1.4);
-  for (let i = 0; i < n - 1; i++) {
-    doc.line(px(i), py(points[i].planned), px(i + 1), py(points[i + 1].planned));
-  }
-  // actual line (only where defined)
-  doc.setDrawColor(...BRAND);
-  doc.setLineWidth(1.8);
-  for (let i = 0; i < n - 1; i++) {
-    const a = points[i].actual;
-    const b = points[i + 1].actual;
-    if (a == null || b == null) continue;
-    doc.line(px(i), py(a), px(i + 1), py(b));
-  }
-  // actual area fill
-  doc.setFillColor(...BRAND);
-  doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
-  for (let i = 0; i < n - 1; i++) {
-    const a = points[i].actual;
-    const b = points[i + 1].actual;
-    if (a == null || b == null) continue;
-    doc.triangle(px(i), baseY, px(i), py(a), px(i + 1), py(b), "F");
-    doc.triangle(px(i), baseY, px(i + 1), py(b), px(i + 1), baseY, "F");
-  }
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
-
-  // x labels (sparse)
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(...MUTED);
-  const everyN = Math.ceil(n / 12);
-  points.forEach((p, i) => {
-    if (i === 0 || i === n - 1 || i % everyN === 0) {
-      doc.text(p.label, px(i), baseY + 9, { align: "center", angle: 0 });
-    }
-  });
-  // endpoint markers with values
-  const lastActualIdx = [...points].reverse().findIndex((p) => p.actual != null);
-  if (lastActualIdx !== -1) {
-    const idx = n - 1 - lastActualIdx;
-    const v = points[idx].actual!;
-    doc.setFillColor(...BRAND); doc.circle(px(idx), py(v), 2.2, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...BRAND);
-    doc.text(`${v}%`, px(idx), py(v) - 5, { align: "center" });
-  }
-  const lastPlanned = points[n - 1].planned;
-  doc.setFillColor(...MUTED); doc.circle(px(n - 1), py(lastPlanned), 2, "F");
-}
 
 
 
@@ -538,90 +439,6 @@ export function buildWeeklyDoc(
   });
   y += 170 + 16;
 
-  // ---- Portfolio S-Curve: ideal/baseline vs actual ----
-  if (y > pageH - 200) { doc.addPage(); y = margin; }
-  drawSCurveChart(doc, {
-    x: margin + 14,
-    y,
-    w: contentW - 14,
-    h: 180,
-    title: "Portfolio S-Curve — Ideal / Baseline vs Actual Cumulative Progress",
-    points: analytics.sCurve,
-  });
-  // schedule variance caption
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
-  const scCaption =
-    `Actual ${avgPct}% vs ideal ${idealPct}% · ${daysBehind >= 0 ? `${daysBehind} days behind` : `${Math.abs(daysBehind)} days ahead of`} baseline`;
-  doc.text(scCaption, margin + 14, y + 178);
-  y += 180 + 18;
-
-  // ---- AI Executive Narrative ----
-  const narrative = extras.narrative;
-  if (narrative) {
-    doc.addPage();
-    let ny = margin + 4;
-    sectionTitle(doc, "Executive Narrative & Analysis", margin, ny, "AI-generated synthesis of portfolio status, exceptions and engineering remarks");
-    ny += 24;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(...INK);
-    const summaryLines = doc.splitTextToSize(narrative.executiveSummary, contentW);
-    doc.text(summaryLines, margin, ny);
-    ny += summaryLines.length * 13 + 12;
-
-    // three-column band: insights / risks / recommendations
-    const colW = (contentW - 32) / 3;
-    const cols: Array<{ title: string; items: string[]; color: RGB }> = [
-      { title: "Key Insights", items: narrative.keyInsights, color: BRAND },
-      { title: "Top Risks", items: narrative.risks, color: HEALTH_RGB.red },
-      { title: "Recommendations", items: narrative.recommendations, color: HEALTH_RGB.green },
-    ];
-    const colTop = ny;
-    let maxColBottom = ny;
-    cols.forEach((c, ci) => {
-      const cx = margin + ci * (colW + 16);
-      let cy = colTop;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(c.color[0], c.color[1], c.color[2]);
-      doc.text(c.title.toUpperCase(), cx, cy);
-      cy += 6;
-      doc.setDrawColor(c.color[0], c.color[1], c.color[2]);
-      doc.setLineWidth(1.2);
-      doc.line(cx, cy, cx + colW, cy);
-      cy += 12;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(...INK);
-      for (const item of c.items) {
-        const lines = doc.splitTextToSize(`•  ${item}`, colW);
-        doc.text(lines, cx, cy);
-        cy += lines.length * 12 + 4;
-      }
-      maxColBottom = Math.max(maxColBottom, cy);
-    });
-    ny = maxColBottom + 10;
-
-    // outlook box
-    if (ny > pageH - 90) { doc.addPage(); ny = margin; }
-    doc.setFillColor(245, 249, 250);
-    doc.setDrawColor(...BRAND_LIGHT);
-    const outLines = doc.splitTextToSize(narrative.outlook, contentW - 24);
-    const boxH = outLines.length * 12 + 30;
-    doc.roundedRect(margin, ny, contentW, boxH, 5, 5, "FD");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...BRAND);
-    doc.text("OUTLOOK", margin + 12, ny + 16);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(...INK);
-    doc.text(outLines, margin + 12, ny + 30);
-    y = ny + boxH + 18;
-  }
 
 
 
