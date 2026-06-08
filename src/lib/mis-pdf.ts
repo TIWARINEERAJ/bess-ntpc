@@ -578,6 +578,43 @@ export function buildWeeklyDoc(
     },
   });
 
+  // ---- Statutory Compliance — Pending / Open items ----
+  const complMaster = extras.complianceMaster ?? [];
+  const complStatus = extras.complianceStatus ?? [];
+  const complMap = new Map(complStatus.map((c) => [`${c.station_id}::${c.compliance_id}`, c.status]));
+  const isComplCleared = (s: string | undefined) => s === "approved" || s === "not_applicable";
+  const complRows = stations
+    .map((s) => {
+      const items = complMaster.filter((m) => !isComplCleared(complMap.get(`${s.id}::${m.id}`)));
+      const pendingNames = items.map((m) => m.name);
+      return { station: s.name, pending: items.length, total: complMaster.length, names: pendingNames };
+    })
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.pending - a.pending);
+
+  // @ts-expect-error lastAutoTable injected by plugin
+  let cY = doc.lastAutoTable.finalY + 22;
+  if (cY > pageH - 120) { doc.addPage(); cY = margin; }
+  sectionTitle(doc, "Statutory Compliance — Pending Items", margin, cY, "Compliance items not yet cleared (excludes approved and not-applicable), by station");
+  autoTable(doc, {
+    startY: cY + 20,
+    head: [["Station", "Pending", "Cleared", "Open Compliance Items"]],
+    body: complRows.length
+      ? complRows.map((r) => [r.station, `${r.pending}`, `${r.total - r.pending}/${r.total}`, r.names.slice(0, 12).join(", ") || "—"])
+      : [["—", "—", "—", "No compliance master configured."]],
+    styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
+    headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 9 },
+    alternateRowStyles: { fillColor: [249, 246, 252] },
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { cellWidth: 420 } },
+    margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 1 && complRows.length) {
+        const p = complRows[data.row.index].pending;
+        if (p > 0) { data.cell.styles.textColor = [124, 58, 237]; data.cell.styles.fontStyle = "bold"; }
+      }
+    },
+  });
+
   // ---- Meetings governance (upcoming + last concluded) ----
   const plans = (extras.plans ?? [])
     .filter((p) => p.planned_date >= format(today, "yyyy-MM-dd"))
