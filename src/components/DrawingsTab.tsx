@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, FileStack } from "lucide-react";
 import { toast } from "sonner";
-import { drawingCounts, uniqueCategories, isApproved, isOverdue, isUpcoming, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 
 
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
@@ -42,9 +42,41 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   const mdlTotal = stationQ.data ?? 0;
   const counts = useMemo(() => drawingCounts(mdlTotal, rows), [mdlTotal, rows]);
   const categories = useMemo(() => uniqueCategories(rows), [rows]);
+  const catClasses = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.cat).filter(Boolean))).sort() as string[],
+    [rows],
+  );
 
   const [filter, setFilter] = useState<string>("all");
-  const visible = filter === "all" ? rows : rows.filter((r) => r.category === filter);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [catFilter, setCatFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  const matchesStatus = (r: StationDrawing) => {
+    switch (statusFilter) {
+      case "approved": return isApproved(r);
+      case "submitted": return isSubmitted(r) && !isApproved(r);
+      case "pending": return !isSubmitted(r);
+      case "overdue": return isOverdue(r);
+      case "sub_overdue": return isSubmissionOverdue(r);
+      case "upcoming": return isUpcoming(r);
+      default: return true;
+    }
+  };
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (filter !== "all" && r.category !== filter) return false;
+      if (catFilter !== "all") {
+        if (catFilter === "_none" ? !!r.cat : r.cat !== catFilter) return false;
+      }
+      if (!matchesStatus(r)) return false;
+      if (q && !(`${r.drg_ref} ${r.drg_desc} ${r.category} ${r.cat ?? ""}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, filter, catFilter, statusFilter, search]);
 
   const save = useMutation({
     mutationFn: async (row: Partial<StationDrawing> & { id: string }) => {
@@ -105,12 +137,13 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         <SummaryCard label="Total MDL" value={counts.total} editable={canEdit} onCommit={(v) => v !== mdlTotal && setTotal.mutate(v)} initial={mdlTotal} />
         <SummaryCard label="Submitted" value={counts.submitted} pct={counts.submittedPct} tone="blue" />
         <SummaryCard label="Approved" value={counts.approved} pct={counts.approvedPct} tone="green" />
         <SummaryCard label="Pending" value={counts.pending} tone="amber" />
-        <SummaryCard label="Overdue" value={counts.overdue} tone="red" />
+        <SummaryCard label="Sub. Overdue" value={counts.submissionOverdue} tone="red" />
+        <SummaryCard label="Apprvl Overdue" value={counts.overdue} tone="red" />
         <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
 
@@ -118,14 +151,40 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <FileStack className="h-4 w-4 text-primary" /> Master Drawing List Register
-            <Badge variant="outline" className="text-[10px]">{counts.registered} of {counts.total} listed</Badge>
+            <Badge variant="outline" className="text-[10px]">{visible.length} of {counts.registered} shown</Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="Search ref / description…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 w-48 text-xs"
+            />
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="h-8 w-56 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-44 text-xs"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
                 {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="sub_overdue">Sub. overdue</SelectItem>
+                <SelectItem value="overdue">Apprvl overdue</SelectItem>
+                <SelectItem value="upcoming">Due in 2 mo</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={catFilter} onValueChange={setCatFilter}>
+              <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Cat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cat</SelectItem>
+                <SelectItem value="_none">No Cat</SelectItem>
+                {catClasses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
             {canEdit && (
@@ -137,11 +196,24 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
+            <colgroup>
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "30%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "8%" }} />
+              {canEdit && <col style={{ width: "4%" }} />}
+            </colgroup>
             <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
                 {["Category", "Drg Ref", "Drawing Description", "Sch. Sub", "Sch. Apprvl", "Submitted", "Re-submitted", "Approved", "Cat", "Status", canEdit ? "" : null].filter((h) => h !== null).map((h, i) =>
-                  <th key={i} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
+                  <th key={i} className="border-b border-border px-2 py-2 text-left font-semibold">{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -177,7 +249,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 
   // Editable actual-date fields (commit immediately).
   const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
-    <Input type="date" disabled={!canEdit} className="h-7 w-32 bg-transparent text-xs" value={local[k] ?? ""}
+    <Input type="date" disabled={!canEdit} className="h-7 w-full min-w-0 bg-transparent px-1 text-[11px]" value={local[k] ?? ""}
       onChange={(e) => { const n = { ...local, [k]: e.target.value || null }; setLocal(n); onSave(n); }} />
   );
   // Editable category-class (Cat) dropdown — commits immediately.
@@ -187,7 +259,7 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
       disabled={!canEdit}
       onValueChange={(v) => { const n = { ...local, cat: v === "_none" ? null : v }; setLocal(n); onSave(n); }}
     >
-      <SelectTrigger className="h-7 w-24 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+      <SelectTrigger className="h-7 w-full min-w-0 px-1 text-[11px]"><SelectValue placeholder="—" /></SelectTrigger>
       <SelectContent>
         <SelectItem value="_none">—</SelectItem>
         {CAT_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -204,9 +276,9 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
 
   return (
     <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "whitespace-nowrap font-medium")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "whitespace-nowrap font-mono text-[10px] text-muted-foreground")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "min-w-[18rem] max-w-[28rem] whitespace-normal break-words leading-snug")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "break-words font-medium")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "break-all font-mono text-[10px] text-muted-foreground")}</td>
+      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_apprvl_date)}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>

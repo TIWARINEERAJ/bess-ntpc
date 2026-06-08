@@ -103,6 +103,22 @@ function Dashboard() {
       return data ?? [];
     },
   });
+  const complMasterQ = useQuery({
+    queryKey: ["compl_master_mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("compliance_master").select("id,category,name").order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const complStatusQ = useQuery({
+    queryKey: ["all_compliance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_compliance").select("station_id,compliance_id,status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const tasksByStation = tasksQ.data ?? {};
@@ -248,6 +264,8 @@ function Dashboard() {
             meetings: meetingsQ.data ?? [],
             plans: plansQ.data ?? [],
             snapshots: snapshotsQ.data ?? [],
+            complianceMaster: complMasterQ.data ?? [],
+            complianceStatus: complStatusQ.data ?? [],
           })}>
             <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
           </Button>

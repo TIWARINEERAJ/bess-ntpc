@@ -27,6 +27,8 @@ type BoiStatus = { station_id: string; boi_id: string; actual_po_date: string | 
 type MeetingRow = { station_id: string; meeting_type: string; meeting_date: string };
 type PlanRow = { station_id: string; meeting_type: string; planned_date: string; title: string | null };
 type Snapshot = { snapshot_date: string; station_id: string; pct: number };
+type ComplMaster = { id: string; category: string; name: string };
+type ComplStatus = { station_id: string; compliance_id: string; status: string };
 
 export type WeeklyPdfExtras = {
   drawings?: StationDrawing[];
@@ -35,6 +37,8 @@ export type WeeklyPdfExtras = {
   meetings?: MeetingRow[];
   plans?: PlanRow[];
   snapshots?: Snapshot[];
+  complianceMaster?: ComplMaster[];
+  complianceStatus?: ComplStatus[];
 };
 
 type Health = "green" | "amber" | "red";
@@ -178,6 +182,66 @@ function drawLineChart(
       doc.setTextColor(...MUTED);
       doc.text(c.p.label, c.px, baseY + 10, { align: "center" });
     }
+  });
+}
+
+/** Grouped columns: per station a Progress% bar (left scale 0-100) and a Delays bar (right scale). */
+function drawProgressDelayChart(
+  doc: jsPDF,
+  opts: { x: number; y: number; w: number; h: number; title: string; data: { label: string; pct: number; delayed: number }[] },
+) {
+  const { x, y, w, h, title, data } = opts;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.setTextColor(...INK);
+  doc.text(title, x, y);
+
+  // legend
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  const lx = x + w - 150;
+  doc.setFillColor(...BRAND); doc.rect(lx, y - 7, 9, 9, "F");
+  doc.setTextColor(...MUTED); doc.text("Progress %", lx + 13, y);
+  doc.setFillColor(...HEALTH_RGB.red); doc.rect(lx + 78, y - 7, 9, 9, "F");
+  doc.text("Delays", lx + 91, y);
+
+  const top = y + 14;
+  const chartH = h - 40;
+  const baseY = top + chartH;
+  doc.setDrawColor(215, 215, 215);
+  doc.setLineWidth(0.6);
+  doc.line(x, baseY, x + w, baseY);
+
+  const n = Math.max(1, data.length);
+  const slot = w / n;
+  const groupW = Math.min(34, slot * 0.6);
+  const barW = groupW / 2 - 1;
+  const maxDelay = Math.max(1, ...data.map((d) => d.delayed));
+
+  data.forEach((d, i) => {
+    const cx = x + slot * i + slot / 2;
+    // progress bar (0-100 scale)
+    const ph = (Math.min(100, Math.max(0, d.pct)) / 100) * chartH;
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(cx - groupW / 2, baseY - ph, barW, Math.max(0.6, ph), 1, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(...BRAND);
+    doc.text(`${d.pct}`, cx - groupW / 2 + barW / 2, baseY - ph - 2.5, { align: "center" });
+    // delay bar (scaled to maxDelay)
+    const dh = (d.delayed / maxDelay) * chartH;
+    doc.setFillColor(...HEALTH_RGB.red);
+    doc.roundedRect(cx + 1, baseY - dh, barW, Math.max(d.delayed > 0 ? 1.2 : 0, dh), 1, 1, "F");
+    if (d.delayed > 0) {
+      doc.setTextColor(...HEALTH_RGB.red);
+      doc.text(`${d.delayed}`, cx + 1 + barW / 2, baseY - dh - 2.5, { align: "center" });
+    }
+    // label
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...MUTED);
+    const lines = doc.splitTextToSize(d.label, slot - 2);
+    doc.text(lines.slice(0, 2), cx, baseY + 9, { align: "center" });
   });
 }
 
@@ -340,6 +404,23 @@ export function buildWeeklyDoc(
   });
   y += 150 + 16;
 
+  // ---- Station-wise Portfolio Progress vs Delays (grouped columns) ----
+  if (y > pageH - 180) { doc.addPage(); y = margin; }
+  const pdData = [...rows]
+    .sort((a, b) => b.delayed - a.delayed || a.pct - b.pct)
+    .map((r) => ({ label: r.s.name, pct: r.pct, delayed: r.delayed }));
+  drawProgressDelayChart(doc, {
+    x: margin,
+    y,
+    w: contentW,
+    h: 170,
+    title: "Station-wise Portfolio Progress vs Delays",
+    data: pdData,
+  });
+  y += 170 + 16;
+
+
+
   // ---- Station status summary table ----
   const order: Health[] = ["red", "amber", "green"];
   const sorted = [...rows].sort((a, b) => order.indexOf(a.health) - order.indexOf(b.health) || a.pct - b.pct);
@@ -493,6 +574,43 @@ export function buildWeeklyDoc(
       if (data.section === "body" && data.column.index === 4 && l2Exc.length) {
         data.cell.styles.textColor = HEALTH_RGB.red;
         data.cell.styles.fontStyle = "bold";
+      }
+    },
+  });
+
+  // ---- Statutory Compliance — Pending / Open items ----
+  const complMaster = extras.complianceMaster ?? [];
+  const complStatus = extras.complianceStatus ?? [];
+  const complMap = new Map(complStatus.map((c) => [`${c.station_id}::${c.compliance_id}`, c.status]));
+  const isComplCleared = (s: string | undefined) => s === "approved" || s === "not_applicable";
+  const complRows = stations
+    .map((s) => {
+      const items = complMaster.filter((m) => !isComplCleared(complMap.get(`${s.id}::${m.id}`)));
+      const pendingNames = items.map((m) => m.name);
+      return { station: s.name, pending: items.length, total: complMaster.length, names: pendingNames };
+    })
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.pending - a.pending);
+
+  // @ts-expect-error lastAutoTable injected by plugin
+  let cY = doc.lastAutoTable.finalY + 22;
+  if (cY > pageH - 120) { doc.addPage(); cY = margin; }
+  sectionTitle(doc, "Statutory Compliance — Pending Items", margin, cY, "Compliance items not yet cleared (excludes approved and not-applicable), by station");
+  autoTable(doc, {
+    startY: cY + 20,
+    head: [["Station", "Pending", "Cleared", "Open Compliance Items"]],
+    body: complRows.length
+      ? complRows.map((r) => [r.station, `${r.pending}`, `${r.total - r.pending}/${r.total}`, r.names.slice(0, 12).join(", ") || "—"])
+      : [["—", "—", "—", "No compliance master configured."]],
+    styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
+    headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 9 },
+    alternateRowStyles: { fillColor: [249, 246, 252] },
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { cellWidth: 420 } },
+    margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 1 && complRows.length) {
+        const p = complRows[data.row.index].pending;
+        if (p > 0) { data.cell.styles.textColor = [124, 58, 237]; data.cell.styles.fontStyle = "bold"; }
       }
     },
   });

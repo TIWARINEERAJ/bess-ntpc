@@ -12,7 +12,7 @@ import { DocumentUploads } from "@/components/DocumentUploads";
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
 
-const STATUSES = ["not_applied", "applied", "under_review", "approved", "rejected", "expired"];
+const STATUSES = ["not_applied", "not_applicable", "applied", "under_review", "approved", "rejected", "expired"];
 const statusColor = (s: string, expiry?: string | null) => {
   if (s === "approved") {
     if (expiry) { const d = differenceInCalendarDays(parseISO(expiry), new Date()); if (d < 0) return "var(--status-red)"; if (d < 30) return "var(--status-amber)"; }
@@ -20,6 +20,7 @@ const statusColor = (s: string, expiry?: string | null) => {
   }
   if (s === "rejected" || s === "expired") return "var(--status-red)";
   if (s === "applied" || s === "under_review") return "var(--status-blue)";
+  if (s === "not_applicable") return "#8b5cf6";
   return "var(--status-grey)";
 };
 
