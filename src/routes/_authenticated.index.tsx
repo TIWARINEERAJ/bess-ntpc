@@ -1,17 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack, Camera } from "lucide-react";
+import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack, Camera, FileType } from "lucide-react";
 import { toast } from "sonner";
 import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
-import { exportWeeklyPDF } from "@/lib/mis-pdf";
+import { exportWeeklyPDF, type WeeklyPdfExtras } from "@/lib/mis-pdf";
+import { exportWeeklyDOCX } from "@/lib/mis-docx";
+import { computePortfolioAnalytics } from "@/lib/mis-analytics";
+import { generateMisNarrative, type MisNarrative, type MisNarrativeInput } from "@/lib/mis-narrative.functions";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { drawingCounts, type StationDrawing } from "@/lib/drawings";
@@ -115,6 +119,22 @@ function Dashboard() {
     queryKey: ["all_compliance"],
     queryFn: async () => {
       const { data, error } = await supabase.from("station_compliance").select("station_id,compliance_id,status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const delaysQ = useQuery({
+    queryKey: ["all_delays_mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("delay_register").select("station_id,title,root_cause,corrective_action");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const issuesQ = useQuery({
+    queryKey: ["all_issues_mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("issues").select("station_id,title,severity,status");
       if (error) throw error;
       return data ?? [];
     },
@@ -239,6 +259,101 @@ function Dashboard() {
     }
   };
 
+  const callNarrative = useServerFn(generateMisNarrative);
+  const [exporting, setExporting] = useState<null | "pdf" | "docx">(null);
+
+  const buildExtras = (): WeeklyPdfExtras => ({
+    drawings: drawingsQ.data ?? [],
+    boiMaster: boiMasterQ.data ?? [],
+    boiStatus: boiStatusQ.data ?? [],
+    meetings: meetingsQ.data ?? [],
+    plans: plansQ.data ?? [],
+    snapshots: snapshotsQ.data ?? [],
+    complianceMaster: complMasterQ.data ?? [],
+    complianceStatus: complStatusQ.data ?? [],
+  });
+
+  const buildNarrativeInput = (): MisNarrativeInput => {
+    const today = new Date();
+    const a = computePortfolioAnalytics(stations, tasks, statusByStation, today);
+    // drawings overdue
+    const drawingsOverdue = (drawingsQ.data ?? []).filter((d) => {
+      if (d.submitted_date || d.resubmitted_date || d.approved_date || !d.sch_date) return false;
+      return new Date(d.sch_date) < today;
+    }).length;
+    // BOI overdue
+    const boiStatusMap = new Map((boiStatusQ.data ?? []).map((s: any) => [`${s.station_id}::${s.boi_id}`, s]));
+    let boiOverdue = 0;
+    for (const s of stations) for (const b of (boiMasterQ.data ?? [])) {
+      if (!b.scheduled_po_date) continue;
+      const st: any = boiStatusMap.get(`${s.id}::${b.id}`);
+      if (st?.actual_po_date) continue;
+      if (new Date(b.scheduled_po_date) < today) boiOverdue += 1;
+    }
+    // compliance pending
+    const complMap = new Map((complStatusQ.data ?? []).map((c: any) => [`${c.station_id}::${c.compliance_id}`, c.status]));
+    let compliancePending = 0;
+    for (const s of stations) for (const m of (complMasterQ.data ?? [])) {
+      const st = complMap.get(`${s.id}::${m.id}`);
+      if (st !== "approved" && st !== "not_applicable") compliancePending += 1;
+    }
+    // remarks from task status
+    const sn = new Map(stations.map((s) => [s.id, s.name]));
+    const remarks: string[] = [];
+    for (const arr of Object.values(statusByStation)) {
+      for (const st of arr as Status[]) {
+        if (st.remarks && st.remarks.trim()) remarks.push(`${sn.get(st.station_id) ?? ""}: ${st.remarks.trim()}`);
+      }
+    }
+    const delays = (delaysQ.data ?? []).map((d: any) => ({
+      station: sn.get(d.station_id) ?? "—",
+      title: d.title ?? "",
+      rootCause: d.root_cause ?? "",
+      corrective: d.corrective_action ?? "",
+    })).slice(0, 40);
+    const issues = (issuesQ.data ?? []).map((i: any) => ({
+      station: sn.get(i.station_id) ?? "—",
+      title: i.title ?? "",
+      severity: i.severity ?? "",
+      status: i.status ?? "",
+    })).slice(0, 40);
+
+    return {
+      asOf: format(today, "dd MMM yyyy"),
+      totals: { ...a.totals },
+      stations: a.stations.map((s) => ({
+        name: s.name, agency: s.agency, pct: s.pct, ideal: s.ideal,
+        delayed: s.delayed, forecastOverrunDays: s.forecastOverrunDays, health: s.health,
+      })),
+      exceptions: { l2Overdue: kpis.exceptions, drawingsOverdue, boiOverdue, compliancePending },
+      remarks: remarks.slice(0, 60),
+      delays,
+      issues,
+    };
+  };
+
+  const runWeeklyExport = async (kind: "pdf" | "docx") => {
+    setExporting(kind);
+    let narrative: MisNarrative | null = null;
+    try {
+      toast.loading("Generating AI narrative…", { id: "mis-export" });
+      narrative = await callNarrative({ data: buildNarrativeInput() });
+    } catch (e) {
+      console.error(e);
+      toast.error("AI narrative unavailable — exporting without it", { id: "mis-export" });
+    }
+    try {
+      const extras: WeeklyPdfExtras = { ...buildExtras(), narrative };
+      if (kind === "pdf") exportWeeklyPDF(stations, tasks, statusByStation, extras);
+      else await exportWeeklyDOCX(stations, tasks, statusByStation, extras);
+      toast.success(`Weekly MIS (${kind.toUpperCase()}) downloaded`, { id: "mis-export" });
+    } catch (e) {
+      toast.error(`Export failed: ${(e as Error).message}`, { id: "mis-export" });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
@@ -257,18 +372,13 @@ function Dashboard() {
           <Button variant="outline" size="sm" disabled={capturing} onClick={captureSnapshot}>
             <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
           </Button>
-          <Button size="sm" disabled={loading} onClick={() => exportWeeklyPDF(stations, tasks, statusByStation, {
-            drawings: drawingsQ.data ?? [],
-            boiMaster: boiMasterQ.data ?? [],
-            boiStatus: boiStatusQ.data ?? [],
-            meetings: meetingsQ.data ?? [],
-            plans: plansQ.data ?? [],
-            snapshots: snapshotsQ.data ?? [],
-            complianceMaster: complMasterQ.data ?? [],
-            complianceStatus: complStatusQ.data ?? [],
-          })}>
-            <FileText className="mr-2 h-4 w-4" /> Weekly MIS (PDF)
+          <Button variant="outline" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("docx")}>
+            <FileType className="mr-2 h-4 w-4" /> {exporting === "docx" ? "Building…" : "Weekly MIS (Word)"}
           </Button>
+          <Button size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
+            <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
+          </Button>
+
 
         </div>
       </section>
