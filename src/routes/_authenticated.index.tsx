@@ -206,6 +206,22 @@ function Dashboard() {
     () => (healthFilter ? computed.filter((s) => s.health === healthFilter) : computed),
     [computed, healthFilter]);
 
+  const [capturing, setCapturing] = useState(false);
+  const captureSnapshot = async () => {
+    setCapturing(true);
+    try {
+      const res = await fetch("/api/public/hooks/weekly-snapshot", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Snapshot failed");
+      toast.success(`Snapshot captured for ${json.stations} stations`);
+      snapshotsQ.refetch();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCapturing(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
