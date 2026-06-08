@@ -27,6 +27,8 @@ type BoiStatus = { station_id: string; boi_id: string; actual_po_date: string | 
 type MeetingRow = { station_id: string; meeting_type: string; meeting_date: string };
 type PlanRow = { station_id: string; meeting_type: string; planned_date: string; title: string | null };
 type Snapshot = { snapshot_date: string; station_id: string; pct: number };
+type ComplMaster = { id: string; category: string; name: string };
+type ComplStatus = { station_id: string; compliance_id: string; status: string };
 
 export type WeeklyPdfExtras = {
   drawings?: StationDrawing[];
@@ -35,6 +37,8 @@ export type WeeklyPdfExtras = {
   meetings?: MeetingRow[];
   plans?: PlanRow[];
   snapshots?: Snapshot[];
+  complianceMaster?: ComplMaster[];
+  complianceStatus?: ComplStatus[];
 };
 
 type Health = "green" | "amber" | "red";
