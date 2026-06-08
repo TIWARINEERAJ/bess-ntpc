@@ -29,4 +29,6 @@ const snapshots: any[] = [];
 const dates = ["2026-05-03", "2026-05-10", "2026-05-17", "2026-05-24", "2026-05-31", "2026-06-07"];
 dates.forEach((d, di) => stations.forEach((s, si) => snapshots.push({ snapshot_date: d, station_id: s.id, pct: 20 + di * 8 + si })));
 
-exportWeeklyPDF(stations as any, tasks, statusByStation, { drawings: drawings as any, boiMaster, boiStatus, meetings, plans, snapshots });
+const doc = buildWeeklyDoc(stations as any, tasks, statusByStation, { drawings: drawings as any, boiMaster, boiStatus, meetings, plans, snapshots });
+writeFileSync("/dev-server/mis-qa.pdf", Buffer.from(doc.output("arraybuffer")));
+console.log("done");
