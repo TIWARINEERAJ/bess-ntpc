@@ -1,0 +1,1 @@
+ALTER TABLE public.stations ADD COLUMN IF NOT EXISTS connectivity_status text;

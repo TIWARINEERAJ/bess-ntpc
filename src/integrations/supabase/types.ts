@@ -709,6 +709,7 @@ export type Database = {
           capacity_mw: number | null
           capacity_mwh: number
           completion_date: string | null
+          connectivity_status: string | null
           created_at: string
           eic_contact: string | null
           eic_email: string | null
@@ -734,6 +735,7 @@ export type Database = {
           capacity_mw?: number | null
           capacity_mwh: number
           completion_date?: string | null
+          connectivity_status?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
@@ -759,6 +761,7 @@ export type Database = {
           capacity_mw?: number | null
           capacity_mwh?: number
           completion_date?: string | null
+          connectivity_status?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
