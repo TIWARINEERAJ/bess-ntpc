@@ -123,6 +123,22 @@ function Dashboard() {
       return data ?? [];
     },
   });
+  const delaysQ = useQuery({
+    queryKey: ["all_delays_mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("delay_register").select("station_id,title,root_cause,corrective_action");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const issuesQ = useQuery({
+    queryKey: ["all_issues_mini"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("issues").select("station_id,title,severity,status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const tasksByStation = tasksQ.data ?? {};
