@@ -29,10 +29,11 @@ const dates = ["2026-05-03", "2026-05-10", "2026-05-17", "2026-05-24", "2026-05-
 dates.forEach((d, di) => stations.forEach((s, si) => snapshots.push({ snapshot_date: d, station_id: s.id, pct: 20 + di * 8 + si })));
 
 // stub doc.save to write file in node
+import { writeFileSync } from "fs";
 const jspdfMod = await import("jspdf");
 jspdfMod.jsPDF.prototype.save = function (this: any) {
   const buf = Buffer.from(this.output("arraybuffer"));
-  Bun.write("/dev-server/mis-qa.pdf", buf);
+  writeFileSync("/dev-server/mis-qa.pdf", buf);
   return this;
 };
 
