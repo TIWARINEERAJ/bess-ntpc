@@ -173,7 +173,6 @@ function DrawingRow({ row, canEdit, onSave, onDelete }: {
   row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void; onDelete: () => void;
 }) {
   const [local, setLocal] = useState<StationDrawing>(row);
-  const dirty = JSON.stringify(local) !== JSON.stringify(row);
   const st = statusOf(local);
 
   // Editable actual-date fields (commit immediately).
