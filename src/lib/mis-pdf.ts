@@ -245,7 +245,7 @@ function drawProgressDelayChart(
   });
 }
 
-
+function sectionTitle(doc: jsPDF, text: string, x: number, y: number, sub?: string) {
   doc.setTextColor(...INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
