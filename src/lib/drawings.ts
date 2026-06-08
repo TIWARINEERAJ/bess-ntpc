@@ -61,6 +61,12 @@ export function isOverdue(r: StationDrawing, today = startOfToday()): boolean {
   return new Date(r.sch_apprvl_date) < today;
 }
 
+/** Submission overdue = scheduled SUBMISSION date in the past, still not submitted (and not approved). */
+export function isSubmissionOverdue(r: StationDrawing, today = startOfToday()): boolean {
+  if (isSubmitted(r) || !r.sch_date) return false;
+  return new Date(r.sch_date) < today;
+}
+
 /** Upcoming = scheduled approval within the next `months` months, not approved, not already overdue. */
 export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()): boolean {
   if (isApproved(r) || !r.sch_apprvl_date) return false;
