@@ -104,7 +104,7 @@ function Dashboard() {
 
   const exceptions = useMemo(() => {
     const today = new Date();
-    const list: Array<{ station: string; stationId: string; wbs: string; task: string; slip: number; status: RowStatus; owner: string }> = [];
+    const list: Array<{ station: string; stationId: string; wbs: string; task: string; slip: number; planFinish: string; status: RowStatus; owner: string }> = [];
     for (const s of stations) {
       const map = buildStatusMap(statusByStation[s.id]);
       for (const t of tasksByStation[s.id] ?? []) {
@@ -112,11 +112,23 @@ function Dashboard() {
         const st = map.get(t.id);
         const cs = computeRowState(t, st, today);
         if (cs.status === "delayed" || cs.status === "blocked") {
-          list.push({ station: s.name, stationId: s.id, wbs: t.wbs_code, task: t.name, slip: cs.slipDays, status: cs.status as RowStatus, owner: st?.owner ?? "—" });
+          list.push({
+            station: s.name, stationId: s.id, wbs: t.wbs_code, task: t.name,
+            slip: cs.slipDays,
+            planFinish: t.baseline_finish ? format(new Date(t.baseline_finish), "dd MMM yy") : "—",
+            status: cs.status as RowStatus, owner: st?.owner ?? "—",
+          });
         }
       }
     }
-    return list.sort((a, b) => b.slip - a.slip).slice(0, 12);
+    // Station-wise: group by station, worst-overdue first within each station, busiest stations on top.
+    list.sort((a, b) =>
+      a.station.localeCompare(b.station) || b.slip - a.slip);
+    const byStation = new Map<string, number>();
+    for (const e of list) byStation.set(e.station, (byStation.get(e.station) ?? 0) + 1);
+    return list
+      .sort((a, b) => (byStation.get(b.station)! - byStation.get(a.station)!) || a.station.localeCompare(b.station) || b.slip - a.slip)
+      .slice(0, 14);
   }, [stations, tasksByStation, statusByStation]);
 
   // Per-agency (awarded contractor) performance roll-up
