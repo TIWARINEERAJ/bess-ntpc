@@ -90,6 +90,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
   const submitted = rows.filter(isSubmitted).length;
   const approved = rows.filter(isApproved).length;
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
+  const submissionOverdue = rows.filter((r) => isSubmissionOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;
   const total = Math.max(mdlTotal, registered);
   const pending = Math.max(0, total - approved);
@@ -100,6 +101,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
     approved,
     pending,
     overdue,
+    submissionOverdue,
     upcoming,
     submittedPct: total ? Math.round((submitted / total) * 100) : 0,
     approvedPct: total ? Math.round((approved / total) * 100) : 0,
