@@ -17,7 +17,7 @@ import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCir
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { GanttChart } from "@/components/GanttChart";
-import { buildStatusMap, computeRowState, fmtD, sectionDerived, stationProgress, statusLabel, type L2Task, type RowStatus, type Status } from "@/lib/gantt-utils";
+import { buildStatusMap, computeRowState, fmtD, sectionDerived, stationProgress, statusLabel, plannedPctAt, type L2Task, type RowStatus, type Status } from "@/lib/gantt-utils";
 import { exportStation } from "@/lib/mis-export";
 import { useAuth } from "@/lib/auth-context";
 import { BoiStatusTab } from "@/components/BoiStatusTab";
