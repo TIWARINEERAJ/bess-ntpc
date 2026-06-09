@@ -154,9 +154,22 @@ function StationPage() {
           <div className="min-w-[200px] flex-1">
             <div className="flex items-baseline justify-between">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Physical Progress</span>
-              <span className="font-mono text-2xl font-bold text-primary">{progress.pct}%</span>
+              <span className="font-mono text-2xl font-bold">
+                <span className="text-primary">{progress.pct}%</span>
+                <span className="text-base font-semibold text-muted-foreground"> / {idealPct}%</span>
+              </span>
             </div>
-            <Progress value={progress.pct} className="mt-2 h-2" />
+            <div className="relative mt-2">
+              <Progress value={progress.pct} className="h-2" />
+              <span
+                className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 bg-foreground/70"
+                style={{ left: `${Math.min(100, idealPct)}%` }}
+                title={`Ideal / baseline progress: ${idealPct}%`}
+              />
+            </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              actual vs ideal · {progress.pct >= idealPct ? "on/ahead of plan" : `${idealPct - progress.pct}% behind plan`}
+            </div>
           </div>
           <Stat label="Tasks Done" value={`${progress.completed} / ${progress.total}`} />
           <Stat label="Delayed" value={`${progress.delayed}`} tone={progress.delayed > 0 ? "red" : undefined} />
