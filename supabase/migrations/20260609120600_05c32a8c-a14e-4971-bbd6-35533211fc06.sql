@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.log_commitment_revision() FROM PUBLIC, anon, authenticated;
