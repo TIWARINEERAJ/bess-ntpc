@@ -125,6 +125,39 @@ export type Database = {
         }
         Relationships: []
       }
+      commitment_revisions: {
+        Row: {
+          committed_date: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          recorded_by: string | null
+          revision_no: number
+          station_id: string
+        }
+        Insert: {
+          committed_date: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          recorded_by?: string | null
+          revision_no: number
+          station_id: string
+        }
+        Update: {
+          committed_date?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          recorded_by?: string | null
+          revision_no?: number
+          station_id?: string
+        }
+        Relationships: []
+      }
       compliance_documents: {
         Row: {
           compliance_id: string

@@ -17,7 +17,7 @@ import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCir
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { GanttChart } from "@/components/GanttChart";
-import { buildStatusMap, computeRowState, fmtD, sectionDerived, stationProgress, statusLabel, type L2Task, type RowStatus, type Status } from "@/lib/gantt-utils";
+import { buildStatusMap, computeRowState, fmtD, sectionDerived, stationProgress, statusLabel, plannedPctAt, type L2Task, type RowStatus, type Status } from "@/lib/gantt-utils";
 import { exportStation } from "@/lib/mis-export";
 import { useAuth } from "@/lib/auth-context";
 import { BoiStatusTab } from "@/components/BoiStatusTab";
@@ -28,6 +28,8 @@ import { MeetingsTab } from "@/components/MeetingsTab";
 import { DrawingsTab } from "@/components/DrawingsTab";
 import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
@@ -62,6 +64,8 @@ function StationPage() {
   const station = stationQ.data;
   const statusMap = useMemo(() => buildStatusMap(status), [status]);
   const progress = useMemo(() => stationProgress(tasks, statusMap), [tasks, statusMap]);
+  const idealPct = useMemo(() => (tasks.length ? Math.round(plannedPctAt(tasks, new Date())) : 0), [tasks]);
+  const taskRevQ = useCommitmentRevisions(stationId, "task");
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -113,6 +117,7 @@ function StationPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["status", stationId] });
+      qc.invalidateQueries({ queryKey: ["commitment_revisions", "task", stationId] });
       qc.invalidateQueries({ queryKey: ["all_status"] });
       toast.success("Saved");
     },
@@ -149,9 +154,22 @@ function StationPage() {
           <div className="min-w-[200px] flex-1">
             <div className="flex items-baseline justify-between">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Physical Progress</span>
-              <span className="font-mono text-2xl font-bold text-primary">{progress.pct}%</span>
+              <span className="font-mono text-2xl font-bold">
+                <span className="text-primary">{progress.pct}%</span>
+                <span className="text-base font-semibold text-muted-foreground"> / {idealPct}%</span>
+              </span>
             </div>
-            <Progress value={progress.pct} className="mt-2 h-2" />
+            <div className="relative mt-2">
+              <Progress value={progress.pct} className="h-2" />
+              <span
+                className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 bg-foreground/70"
+                style={{ left: `${Math.min(100, idealPct)}%` }}
+                title={`Ideal / baseline progress: ${idealPct}%`}
+              />
+            </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              actual vs ideal · {progress.pct >= idealPct ? "on/ahead of plan" : `${idealPct - progress.pct}% behind plan`}
+            </div>
           </div>
           <Stat label="Tasks Done" value={`${progress.completed} / ${progress.total}`} />
           <Stat label="Delayed" value={`${progress.delayed}`} tone={progress.delayed > 0 ? "red" : undefined} />
@@ -212,7 +230,10 @@ function StationPage() {
                       <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_finish)}</div>
                       <div className="font-mono text-[10px]" style={{ color: aStart ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(aStart)}</div>
                       <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : aFinish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(aFinish)}</div>
-                      <div className="font-mono text-[10px]" style={{ color: st?.committed_date ? "var(--status-amber)" : "var(--muted-foreground)" }}>{fmtD(st?.committed_date ?? null)}</div>
+                      <div className="flex items-center gap-1 font-mono text-[10px]" style={{ color: st?.committed_date ? "var(--status-amber)" : "var(--muted-foreground)" }}>
+                        <span>{fmtD(st?.committed_date ?? null)}</span>
+                        {!t.is_section && <CommitmentHistory revisions={taskRevQ.data?.get(t.id)} />}
+                      </div>
                     </div>
                   );
                 })}
@@ -236,6 +257,7 @@ function StationPage() {
       <TaskDrawer
         task={openTask}
         status={openTask ? statusMap.get(openTask.id) : undefined}
+        revisions={openTask ? taskRevQ.data?.get(openTask.id) : undefined}
         derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
         onClose={() => setOpenTask(null)}
         canEdit={canEdit}
@@ -275,9 +297,10 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
   );
 }
 
-function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }: {
+function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit, saving }: {
   task: L2Task | null;
   status: Status | undefined;
+  revisions?: CommitmentRevision[];
   derived: { pct: number; actual_start: Date | null; actual_finish: Date | null; leafCount: number } | null;
   onClose: () => void;
   onSave: (p: Partial<Status>) => Promise<void>;
@@ -354,9 +377,14 @@ function TaskDrawer({ task, status, derived, onClose, onSave, canEdit, saving }:
             </div>
           </div>
           <div>
-            <Label htmlFor="cd">Committed Date</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="cd">Committed Date</Label>
+              {!task.is_section && <CommitmentHistory revisions={revisions} />}
+            </div>
             <Input id="cd" type="date" disabled={!canEdit || task.is_section} value={committedDate} onChange={e => setCommittedDate(e.target.value)} />
-            <p className="mt-1 text-[10px] text-muted-foreground">Committed / promised completion date for this activity.</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Committed / promised completion date. Each change is versioned (R0, R1 …) to track agency slippage.
+            </p>
           </div>
           <div>
             <Label htmlFor="pct">% Complete: <span className="font-mono">{pct}%</span></Label>

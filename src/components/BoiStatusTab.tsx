@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
 import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 type Boi = {
   id: string;
@@ -67,6 +69,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
   });
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
+  const revQ = useCommitmentRevisions(stationId, "boi");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -110,6 +113,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["boi_status", stationId] });
+      qc.invalidateQueries({ queryKey: ["commitment_revisions", "boi", stationId] });
       qc.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Saved");
     },
@@ -186,6 +190,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                   s={s}
                   chip={chip}
                   canEdit={canEdit}
+                  revisions={revQ.data?.get(b.id)}
                   onSave={(p) => save.mutate({ ...s, ...p })}
                 />
               );
@@ -203,12 +208,14 @@ function BoiRow({
   s,
   chip,
   canEdit,
+  revisions,
   onSave,
 }: {
   b: Boi;
   s: BoiStatus;
   chip: { label: string; c: string };
   canEdit: boolean;
+  revisions?: CommitmentRevision[];
   onSave: (p: Partial<BoiStatus>) => void;
 }) {
   const [local, setLocal] = useState<BoiStatus>(s);
@@ -252,7 +259,12 @@ function BoiRow({
       <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
-      <td className="px-1 py-1">{cell("committed_date", "date", "w-32")}</td>
+      <td className="px-1 py-1">
+        <div className="flex items-center gap-1">
+          {cell("committed_date", "date", "w-32")}
+          <CommitmentHistory revisions={revisions} />
+        </div>
+      </td>
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>

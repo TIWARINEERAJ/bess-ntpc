@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; committed_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
@@ -39,6 +41,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
   }});
 
   const map = useMemo(() => new Map((statQ.data ?? []).map(s => [s.compliance_id, s])), [statQ.data]);
+  const revQ = useCommitmentRevisions(stationId, "compliance");
 
   const save = useMutation({
     mutationFn: async (row: Stat) => {
@@ -46,7 +49,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
       const { error } = await supabase.from("station_compliance").upsert({ ...row, updated_by: user?.id ?? null }, { onConflict: "station_id,compliance_id" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["station_compl", stationId] }); qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["station_compl", stationId] }); qc.invalidateQueries({ queryKey: ["commitment_revisions", "compliance", stationId] }); qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Saved"); },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -121,7 +124,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
               <tbody>
                 {items.map(m => {
                   const s = map.get(m.id) ?? emptyStat(stationId, m.id);
-                  return <ComplRow key={m.id} m={m} s={s} canEdit={canEdit} onSave={(p) => save.mutate({ ...s, ...p })} />;
+                  return <ComplRow key={m.id} m={m} s={s} canEdit={canEdit} revisions={revQ.data?.get(m.id)} onSave={(p) => save.mutate({ ...s, ...p })} />;
                 })}
               </tbody>
             </table>
@@ -132,7 +135,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
   );
 }
 
-function ComplRow({ m, s, canEdit, onSave }: { m: Master; s: Stat; canEdit: boolean; onSave: (p: Partial<Stat>) => void }) {
+function ComplRow({ m, s, canEdit, revisions, onSave }: { m: Master; s: Stat; canEdit: boolean; revisions?: CommitmentRevision[]; onSave: (p: Partial<Stat>) => void }) {
   const [local, setLocal] = useState<Stat>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
   const inp = (k: keyof Stat, type: "date" | "text" = "text", w = "w-32") => (
@@ -150,7 +153,7 @@ function ComplRow({ m, s, canEdit, onSave }: { m: Master; s: Stat; canEdit: bool
           <SelectContent>{STATUSES.map(x => <SelectItem key={x} value={x}>{x.replace("_", " ")}</SelectItem>)}</SelectContent>
         </Select>
       </td>
-      <td className="px-1 py-1">{inp("committed_date", "date")}</td>
+      <td className="px-1 py-1"><div className="flex items-center gap-1">{inp("committed_date", "date")}<CommitmentHistory revisions={revisions} /></div></td>
       <td className="px-1 py-1">{inp("application_date", "date")}</td>
       <td className="px-1 py-1">{inp("approval_date", "date")}</td>
       <td className="px-1 py-1">{inp("expiry_date", "date")}</td>
