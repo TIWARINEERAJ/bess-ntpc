@@ -92,45 +92,55 @@ Return ONLY valid JSON with this exact shape (no markdown, no code fences):
 STATUS DATA (JSON):
 ${JSON.stringify(data)}`;
 
-    try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "You are a precise project controls analyst. Output only valid JSON." },
-            { role: "user", content: prompt },
-          ],
-          temperature: 0.4,
-        }),
-      });
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You are a precise project controls analyst. Output only valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.4,
+      }),
+    });
 
-      if (!res.ok) {
-        console.error("AI narrative gateway error", res.status, await res.text().catch(() => ""));
-        return fallback(data);
-      }
+    if (res.status === 429) {
+      throw new Error("AI rate limit reached — please wait a moment and try again.");
+    }
+    if (res.status === 402) {
+      throw new Error("AI credits exhausted — add credits in workspace settings to continue.");
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("AI narrative gateway error", res.status, body);
+      throw new Error(`AI service error (${res.status}). Please try again.`);
+    }
 
-      const json = await res.json();
-      const content: string = json?.choices?.[0]?.message?.content ?? "";
-      const cleaned = content.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-      const start = cleaned.indexOf("{");
-      const end = cleaned.lastIndexOf("}");
-      if (start === -1 || end === -1) return fallback(data);
-      const parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<MisNarrative>;
-
-      return {
-        executiveSummary: parsed.executiveSummary || fallback(data).executiveSummary,
-        keyInsights: Array.isArray(parsed.keyInsights) && parsed.keyInsights.length ? parsed.keyInsights : fallback(data).keyInsights,
-        risks: Array.isArray(parsed.risks) && parsed.risks.length ? parsed.risks : fallback(data).risks,
-        recommendations: Array.isArray(parsed.recommendations) && parsed.recommendations.length ? parsed.recommendations : fallback(data).recommendations,
-        outlook: parsed.outlook || fallback(data).outlook,
-      };
-    } catch (e) {
-      console.error("AI narrative failure", e);
+    const json = await res.json();
+    const content: string = json?.choices?.[0]?.message?.content ?? "";
+    const cleaned = content.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      console.error("AI narrative: no JSON found in response", content.slice(0, 200));
       return fallback(data);
     }
+    let parsed: Partial<MisNarrative>;
+    try {
+      parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<MisNarrative>;
+    } catch {
+      return fallback(data);
+    }
+
+    return {
+      executiveSummary: parsed.executiveSummary || fallback(data).executiveSummary,
+      keyInsights: Array.isArray(parsed.keyInsights) && parsed.keyInsights.length ? parsed.keyInsights : fallback(data).keyInsights,
+      risks: Array.isArray(parsed.risks) && parsed.risks.length ? parsed.risks : fallback(data).risks,
+      recommendations: Array.isArray(parsed.recommendations) && parsed.recommendations.length ? parsed.recommendations : fallback(data).recommendations,
+      outlook: parsed.outlook || fallback(data).outlook,
+    };
   });
