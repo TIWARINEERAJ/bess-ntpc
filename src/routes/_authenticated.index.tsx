@@ -326,6 +326,15 @@ function Dashboard() {
         </div>
       </section>
 
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Dashboard</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk MIS Export</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-0 space-y-6">
+
+
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
 
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
