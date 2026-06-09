@@ -377,9 +377,14 @@ function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit
             </div>
           </div>
           <div>
-            <Label htmlFor="cd">Committed Date</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="cd">Committed Date</Label>
+              {!task.is_section && <CommitmentHistory revisions={revisions} />}
+            </div>
             <Input id="cd" type="date" disabled={!canEdit || task.is_section} value={committedDate} onChange={e => setCommittedDate(e.target.value)} />
-            <p className="mt-1 text-[10px] text-muted-foreground">Committed / promised completion date for this activity.</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Committed / promised completion date. Each change is versioned (R0, R1 …) to track agency slippage.
+            </p>
           </div>
           <div>
             <Label htmlFor="pct">% Complete: <span className="font-mono">{pct}%</span></Label>
