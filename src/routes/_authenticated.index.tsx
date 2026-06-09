@@ -662,7 +662,7 @@ function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings
   }, [drawings]);
 
   const perStation = useMemo(() =>
-    stations.map((s) => ({ s, c: drawingCounts(s.mdl_total, byStation.get(s.id) ?? []) })),
+    stations.map((s) => ({ s, c: drawingCounts(byStation.get(s.id) ?? []) })),
     [stations, byStation]);
 
   const totals = useMemo(() => {
