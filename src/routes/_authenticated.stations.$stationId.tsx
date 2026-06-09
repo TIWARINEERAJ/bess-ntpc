@@ -255,7 +255,7 @@ function StationPage() {
               </div>
             </div>
             {/* Gantt */}
-            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} />
+            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} bodyRef={ganttBodyRef} onBodyVerticalScroll={(top) => syncScroll("gantt", top)} />
           </div>
           <Legend />
         </TabsContent>
