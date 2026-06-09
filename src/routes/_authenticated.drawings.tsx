@@ -21,13 +21,13 @@ export const Route = createFileRoute("/_authenticated/drawings")({
   component: DrawingsPage,
 });
 
-type StationRow = { id: string; name: string; lot: string; mdl_total: number; sort_order: number | null };
+type StationRow = { id: string; name: string; lot: string; sort_order: number | null };
 
 function DrawingsPage() {
   const stationsQ = useQuery({
     queryKey: ["stations"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("stations").select("id,name,lot,mdl_total,sort_order").order("sort_order").order("name");
+      const { data, error } = await supabase.from("stations").select("id,name,lot,sort_order").order("sort_order").order("name");
       if (error) throw error;
       return data as StationRow[];
     },
@@ -35,11 +35,7 @@ function DrawingsPage() {
 
   const drawingsQ = useQuery({
     queryKey: ["all_drawings"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_drawings").select("*").order("category").order("sort_order");
-      if (error) throw error;
-      return data as StationDrawing[];
-    },
+    queryFn: fetchAllDrawings,
   });
 
   const loading = stationsQ.isLoading || drawingsQ.isLoading;
@@ -55,8 +51,9 @@ function DrawingsPage() {
   const categories = useMemo(() => uniqueCategories(drawings), [drawings]);
 
   const stationCounts = useMemo(() =>
-    stations.map((s) => ({ s, c: drawingCounts(s.mdl_total, byStation.get(s.id) ?? []) })),
+    stations.map((s) => ({ s, c: drawingCounts(byStation.get(s.id) ?? []) })),
     [stations, byStation]);
+
 
   const portfolio = useMemo(() => {
     const total = stationCounts.reduce((a, x) => a + x.c.total, 0);
