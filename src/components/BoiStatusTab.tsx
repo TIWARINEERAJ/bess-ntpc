@@ -208,12 +208,14 @@ function BoiRow({
   s,
   chip,
   canEdit,
+  revisions,
   onSave,
 }: {
   b: Boi;
   s: BoiStatus;
   chip: { label: string; c: string };
   canEdit: boolean;
+  revisions?: CommitmentRevision[];
   onSave: (p: Partial<BoiStatus>) => void;
 }) {
   const [local, setLocal] = useState<BoiStatus>(s);
