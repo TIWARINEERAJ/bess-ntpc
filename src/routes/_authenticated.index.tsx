@@ -852,14 +852,16 @@ function healthLabel(h: "green" | "amber" | "red"): string {
   return h === "green" ? "On Track" : h === "amber" ? "At Risk" : "Delayed";
 }
 
-type AgencyRow = { agency: string; count: number; avgPct: number; delayed: number; green: number; amber: number; red: number; names: string };
+type AgencyStation = { id: string; name: string; pct: number; delayed: number; completed: number; total: number; health: "green" | "amber" | "red" };
+type AgencyRow = { agency: string; count: number; avgPct: number; delayed: number; green: number; amber: number; red: number; names: string; stations: AgencyStation[] };
 
 function AgencyPerformance({ data }: { data: AgencyRow[] }) {
+  const [drill, setDrill] = useState<AgencyRow | null>(null);
   if (data.length === 0) return null;
   const avgAll = Math.round(data.reduce((a, d) => a + d.avgPct * d.count, 0) / Math.max(1, data.reduce((a, d) => a + d.count, 0)));
   return (
     <section>
-      <SectionHeading title="Agency Performance" sub="Average physical progress by awarded EPC contractor · delayed-task load overlaid · portfolio average as reference" />
+      <SectionHeading title="Agency Performance" sub="Average physical progress by awarded EPC contractor · click a bar or card to drill into its stations" />
       <Card className="p-4">
         <div style={{ width: "100%", height: 360 }}>
           <ResponsiveContainer>
@@ -879,12 +881,13 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
                 formatter={(value: number, name: string) => name === "Avg progress" ? [`${value}%`, name] : [value, name]}
                 labelFormatter={(label: string) => {
                   const row = data.find((d) => d.agency === label);
-                  return row ? `${label} · ${row.count} station(s)\n${row.names}` : label;
+                  return row ? `${label} · ${row.count} station(s) · click to drill down` : label;
                 }}
               />
               <ReferenceLine y={avgAll} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
                 label={{ value: `avg ${avgAll}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
-              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+              <Bar dataKey="avgPct" name="Avg progress" fill="url(#gradAgency)" radius={[4, 4, 0, 0]} maxBarSize={48} cursor="pointer"
+                onClick={(d: any) => setDrill(data.find((r) => r.agency === d.agency) ?? null)}>
                 <LabelList dataKey="avgPct" position="top" fill="var(--foreground)" fontSize={11} formatter={(v: number) => `${v}%`} />
               </Bar>
             </ComposedChart>
@@ -892,20 +895,112 @@ function AgencyPerformance({ data }: { data: AgencyRow[] }) {
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((d) => (
-            <div key={d.agency} className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-xs">
+            <button key={d.agency} onClick={() => setDrill(d)} className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-left text-xs transition-colors hover:border-primary/40">
               <div className="min-w-0">
                 <div className="truncate font-medium">{d.agency}</div>
-                <div className="truncate text-[10px] text-muted-foreground">{d.names}</div>
+                <div className="truncate text-[10px] text-muted-foreground">{d.count} station(s) · click for split</div>
               </div>
               <div className="flex shrink-0 items-center gap-2 font-mono">
                 <span style={{ color: "var(--primary)" }}>{d.avgPct}%</span>
                 {d.delayed > 0 && <span style={{ color: "var(--status-red)" }} title="Delayed tasks">{d.delayed}⚠</span>}
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </Card>
+
+      <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{drill?.agency} — {drill?.count} station(s) · avg {drill?.avgPct}%</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-2 overflow-auto">
+            {drill?.stations.map((s) => {
+              const tone = `var(--status-${s.health})`;
+              return (
+                <Link key={s.id} to="/stations/$stationId" params={{ stationId: s.id }} className="block rounded-md border border-border/60 p-3 transition-colors hover:border-primary/40">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{s.name}</div>
+                      <div className="text-[11px] text-muted-foreground">{s.completed}/{s.total} tasks{s.delayed > 0 ? ` · ${s.delayed} delayed` : ""}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-semibold" style={{ color: tone }}>{s.pct}%</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="mt-2"><Progress value={s.pct} className="h-1.5" /></div>
+                </Link>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
+  );
+}
+
+type ExceptionRow = { station: string; stationId: string; wbs: string; task: string; slip: number; planFinish: string; status: RowStatus; owner: string };
+
+function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]; loading: boolean }) {
+  const [station, setStation] = useState<string>("all");
+  const stationNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of exceptions) counts.set(e.station, (counts.get(e.station) ?? 0) + 1);
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [exceptions]);
+
+  const shown = useMemo(() => {
+    if (station === "all") return exceptions.slice(0, 14);
+    return exceptions.filter((e) => e.station === station);
+  }, [exceptions, station]);
+
+  return (
+    <div>
+      <SectionHeading
+        title="Station-wise Exceptions"
+        sub="Delayed & blocked activities · days overdue against planned finish"
+        right={
+          <Select value={station} onValueChange={setStation}>
+            <SelectTrigger className="h-8 w-[190px] text-xs">
+              <SelectValue placeholder="All stations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All stations (top)</SelectItem>
+              {stationNames.map(([name, n]) => (
+                <SelectItem key={name} value={name}>{name} ({n})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+      <Card className="divide-y divide-border/60 p-0">
+        {shown.length === 0 && !loading && (
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-[color:var(--status-green)]" />
+            {station === "all" ? "No exceptions. All tasks on schedule." : "No exceptions for this station."}
+          </div>
+        )}
+        {shown.map((e, i) => (
+          <Link key={i} to="/stations/$stationId" params={{ stationId: e.stationId }} className="block p-3 transition-colors hover:bg-secondary/60">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">{e.station} · <span className="font-mono text-xs text-muted-foreground">{e.wbs}</span></div>
+                <div className="mt-0.5 truncate text-xs text-muted-foreground">{e.task}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">Due {e.planFinish} · Owner: {e.owner}</div>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <StatusBadge status={e.status} />
+                <div className="font-mono text-xs text-[color:var(--status-red)]" title="Days overdue against planned finish">
+                  {e.slip > 0 ? `overdue ${e.slip}d` : "due"}
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </Card>
+    </div>
   );
 }
 
