@@ -31,9 +31,13 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
   }
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  // sync horizontal scroll
-  const onBodyScroll = () => { if (headerRef.current && bodyRef.current) headerRef.current.scrollLeft = bodyRef.current.scrollLeft; };
+  const internalBodyRef = useRef<HTMLDivElement>(null);
+  const bodyRef = externalBodyRef ?? internalBodyRef;
+  // sync horizontal scroll with header and report vertical scroll to parent
+  const onBodyScroll = () => {
+    if (headerRef.current && bodyRef.current) headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
+    if (bodyRef.current) onBodyVerticalScroll?.(bodyRef.current.scrollTop);
+  };
 
   const height = visibleTasks.length * rowHeight;
 
