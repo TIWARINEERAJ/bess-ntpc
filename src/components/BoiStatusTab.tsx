@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
 import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 type Boi = {
   id: string;
