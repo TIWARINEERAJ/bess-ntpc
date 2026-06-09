@@ -115,6 +115,10 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
         <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
 
+      <DrawingsLifecycleChart rows={rows} />
+
+
+
       <Card className="p-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
