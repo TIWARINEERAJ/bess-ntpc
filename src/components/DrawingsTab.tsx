@@ -100,24 +100,12 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const setTotal = useMutation({
-    mutationFn: async (val: number) => {
-      const { error } = await supabase.from("stations").update({ mdl_total: val }).eq("id", stationId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["station_mdl_total", stationId] });
-      qc.invalidateQueries({ queryKey: ["stations"] });
-      toast.success("Total MDL updated");
-    },
-    onError: (e) => toast.error((e as Error).message),
-  });
-
   return (
     <div className="space-y-4">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-        <SummaryCard label="Total MDL" value={counts.total} editable={canEdit} onCommit={(v) => v !== mdlTotal && setTotal.mutate(v)} initial={mdlTotal} />
+        <SummaryCard label="Total MDL Drawings" value={counts.total} />
+
         <SummaryCard label="Submitted" value={counts.submitted} pct={counts.submittedPct} tone="blue" />
         <SummaryCard label="Approved" value={counts.approved} pct={counts.approvedPct} tone="green" />
         <SummaryCard label="Pending" value={counts.pending} tone="amber" />
