@@ -438,6 +438,8 @@ function Dashboard() {
         </div>
       </section>
 
+      <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
+
       <DrawingTypeAnalytics stations={stations} drawings={drawingsQ.data ?? []} />
 
       <BoiComplianceAnalytics
@@ -447,10 +449,6 @@ function Dashboard() {
         complMaster={complMasterQ.data ?? []}
         complStatus={complStatusQ.data ?? []}
       />
-
-      <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
-
-      <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
 
       <section>
         <div className="mb-3">
@@ -477,6 +475,7 @@ function Dashboard() {
                     formatter={(value: number, name: string) => [value == null ? "—" : `${value}%`, name]}
                   />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                  <ReferenceLine x="Now" stroke="var(--primary)" strokeDasharray="3 3" label={{ value: "Now", fill: "var(--primary)", fontSize: 10, position: "top" }} />
                   <Line type="monotone" dataKey="planned" name="Ideal / Baseline" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--primary)" strokeWidth={2.5} dot={false} connectNulls />
                 </ComposedChart>
@@ -485,6 +484,12 @@ function Dashboard() {
           )}
         </Card>
       </section>
+        </TabsContent>
+
+        <TabsContent value="bulk" className="mt-0">
+          <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
+        </TabsContent>
+      </Tabs>
     </div>
 
   );
