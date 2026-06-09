@@ -153,7 +153,7 @@ function ComplRow({ m, s, canEdit, revisions, onSave }: { m: Master; s: Stat; ca
           <SelectContent>{STATUSES.map(x => <SelectItem key={x} value={x}>{x.replace("_", " ")}</SelectItem>)}</SelectContent>
         </Select>
       </td>
-      <td className="px-1 py-1">{inp("committed_date", "date")}</td>
+      <td className="px-1 py-1"><div className="flex items-center gap-1">{inp("committed_date", "date")}<CommitmentHistory revisions={revisions} /></div></td>
       <td className="px-1 py-1">{inp("application_date", "date")}</td>
       <td className="px-1 py-1">{inp("approval_date", "date")}</td>
       <td className="px-1 py-1">{inp("expiry_date", "date")}</td>
