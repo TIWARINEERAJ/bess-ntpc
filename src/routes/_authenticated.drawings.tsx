@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileStack, ArrowRight, FileCheck2, FileClock, FileWarning } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { drawingCounts, fetchAllDrawings, uniqueCategories, isApproved, isSubmitted, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 
 export const Route = createFileRoute("/_authenticated/drawings")({
   head: () => ({
@@ -151,8 +152,15 @@ function DrawingsPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
+            <DrawingsLifecycleChart
+              rows={drawings}
+              title="Portfolio Drawings (MDL) Lifecycle — Month-wise Flow"
+              subtitle="All stations combined — scheduled vs actual submissions, approvals, re-submissions and cumulative slippage"
+              height={460}
+            />
             <Card className="p-4">
               <div style={{ width: "100%", height: 340 }}>
+
                 <ResponsiveContainer>
                   <BarChart data={stationCounts.map((x) => ({ name: x.s.name, Submitted: x.c.submitted, Approved: x.c.approved, Pending: x.c.pending }))}
                     margin={{ top: 8, right: 16, left: 0, bottom: 70 }} barCategoryGap="20%">

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 
 
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
@@ -113,6 +114,10 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
         <SummaryCard label="Apprvl Overdue" value={counts.overdue} tone="red" />
         <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
+
+      <DrawingsLifecycleChart rows={rows} />
+
+
 
       <Card className="p-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
