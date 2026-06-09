@@ -28,6 +28,7 @@ import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, C
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DrawingTypeAnalytics, BoiComplianceAnalytics } from "@/components/PortfolioAnalytics";
 import { LineChart as LineChartIcon } from "lucide-react";
 
@@ -325,6 +326,15 @@ function Dashboard() {
         </div>
       </section>
 
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Dashboard</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk MIS Export</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-0 space-y-6">
+
+
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
 
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
@@ -428,6 +438,8 @@ function Dashboard() {
         </div>
       </section>
 
+      <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
+
       <DrawingTypeAnalytics stations={stations} drawings={drawingsQ.data ?? []} />
 
       <BoiComplianceAnalytics
@@ -437,10 +449,6 @@ function Dashboard() {
         complMaster={complMasterQ.data ?? []}
         complStatus={complStatusQ.data ?? []}
       />
-
-      <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
-
-      <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
 
       <section>
         <div className="mb-3">
@@ -467,6 +475,7 @@ function Dashboard() {
                     formatter={(value: number, name: string) => [value == null ? "—" : `${value}%`, name]}
                   />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                  <ReferenceLine x="Now" stroke="var(--primary)" strokeDasharray="3 3" label={{ value: "Now", fill: "var(--primary)", fontSize: 10, position: "top" }} />
                   <Line type="monotone" dataKey="planned" name="Ideal / Baseline" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--primary)" strokeWidth={2.5} dot={false} connectNulls />
                 </ComposedChart>
@@ -475,6 +484,12 @@ function Dashboard() {
           )}
         </Card>
       </section>
+        </TabsContent>
+
+        <TabsContent value="bulk" className="mt-0">
+          <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
+        </TabsContent>
+      </Tabs>
     </div>
 
   );
@@ -777,15 +792,16 @@ function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]
   }, [exceptions]);
 
   const shown = useMemo(() => {
-    if (station === "all") return exceptions.slice(0, 14);
-    return exceptions.filter((e) => e.station === station);
+    const base = station === "all" ? exceptions : exceptions.filter((e) => e.station === station);
+    // Always show the worst-overdue first, capped at the top 10.
+    return [...base].sort((a, b) => b.slip - a.slip).slice(0, 10);
   }, [exceptions, station]);
 
   return (
     <div>
       <SectionHeading
-        title="Station-wise Exceptions"
-        sub="Delayed & blocked activities · days overdue against planned finish"
+        title="Top 10 Exceptions"
+        sub={station === "all" ? "Worst 10 delayed / blocked activities across all stations · days overdue against planned finish" : "Worst 10 delayed / blocked activities for this station · days overdue against planned finish"}
         right={
           <Select value={station} onValueChange={setStation}>
             <SelectTrigger className="h-8 w-[190px] text-xs">

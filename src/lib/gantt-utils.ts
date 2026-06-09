@@ -231,10 +231,14 @@ export function computeSCurve(tasks: L2Task[], statusMap: Map<string, Status>, t
     points.push({ date: format(cursor, "MMM yy"), t: cursor.getTime(), planned, actual });
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
-  // ensure a final "today" point so curves meet at the present
+  // Insert a "Now" point at its true chronological position so it lands
+  // between the surrounding months (e.g. 9 Jun sits between Jun and Jul).
   const plannedNow = Math.round(plannedPctAt(tasks, today) * 10) / 10;
   const actualNow = Math.round(actualPctAt(tasks, statusMap, today, today) * 10) / 10;
-  points.push({ date: "Now", t: today.getTime(), planned: plannedNow, actual: actualNow });
+  const nowPoint: SCurvePoint = { date: "Now", t: today.getTime(), planned: plannedNow, actual: actualNow };
+  const insertIdx = points.findIndex((p) => p.t > today.getTime());
+  if (insertIdx === -1) points.push(nowPoint);
+  else points.splice(insertIdx, 0, nowPoint);
 
   // daysBehind: how many days ago the ideal curve already reached today's actual %
   let daysBehind = 0;
