@@ -280,64 +280,6 @@ function Dashboard() {
     complianceStatus: complStatusQ.data ?? [],
   });
 
-  const buildNarrativeInput = (): MisNarrativeInput => {
-    const today = new Date();
-    const a = computePortfolioAnalytics(stations, tasks, statusByStation, today);
-    // drawings overdue
-    const drawingsOverdue = (drawingsQ.data ?? []).filter((d) => {
-      if (d.submitted_date || d.resubmitted_date || d.approved_date || !d.sch_date) return false;
-      return new Date(d.sch_date) < today;
-    }).length;
-    // BOI overdue
-    const boiStatusMap = new Map((boiStatusQ.data ?? []).map((s: any) => [`${s.station_id}::${s.boi_id}`, s]));
-    let boiOverdue = 0;
-    for (const s of stations) for (const b of (boiMasterQ.data ?? [])) {
-      if (!b.scheduled_po_date) continue;
-      const st: any = boiStatusMap.get(`${s.id}::${b.id}`);
-      if (st?.actual_po_date) continue;
-      if (new Date(b.scheduled_po_date) < today) boiOverdue += 1;
-    }
-    // compliance pending
-    const complMap = new Map((complStatusQ.data ?? []).map((c: any) => [`${c.station_id}::${c.compliance_id}`, c.status]));
-    let compliancePending = 0;
-    for (const s of stations) for (const m of (complMasterQ.data ?? [])) {
-      const st = complMap.get(`${s.id}::${m.id}`);
-      if (st !== "approved" && st !== "not_applicable") compliancePending += 1;
-    }
-    // remarks from task status
-    const sn = new Map(stations.map((s) => [s.id, s.name]));
-    const remarks: string[] = [];
-    for (const arr of Object.values(statusByStation)) {
-      for (const st of arr as Status[]) {
-        if (st.remarks && st.remarks.trim()) remarks.push(`${sn.get(st.station_id) ?? ""}: ${st.remarks.trim()}`);
-      }
-    }
-    const delays = (delaysQ.data ?? []).map((d: any) => ({
-      station: sn.get(d.station_id) ?? "—",
-      title: d.title ?? "",
-      rootCause: d.root_cause ?? "",
-      corrective: d.corrective_action ?? "",
-    })).slice(0, 40);
-    const issues = (issuesQ.data ?? []).map((i: any) => ({
-      station: sn.get(i.station_id) ?? "—",
-      title: i.title ?? "",
-      severity: i.severity ?? "",
-      status: i.status ?? "",
-    })).slice(0, 40);
-
-    return {
-      asOf: format(today, "dd MMM yyyy"),
-      totals: { ...a.totals },
-      stations: a.stations.map((s) => ({
-        name: s.name, agency: s.agency, pct: s.pct, ideal: s.ideal,
-        delayed: s.delayed, forecastOverrunDays: s.forecastOverrunDays, health: s.health,
-      })),
-      exceptions: { l2Overdue: kpis.exceptions, drawingsOverdue, boiOverdue, compliancePending },
-      remarks: remarks.slice(0, 60),
-      delays,
-      issues,
-    };
-  };
 
   const runWeeklyExport = async (kind: "pdf" | "docx") => {
     setExporting(kind);
