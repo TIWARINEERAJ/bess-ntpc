@@ -193,7 +193,8 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
           </tbody>
         </table>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
 
