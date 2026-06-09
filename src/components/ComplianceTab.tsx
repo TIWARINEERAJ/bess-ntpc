@@ -135,7 +135,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
   );
 }
 
-function ComplRow({ m, s, canEdit, onSave }: { m: Master; s: Stat; canEdit: boolean; onSave: (p: Partial<Stat>) => void }) {
+function ComplRow({ m, s, canEdit, revisions, onSave }: { m: Master; s: Stat; canEdit: boolean; revisions?: CommitmentRevision[]; onSave: (p: Partial<Stat>) => void }) {
   const [local, setLocal] = useState<Stat>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
   const inp = (k: keyof Stat, type: "date" | "text" = "text", w = "w-32") => (
