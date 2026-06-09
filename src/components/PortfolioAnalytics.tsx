@@ -272,6 +272,49 @@ export function BoiComplianceAnalytics({
     return { cells, po, delivered, received };
   }, [boiByStation, stations.length, boiMaster.length]);
 
+  /* ---- BOI: per-component (item) roll-up across stations ---- */
+  const boiStatusMap = useMemo(() => {
+    const m = new Map<string, BoiStatus>();
+    for (const s of boiStatus) m.set(`${s.station_id}::${s.boi_id}`, s);
+    return m;
+  }, [boiStatus]);
+
+  const boiByItem = useMemo(() => {
+    return [...boiMaster]
+      .sort((a, b) => (a as any).sort_order - (b as any).sort_order || a.name.localeCompare(b.name))
+      .map((b) => {
+        let po = 0, delivered = 0, received = 0;
+        for (const st of stations) {
+          const cell = boiStatusMap.get(`${st.id}::${b.id}`);
+          if (cell?.actual_po_date) po += 1;
+          if (cell?.delivery_date) delivered += 1;
+          if (cell?.site_receipt_date) received += 1;
+        }
+        return { id: b.id, name: b.name, category: (b as any).inspection_category as string | null, po, delivered, received, total: stations.length };
+      });
+  }, [boiMaster, stations, boiStatusMap]);
+
+  const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
+
+  // Per-station constituents for the drilled component
+  const boiDrillStations = useMemo(() => {
+    if (!boiDrill) return [];
+    return stations.map((st) => {
+      const cell = boiStatusMap.get(`${st.id}::${boiDrill.id}`);
+      const stage = cell?.site_receipt_date ? "received" : cell?.delivery_date ? "delivered" : cell?.actual_po_date ? "po" : "pending";
+      return {
+        s: st,
+        stage,
+        po: cell?.actual_po_date ?? null,
+        delivery: cell?.delivery_date ?? null,
+        receipt: cell?.site_receipt_date ?? null,
+      };
+    }).sort((a, b) => {
+      const order = { received: 0, delivered: 1, po: 2, pending: 3 } as const;
+      return order[a.stage as keyof typeof order] - order[b.stage as keyof typeof order];
+    });
+  }, [boiDrill, stations, boiStatusMap]);
+
   /* ---- Compliance: status split by category ---- */
   const complStatusMap = useMemo(() => {
     const m = new Map<string, string>();
