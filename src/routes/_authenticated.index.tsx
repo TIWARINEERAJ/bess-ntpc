@@ -18,7 +18,7 @@ import { computePortfolioAnalytics } from "@/lib/mis-analytics";
 import { generateMisNarrative, type MisNarrative, type MisNarrativeInput } from "@/lib/mis-narrative.functions";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
-import { drawingCounts, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, fetchAllDrawings, type StationDrawing } from "@/lib/drawings";
 import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useRef, useState } from "react";
 import { format, addDays } from "date-fns";
@@ -66,11 +66,7 @@ function Dashboard() {
   });
   const drawingsQ = useQuery({
     queryKey: ["all_drawings"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_drawings").select("*");
-      if (error) throw error;
-      return data as StationDrawing[];
-    },
+    queryFn: fetchAllDrawings,
   });
   const boiMasterQ = useQuery({
     queryKey: ["boi_master"],
@@ -666,7 +662,7 @@ function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings
   }, [drawings]);
 
   const perStation = useMemo(() =>
-    stations.map((s) => ({ s, c: drawingCounts(s.mdl_total, byStation.get(s.id) ?? []) })),
+    stations.map((s) => ({ s, c: drawingCounts(byStation.get(s.id) ?? []) })),
     [stations, byStation]);
 
   const totals = useMemo(() => {
@@ -690,11 +686,11 @@ function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings
 
   return (
     <section>
-      <SectionHeading title="Drawings — MDL Status" sub="Portfolio submission & approval against the Master Drawing List · open the Drawings page for station & category detail" />
+      <SectionHeading title="Drawings (MDL) — Master Drawing List Status" sub="Every figure is counted from the Master Drawing List (MDL) register — the single source of truth. Open the Drawings page for station & category detail." />
       <Card className="p-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            <MdlStat label="Total MDL" value={totals.total} tone="var(--primary)" />
+            <MdlStat label="Total MDL Drawings" value={totals.total} tone="var(--primary)" />
             <MdlStat label="Submitted" value={totals.submitted} sub={`${totals.submittedPct}%`} tone="var(--status-blue)" />
             <MdlStat label="Approved" value={totals.approved} sub={`${totals.approvedPct}%`} tone="var(--status-green)" />
             <MdlStat label="Pending" value={totals.pending} tone="var(--status-amber)" />

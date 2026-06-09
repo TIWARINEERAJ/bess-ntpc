@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileStack, ArrowRight, FileCheck2, FileClock, FileWarning } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
-import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, fetchAllDrawings, uniqueCategories, isApproved, isSubmitted, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 
 export const Route = createFileRoute("/_authenticated/drawings")({
   head: () => ({
@@ -21,13 +21,13 @@ export const Route = createFileRoute("/_authenticated/drawings")({
   component: DrawingsPage,
 });
 
-type StationRow = { id: string; name: string; lot: string; mdl_total: number; sort_order: number | null };
+type StationRow = { id: string; name: string; lot: string; sort_order: number | null };
 
 function DrawingsPage() {
   const stationsQ = useQuery({
     queryKey: ["stations"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("stations").select("id,name,lot,mdl_total,sort_order").order("sort_order").order("name");
+      const { data, error } = await supabase.from("stations").select("id,name,lot,sort_order").order("sort_order").order("name");
       if (error) throw error;
       return data as StationRow[];
     },
@@ -35,11 +35,7 @@ function DrawingsPage() {
 
   const drawingsQ = useQuery({
     queryKey: ["all_drawings"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_drawings").select("*").order("category").order("sort_order");
-      if (error) throw error;
-      return data as StationDrawing[];
-    },
+    queryFn: fetchAllDrawings,
   });
 
   const loading = stationsQ.isLoading || drawingsQ.isLoading;
@@ -55,8 +51,9 @@ function DrawingsPage() {
   const categories = useMemo(() => uniqueCategories(drawings), [drawings]);
 
   const stationCounts = useMemo(() =>
-    stations.map((s) => ({ s, c: drawingCounts(s.mdl_total, byStation.get(s.id) ?? []) })),
+    stations.map((s) => ({ s, c: drawingCounts(byStation.get(s.id) ?? []) })),
     [stations, byStation]);
+
 
   const portfolio = useMemo(() => {
     const total = stationCounts.reduce((a, x) => a + x.c.total, 0);
@@ -89,15 +86,15 @@ function DrawingsPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Engineering Drawings</div>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Drawings = Master Drawing List (MDL)</div>
         <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold tracking-tight">
-          <FileStack className="h-7 w-7 text-primary" /> Master Drawing List Status
+          <FileStack className="h-7 w-7 text-primary" /> Master Drawing List (MDL) Status
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Submission & approval progress against the MDL across all {stations.length} stations.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Submission &amp; approval progress against the MDL — totals counted from the MDL register across all {stations.length} stations.</p>
       </section>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        <Kpi icon={<FileStack className="h-4 w-4" />} label="Total MDL" value={portfolio.total} tone="primary" />
+        <Kpi icon={<FileStack className="h-4 w-4" />} label="Total MDL Drawings" value={portfolio.total} tone="primary" />
         <Kpi icon={<FileClock className="h-4 w-4" />} label="Submitted" value={portfolio.submitted} sub={`${portfolio.submittedPct}% of MDL`} tone="blue" />
         <Kpi icon={<FileCheck2 className="h-4 w-4" />} label="Approved" value={portfolio.approved} sub={`${portfolio.approvedPct}% of MDL`} tone="green" />
         <Kpi icon={<FileWarning className="h-4 w-4" />} label="Pending" value={portfolio.pending} tone="amber" />

@@ -1,3 +1,14 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * A single drawing record in a station's Master Drawing List (MDL).
+ *
+ * IMPORTANT — single source of truth:
+ * The MDL (Master Drawing List) IS the collection of these rows. Every
+ * "Drawings" / "Total MDL" figure shown anywhere in the app is derived by
+ * counting these rows — never from a separately stored planned total. This
+ * guarantees one consistent number propagates across the whole codebase.
+ */
 export type StationDrawing = {
   id: string;
   station_id: string;
@@ -12,6 +23,30 @@ export type StationDrawing = {
   approved_date: string | null;
   sort_order: number;
 };
+
+/**
+ * Fetch every MDL drawing row, transparently paginating past the Supabase
+ * 1000-row response cap. Without this, portfolio-wide drawing totals silently
+ * top out at 1000 even though there are thousands of drawings.
+ */
+export async function fetchAllDrawings(): Promise<StationDrawing[]> {
+  const PAGE = 1000;
+  const all: StationDrawing[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("station_drawings")
+      .select("*")
+      .order("category")
+      .order("sort_order")
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all.push(...(data as StationDrawing[]));
+    if (data.length < PAGE) break;
+  }
+  return all;
+}
+
 
 /** Normalise the drawing CAT classification to a canonical code. */
 export function catCode(cat: string | null): "I" | "II" | "III" | "REL" | null {
@@ -100,13 +135,14 @@ export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()
 }
 
 /**
- * Derive MDL counts for a station.
- * - total: declared Total MDL (planned drawing count) — falls back to registered rows when larger.
- * - submitted / approved: counted from the actual drawing register.
- * - pending: total minus approved.
- * - overdue / upcoming: based on scheduled approval dates.
+ * Derive MDL counts from a station's (or the portfolio's) drawing register.
+ *
+ * The MDL register is the SINGLE source of truth: the total is simply the
+ * number of drawing rows — there is no separately stored planned total. Every
+ * other figure (submitted / approved / pending / overdue) is counted from the
+ * same rows so all numbers stay perfectly consistent everywhere they appear.
  */
-export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): DrawingCounts {
+export function drawingCounts(rows: StationDrawing[]): DrawingCounts {
   const today = startOfToday();
   const registered = rows.length;
   const submitted = rows.filter(isSubmitted).length;
@@ -114,7 +150,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
   const submissionOverdue = rows.filter((r) => isSubmissionOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;
-  const total = Math.max(mdlTotal, registered);
+  const total = registered;
   const pending = Math.max(0, total - approved);
   return {
     total,
@@ -129,6 +165,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
     approvedPct: total ? Math.round((approved / total) * 100) : 0,
   };
 }
+
 
 export function uniqueCategories(rows: StationDrawing[]): string[] {
   return Array.from(new Set(rows.map((r) => r.category))).sort((a, b) => a.localeCompare(b));

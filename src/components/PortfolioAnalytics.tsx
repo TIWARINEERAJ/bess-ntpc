@@ -129,8 +129,8 @@ export function DrawingTypeAnalytics({
   return (
     <section>
       <SectionHeading
-        title="Drawings — by Type (all stations)"
-        sub="Master Drawing List broken down by engineering discipline · approved = CAT-I / CAT-II only · click a type for the station split"
+        title="Drawings (MDL) — by Type · all stations"
+        sub="Master Drawing List (MDL) broken down by engineering discipline · totals are counted from the MDL register · approved = CAT-I / CAT-II only · click a type for the station split"
         right={
           <Link to="/drawings" className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs transition-colors hover:border-primary/40 hover:text-primary">
             <FileStack className="h-3.5 w-3.5" /> Drawings page
@@ -139,11 +139,12 @@ export function DrawingTypeAnalytics({
       />
       <Card className="p-4">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Total drawings" value={totals.total} tone="var(--primary)" />
+          <Stat label="Total MDL Drawings" value={totals.total} tone="var(--primary)" />
           <Stat label="Approved (CAT-I/II)" value={totals.approved} tone="var(--status-green)" sub={totals.total ? `${Math.round((totals.approved / totals.total) * 100)}%` : undefined} />
           <Stat label="Submitted, awaiting" value={totals.submitted} tone="var(--status-blue)" />
           <Stat label="Pending submission" value={totals.pending} tone="var(--status-amber)" />
         </div>
+
 
         <div className="mt-4" style={{ width: "100%", height: 380 }}>
           <ResponsiveContainer>
