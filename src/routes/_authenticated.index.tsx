@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { exportWeeklyPDF, type WeeklyPdfExtras } from "@/lib/mis-pdf";
 import { exportWeeklyDOCX } from "@/lib/mis-docx";
 import { computePortfolioAnalytics } from "@/lib/mis-analytics";
-import { generateMisNarrative, type MisNarrative, type MisNarrativeInput } from "@/lib/mis-narrative.functions";
+
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
 import { drawingCounts, fetchAllDrawings, type StationDrawing } from "@/lib/drawings";
@@ -25,11 +25,11 @@ import { format, addDays } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DrawingTypeAnalytics, BoiComplianceAnalytics } from "@/components/PortfolioAnalytics";
-import { Sparkles, LineChart as LineChartIcon } from "lucide-react";
+import { LineChart as LineChartIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Dashboard — NTPC BESS L2 Monitor" }] }),
@@ -179,6 +179,11 @@ function Dashboard() {
     }
     return { total, green, amber, red, totalMWh, avgPct, upcoming, exceptions };
   }, [computed, stations, tasksByStation, statusByStation]);
+
+  const portfolioAnalytics = useMemo(
+    () => computePortfolioAnalytics(stations, tasks, statusByStation, new Date()),
+    [stations, tasks, statusByStation],
+  );
 
   const exceptions = useMemo(() => {
     const today = new Date();
@@ -378,15 +383,6 @@ function Dashboard() {
         </div>
       </section>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="ai-summary">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> AI Summary
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
 
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
@@ -503,102 +499,6 @@ function Dashboard() {
       <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
 
       <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
-        </TabsContent>
-
-        <TabsContent value="ai-summary">
-          <AiSummaryTab stations={stations} tasks={tasks} statusByStation={statusByStation} narrativeInput={buildNarrativeInput} loading={loading} />
-        </TabsContent>
-      </Tabs>
-    </div>
-
-  );
-}
-
-function AiSummaryTab({
-  stations,
-  tasks,
-  statusByStation,
-  narrativeInput,
-  loading,
-}: {
-  stations: Station[];
-  tasks: L2Task[];
-  statusByStation: Record<string, Status[]>;
-  narrativeInput: () => MisNarrativeInput;
-  loading: boolean;
-}) {
-  const callNarrative = useServerFn(generateMisNarrative);
-  const [narrative, setNarrative] = useState<MisNarrative | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const analytics = useMemo(
-    () => computePortfolioAnalytics(stations, tasks, statusByStation, new Date()),
-    [stations, tasks, statusByStation],
-  );
-
-  const sCurveData = useMemo(
-    () =>
-      analytics.sCurve.map((p) => ({
-        label: p.label,
-        planned: p.planned,
-        actual: p.actual,
-      })),
-    [analytics.sCurve],
-  );
-
-  const t = analytics.totals;
-
-  const generate = async () => {
-    setBusy(true);
-    try {
-      const res = await callNarrative({ data: narrativeInput() });
-      setNarrative(res);
-      toast.success("AI summary generated");
-    } catch (e) {
-      toast.error(`AI summary failed: ${(e as Error).message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <section>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">AI Executive Summary</h2>
-            <p className="text-xs text-muted-foreground">AI-generated synthesis of portfolio status, exceptions and engineering remarks · live data</p>
-          </div>
-          <Button size="sm" disabled={loading || busy} onClick={generate}>
-            <Sparkles className="mr-2 h-4 w-4" /> {busy ? "Generating…" : narrative ? "Regenerate" : "Generate AI Summary"}
-          </Button>
-        </div>
-
-        {!narrative ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
-            <Sparkles className="mx-auto mb-3 h-7 w-7 text-primary/70" />
-            Generate an AI-written executive narrative covering progress, schedule variance, risks and recommendations across the portfolio.
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            <Card className="p-5">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-primary">Executive Summary</div>
-              {narrative.executiveSummary.split(/\n\n+/).map((p, i) => (
-                <p key={i} className="mt-2 text-sm leading-relaxed text-foreground/90">{p}</p>
-              ))}
-            </Card>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <NarrativeList title="Key Insights" items={narrative.keyInsights} tone="var(--primary)" />
-              <NarrativeList title="Top Risks" items={narrative.risks} tone="var(--status-red)" />
-              <NarrativeList title="Recommendations" items={narrative.recommendations} tone="var(--status-green)" />
-            </div>
-            <Card className="p-5">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-primary">Outlook</div>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/90">{narrative.outlook}</p>
-            </Card>
-          </div>
-        )}
-      </section>
 
       <section>
         <div className="mb-3">
@@ -606,17 +506,17 @@ function AiSummaryTab({
             <LineChartIcon className="h-4 w-4 text-primary" /> Portfolio S-Curve
           </h2>
           <p className="text-xs text-muted-foreground">
-            Ideal / baseline vs actual cumulative progress · Actual {t.avgProgress}% vs ideal {t.idealProgress}% ·{" "}
-            {t.daysBehind >= 0 ? `${t.daysBehind} days behind` : `${Math.abs(t.daysBehind)} days ahead of`} baseline
+            Ideal / baseline vs actual cumulative progress · Actual {portfolioAnalytics.totals.avgProgress}% vs ideal {portfolioAnalytics.totals.idealProgress}% ·{" "}
+            {portfolioAnalytics.totals.daysBehind >= 0 ? `${portfolioAnalytics.totals.daysBehind} days behind` : `${Math.abs(portfolioAnalytics.totals.daysBehind)} days ahead of`} baseline
           </p>
         </div>
         <Card className="p-4">
-          {sCurveData.length === 0 ? (
+          {portfolioAnalytics.sCurve.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">No baseline schedule available to plot the S-curve.</div>
           ) : (
             <div style={{ width: "100%", height: 360 }}>
               <ResponsiveContainer>
-                <ComposedChart data={sCurveData} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
+                <ComposedChart data={portfolioAnalytics.sCurve} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="label" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval="preserveStartEnd" height={50} />
                   <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
@@ -634,24 +534,10 @@ function AiSummaryTab({
         </Card>
       </section>
     </div>
+
   );
 }
 
-function NarrativeList({ title, items, tone }: { title: string; items: string[]; tone: string }) {
-  return (
-    <Card className="p-5">
-      <div className="text-[11px] font-medium uppercase tracking-wider" style={{ color: tone }}>{title}</div>
-      <ul className="mt-3 space-y-2">
-        {items.map((it, i) => (
-          <li key={i} className="flex gap-2 text-sm leading-relaxed text-foreground/90">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: tone }} />
-            <span>{it}</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
 
 
 function DrawingsSummary({ stations, drawings }: { stations: Station[]; drawings: StationDrawing[] }) {
