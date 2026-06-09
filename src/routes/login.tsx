@@ -19,31 +19,18 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Account created. You can sign in now.");
-        setMode("signin");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Signed in");
-        router.navigate({ to: "/" });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Signed in");
+      router.navigate({ to: "/" });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -85,17 +72,9 @@ function LoginPage() {
       </div>
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md p-6">
-          <h2 className="text-2xl font-semibold">{mode === "signin" ? "Sign in" : "Create account"}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "Use your NTPC / vendor credentials." : "First user becomes admin automatically."}
-          </p>
+          <h2 className="text-2xl font-semibold">Sign in</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Use your NTPC / vendor credentials.</p>
           <form onSubmit={submit} className="mt-6 space-y-4">
-            {mode === "signup" && (
-              <div>
-                <Label htmlFor="name">Full name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-            )}
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -112,7 +91,7 @@ function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                autoComplete="current-password"
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -121,15 +100,13 @@ function LoginPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "signin" ? "Sign in" : "Create account"}
+              Sign in
             </Button>
           </form>
-          <button
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground"
-          >
-            {mode === "signin" ? "No account yet? Create one" : "Have an account? Sign in"}
-          </button>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Accounts are provisioned by an administrator. Contact your project admin for access.
+          </p>
+
         </Card>
       </div>
     </div>
