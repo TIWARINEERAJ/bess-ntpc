@@ -11,7 +11,7 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
-  LabelList,
+  
 } from "recharts";
 import { ArrowRight, FileStack, Package, ShieldCheck } from "lucide-react";
 import { isApproved, isSubmitted, type StationDrawing } from "@/lib/drawings";
