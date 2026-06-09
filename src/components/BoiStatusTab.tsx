@@ -8,6 +8,8 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
+import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
+import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
 
 type Boi = {
   id: string;
