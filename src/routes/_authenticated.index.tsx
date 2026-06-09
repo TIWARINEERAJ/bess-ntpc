@@ -83,7 +83,7 @@ function Dashboard() {
   const boiStatusQ = useQuery({
     queryKey: ["all_boi_status"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date");
+      const { data, error } = await supabase.from("station_boi_status").select("station_id,boi_id,actual_po_date,delivery_date,site_receipt_date");
       if (error) throw error;
       return data ?? [];
     },
