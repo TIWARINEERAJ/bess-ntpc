@@ -124,7 +124,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
               <tbody>
                 {items.map(m => {
                   const s = map.get(m.id) ?? emptyStat(stationId, m.id);
-                  return <ComplRow key={m.id} m={m} s={s} canEdit={canEdit} onSave={(p) => save.mutate({ ...s, ...p })} />;
+                  return <ComplRow key={m.id} m={m} s={s} canEdit={canEdit} revisions={revQ.data?.get(m.id)} onSave={(p) => save.mutate({ ...s, ...p })} />;
                 })}
               </tbody>
             </table>
