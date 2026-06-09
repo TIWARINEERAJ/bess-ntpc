@@ -158,9 +158,7 @@ export function DrawingTypeAnalytics({
               <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
               <Bar dataKey="approved" stackId="d" name="Approved" fill="var(--status-green)" radius={[0, 0, 0, 0]} cursor="pointer" onClick={(d: any) => setDrill(rows.find((r) => r.key === d.key) ?? null)} />
               <Bar dataKey="submitted" stackId="d" name="Submitted" fill="var(--status-blue)" cursor="pointer" onClick={(d: any) => setDrill(rows.find((r) => r.key === d.key) ?? null)} />
-              <Bar dataKey="pending" stackId="d" name="Pending" fill="var(--status-amber)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d: any) => setDrill(rows.find((r) => r.key === d.key) ?? null)}>
-                <LabelList dataKey="pending" position="top" fill="var(--muted-foreground)" fontSize={9} formatter={(v: number, _e: any) => ""} />
-              </Bar>
+              <Bar dataKey="pending" stackId="d" name="Pending" fill="var(--status-amber)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d: any) => setDrill(rows.find((r) => r.key === d.key) ?? null)} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
