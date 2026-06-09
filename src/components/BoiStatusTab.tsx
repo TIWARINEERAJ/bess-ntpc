@@ -190,6 +190,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                   s={s}
                   chip={chip}
                   canEdit={canEdit}
+                  revisions={revQ.data?.get(b.id)}
                   onSave={(p) => save.mutate({ ...s, ...p })}
                 />
               );
