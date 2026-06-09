@@ -64,6 +64,8 @@ function StationPage() {
   const station = stationQ.data;
   const statusMap = useMemo(() => buildStatusMap(status), [status]);
   const progress = useMemo(() => stationProgress(tasks, statusMap), [tasks, statusMap]);
+  const idealPct = useMemo(() => (tasks.length ? Math.round(plannedPctAt(tasks, new Date())) : 0), [tasks]);
+  const taskRevQ = useCommitmentRevisions(stationId, "task");
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   useEffect(() => {
