@@ -1,3 +1,14 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * A single drawing record in a station's Master Drawing List (MDL).
+ *
+ * IMPORTANT — single source of truth:
+ * The MDL (Master Drawing List) IS the collection of these rows. Every
+ * "Drawings" / "Total MDL" figure shown anywhere in the app is derived by
+ * counting these rows — never from a separately stored planned total. This
+ * guarantees one consistent number propagates across the whole codebase.
+ */
 export type StationDrawing = {
   id: string;
   station_id: string;
@@ -12,6 +23,30 @@ export type StationDrawing = {
   approved_date: string | null;
   sort_order: number;
 };
+
+/**
+ * Fetch every MDL drawing row, transparently paginating past the Supabase
+ * 1000-row response cap. Without this, portfolio-wide drawing totals silently
+ * top out at 1000 even though there are thousands of drawings.
+ */
+export async function fetchAllDrawings(): Promise<StationDrawing[]> {
+  const PAGE = 1000;
+  const all: StationDrawing[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("station_drawings")
+      .select("*")
+      .order("category")
+      .order("sort_order")
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all.push(...(data as StationDrawing[]));
+    if (data.length < PAGE) break;
+  }
+  return all;
+}
+
 
 /** Normalise the drawing CAT classification to a canonical code. */
 export function catCode(cat: string | null): "I" | "II" | "III" | "REL" | null {
