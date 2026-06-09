@@ -296,6 +296,33 @@ export function BoiComplianceAnalytics({
 
   const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
 
+  // Drill into a single station + stage (clicked from the chart bars)
+  const [stationDrill, setStationDrill] = useState<{ stationId: string; name: string; stage: "po" | "delivered" | "received" } | null>(null);
+
+  const stationDrillItems = useMemo(() => {
+    if (!stationDrill) return [];
+    const { stationId, stage } = stationDrill;
+    return [...boiMaster]
+      .sort((a, b) => (a as any).sort_order - (b as any).sort_order || a.name.localeCompare(b.name))
+      .map((b) => {
+        const cell = boiStatusMap.get(`${stationId}::${b.id}`);
+        const match =
+          stage === "po" ? !!cell?.actual_po_date :
+          stage === "delivered" ? !!cell?.delivery_date :
+          !!cell?.site_receipt_date;
+        if (!match) return null;
+        return {
+          id: b.id,
+          name: b.name,
+          category: (b as any).inspection_category as string | null,
+          po: cell?.actual_po_date ?? null,
+          delivery: cell?.delivery_date ?? null,
+          receipt: cell?.site_receipt_date ?? null,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [stationDrill, boiMaster, boiStatusMap]);
+
   // Per-station constituents for the drilled component
   const boiDrillStations = useMemo(() => {
     if (!boiDrill) return [];
@@ -371,12 +398,14 @@ export function BoiComplianceAnalytics({
                 <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "po" })} />
+                <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "delivered" })} />
+                <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "received" })} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <p className="mt-1 text-center text-[10px] text-muted-foreground">Tip: click a bar to see the underlying items for that station &amp; stage</p>
+
 
           {/* Per-component (item) breakdown — click a component for its station-wise constituents */}
           {boiByItem.length > 0 && (
@@ -459,8 +488,56 @@ export function BoiComplianceAnalytics({
         </DialogContent>
       </Dialog>
 
+      {/* Station + stage drill-down (clicked from a chart bar) */}
+      <Dialog open={!!stationDrill} onOpenChange={(o) => !o && setStationDrill(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {stationDrill?.name} — {stationDrill?.stage === "po" ? "PO placed" : stationDrill?.stage === "delivered" ? "Delivered" : "Received at site"} items ({stationDrillItems.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            {stationDrillItems.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No items at this stage for this station.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2">Item</th>
+                    <th className="py-2 text-right" style={{ color: "var(--status-blue)" }}>PO placed</th>
+                    <th className="py-2 text-right" style={{ color: "#8b5cf6" }}>Delivered</th>
+                    <th className="py-2 text-right" style={{ color: "var(--status-green)" }}>Received</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stationDrillItems.map((it) => (
+                    <tr key={it.id} className="border-b border-border/50">
+                      <td className="py-2 font-medium">
+                        {it.name}
+                        {it.category ? <span className="ml-2 text-[10px] text-muted-foreground">{it.category}</span> : null}
+                      </td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.po ?? "—"}</td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.delivery ?? "—"}</td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.receipt ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {stationDrill && (
+            <div className="flex justify-end">
+              <Link to="/stations/$stationId" params={{ stationId: stationDrill.stationId }} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                Open station <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Compliance */}
       <div>
+
         <SectionHeading title="Statutory Compliances — all stations" sub="Approval status of common statutory items grouped by category, summed across stations" />
         <Card className="p-4">
           <div className="grid grid-cols-4 gap-3">
