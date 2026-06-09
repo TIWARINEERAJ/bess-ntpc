@@ -9,9 +9,11 @@ type Props = {
   onTaskClick?: (t: L2Task) => void;
   visibleTasks: L2Task[];
   rowHeight?: number;
+  bodyRef?: React.RefObject<HTMLDivElement | null>;
+  onBodyVerticalScroll?: (scrollTop: number) => void;
 };
 
-export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32 }: Props) {
+export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32, bodyRef: externalBodyRef, onBodyVerticalScroll }: Props) {
   const { start: pStart, end: pEnd } = useMemo(() => projectBounds(tasks), [tasks]);
   const totalDays = Math.max(differenceInCalendarDays(pEnd, pStart), 1) + 14;
   const pxPerDay = 3.2;
@@ -29,9 +31,13 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
   }
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  // sync horizontal scroll
-  const onBodyScroll = () => { if (headerRef.current && bodyRef.current) headerRef.current.scrollLeft = bodyRef.current.scrollLeft; };
+  const internalBodyRef = useRef<HTMLDivElement>(null);
+  const bodyRef = externalBodyRef ?? internalBodyRef;
+  // sync horizontal scroll with header and report vertical scroll to parent
+  const onBodyScroll = () => {
+    if (headerRef.current && bodyRef.current) headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
+    if (bodyRef.current) onBodyVerticalScroll?.(bodyRef.current.scrollTop);
+  };
 
   const height = visibleTasks.length * rowHeight;
 

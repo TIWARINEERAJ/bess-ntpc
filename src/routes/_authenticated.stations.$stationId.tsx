@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,21 @@ function StationPage() {
   };
 
   const [openTask, setOpenTask] = useState<L2Task | null>(null);
+
+  // Sync vertical scroll between the WBS table pane and the Gantt chart pane.
+  const wbsBodyRef = useRef<HTMLDivElement | null>(null);
+  const ganttBodyRef = useRef<HTMLDivElement | null>(null);
+  const syncingRef = useRef(false);
+  const syncScroll = (source: "wbs" | "gantt", scrollTop: number) => {
+    if (syncingRef.current) { syncingRef.current = false; return; }
+    const target = source === "wbs" ? ganttBodyRef.current : wbsBodyRef.current;
+    if (target && target.scrollTop !== scrollTop) {
+      syncingRef.current = true;
+      target.scrollTop = scrollTop;
+    }
+  };
+
+
 
   const upsert = useMutation({
     mutationFn: async (payload: Partial<Status> & { task_id: string }) => {
@@ -203,7 +218,7 @@ function StationPage() {
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
                 <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div><div>Committed</div>
               </div>
-              <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
+              <div ref={wbsBodyRef} onScroll={(e) => syncScroll("wbs", e.currentTarget.scrollTop)} className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
                 {visibleTasks.map(t => {
                   const st = statusMap.get(t.id);
                   const cs = computeRowState(t, st);
@@ -240,7 +255,7 @@ function StationPage() {
               </div>
             </div>
             {/* Gantt */}
-            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} />
+            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} bodyRef={ganttBodyRef} onBodyVerticalScroll={(top) => syncScroll("gantt", top)} />
           </div>
           <Legend />
         </TabsContent>
