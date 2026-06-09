@@ -117,7 +117,9 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
   });
 
   return (
-    <Card className="overflow-hidden p-0">
+    <div className="space-y-4">
+      <BoiLifecycleChart rows={lifecycleRows} />
+      <Card className="overflow-hidden p-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="text-xs text-muted-foreground">{visible.length} of {(masterQ.data ?? []).length} items shown</div>
         <div className="flex flex-wrap items-center gap-2">
