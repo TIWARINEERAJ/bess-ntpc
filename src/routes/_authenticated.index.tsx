@@ -148,12 +148,15 @@ function Dashboard() {
   const tasks = useMemo(() => Object.values(tasksByStation).flat(), [tasksByStation]);
 
   const computed = useMemo(() => {
+    const today = new Date();
     return stations.map(s => {
       const map = buildStatusMap(statusByStation[s.id]);
-      const p = stationProgress(tasksByStation[s.id] ?? [], map);
+      const stTasks = tasksByStation[s.id] ?? [];
+      const p = stationProgress(stTasks, map);
+      const idealPct = stTasks.length ? Math.round(plannedPctAt(stTasks, today)) : 0;
       let health: "green" | "amber" | "red" = "green";
       if (p.delayed > 0) health = p.delayed >= 5 ? "red" : "amber";
-      return { ...s, ...p, health };
+      return { ...s, ...p, idealPct, health };
     });
   }, [stations, tasksByStation, statusByStation]);
 
