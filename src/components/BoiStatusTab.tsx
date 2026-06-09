@@ -84,6 +84,19 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterQ.data, statusQ.data, search, statusFilter]);
 
+  const lifecycleRows = useMemo<BoiLifecycleRow[]>(() => {
+    return (masterQ.data ?? []).map((b) => {
+      const s = map.get(b.id);
+      return {
+        scheduled_po_date: b.scheduled_po_date,
+        actual_po_date: s?.actual_po_date ?? null,
+        delivery_date: s?.delivery_date ?? null,
+        site_receipt_date: s?.site_receipt_date ?? null,
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterQ.data, statusQ.data]);
+
 
   const save = useMutation({
     mutationFn: async (row: BoiStatus) => {
