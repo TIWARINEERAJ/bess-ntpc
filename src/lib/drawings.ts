@@ -135,13 +135,14 @@ export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()
 }
 
 /**
- * Derive MDL counts for a station.
- * - total: declared Total MDL (planned drawing count) — falls back to registered rows when larger.
- * - submitted / approved: counted from the actual drawing register.
- * - pending: total minus approved.
- * - overdue / upcoming: based on scheduled approval dates.
+ * Derive MDL counts from a station's (or the portfolio's) drawing register.
+ *
+ * The MDL register is the SINGLE source of truth: the total is simply the
+ * number of drawing rows — there is no separately stored planned total. Every
+ * other figure (submitted / approved / pending / overdue) is counted from the
+ * same rows so all numbers stay perfectly consistent everywhere they appear.
  */
-export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): DrawingCounts {
+export function drawingCounts(rows: StationDrawing[]): DrawingCounts {
   const today = startOfToday();
   const registered = rows.length;
   const submitted = rows.filter(isSubmitted).length;
@@ -149,7 +150,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
   const overdue = rows.filter((r) => isOverdue(r, today)).length;
   const submissionOverdue = rows.filter((r) => isSubmissionOverdue(r, today)).length;
   const upcoming = rows.filter((r) => isUpcoming(r, 2, today)).length;
-  const total = Math.max(mdlTotal, registered);
+  const total = registered;
   const pending = Math.max(0, total - approved);
   return {
     total,
@@ -164,6 +165,7 @@ export function drawingCounts(mdlTotal: number, rows: StationDrawing[]): Drawing
     approvedPct: total ? Math.round((approved / total) * 100) : 0,
   };
 }
+
 
 export function uniqueCategories(rows: StationDrawing[]): string[] {
   return Array.from(new Set(rows.map((r) => r.category))).sort((a, b) => a.localeCompare(b));
