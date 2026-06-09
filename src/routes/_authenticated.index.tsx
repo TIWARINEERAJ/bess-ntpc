@@ -233,6 +233,9 @@ function Dashboard() {
         delayed: e.delayed,
         green: e.green, amber: e.amber, red: e.red,
         names: e.stations.map((s) => s.name).join(", "),
+        stations: e.stations
+          .map((s) => ({ id: s.id, name: s.name, pct: s.pct, delayed: s.delayed, completed: s.completed, total: s.total, health: s.health }))
+          .sort((a, b) => b.pct - a.pct),
       }))
       .sort((a, b) => b.avgPct - a.avgPct);
   }, [computed]);
