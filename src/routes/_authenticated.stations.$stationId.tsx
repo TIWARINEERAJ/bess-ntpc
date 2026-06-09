@@ -230,7 +230,10 @@ function StationPage() {
                       <div className="font-mono text-[10px] text-muted-foreground">{fmtD(t.baseline_finish)}</div>
                       <div className="font-mono text-[10px]" style={{ color: aStart ? "var(--foreground)" : "var(--muted-foreground)" }}>{fmtD(aStart)}</div>
                       <div className="font-mono text-[10px]" style={{ color: cs.status === "delayed" ? "var(--status-red)" : aFinish ? "var(--status-green)" : "var(--muted-foreground)" }}>{fmtD(aFinish)}</div>
-                      <div className="font-mono text-[10px]" style={{ color: st?.committed_date ? "var(--status-amber)" : "var(--muted-foreground)" }}>{fmtD(st?.committed_date ?? null)}</div>
+                      <div className="flex items-center gap-1 font-mono text-[10px]" style={{ color: st?.committed_date ? "var(--status-amber)" : "var(--muted-foreground)" }}>
+                        <span>{fmtD(st?.committed_date ?? null)}</span>
+                        {!t.is_section && <CommitmentHistory revisions={taskRevQ.data?.get(t.id)} />}
+                      </div>
                     </div>
                   );
                 })}
