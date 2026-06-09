@@ -113,6 +113,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["boi_status", stationId] });
+      qc.invalidateQueries({ queryKey: ["commitment_revisions", "boi", stationId] });
       qc.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Saved");
     },
