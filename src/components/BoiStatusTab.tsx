@@ -259,7 +259,12 @@ function BoiRow({
       <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
-      <td className="px-1 py-1">{cell("committed_date", "date", "w-32")}</td>
+      <td className="px-1 py-1">
+        <div className="flex items-center gap-1">
+          {cell("committed_date", "date", "w-32")}
+          <CommitmentHistory revisions={revisions} />
+        </div>
+      </td>
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>
