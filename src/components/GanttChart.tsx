@@ -9,9 +9,11 @@ type Props = {
   onTaskClick?: (t: L2Task) => void;
   visibleTasks: L2Task[];
   rowHeight?: number;
+  bodyRef?: React.RefObject<HTMLDivElement | null>;
+  onBodyVerticalScroll?: (scrollTop: number) => void;
 };
 
-export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32 }: Props) {
+export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32, bodyRef: externalBodyRef, onBodyVerticalScroll }: Props) {
   const { start: pStart, end: pEnd } = useMemo(() => projectBounds(tasks), [tasks]);
   const totalDays = Math.max(differenceInCalendarDays(pEnd, pStart), 1) + 14;
   const pxPerDay = 3.2;
