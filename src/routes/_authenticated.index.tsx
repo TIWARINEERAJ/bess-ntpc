@@ -777,8 +777,9 @@ function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]
   }, [exceptions]);
 
   const shown = useMemo(() => {
-    if (station === "all") return exceptions.slice(0, 14);
-    return exceptions.filter((e) => e.station === station);
+    const base = station === "all" ? exceptions : exceptions.filter((e) => e.station === station);
+    // Always show the worst-overdue first, capped at the top 10.
+    return [...base].sort((a, b) => b.slip - a.slip).slice(0, 10);
   }, [exceptions, station]);
 
   return (
