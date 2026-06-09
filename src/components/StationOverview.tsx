@@ -51,6 +51,112 @@ function parseContacts(raw: unknown): Contact[] {
   return [];
 }
 
+type BoiBrief = {
+  total: number;
+  ordered: number;
+  delivered: number;
+  received: number;
+  overdue: number;
+};
+
+/** Brief at-a-glance summary of MDL drawings and BOI procurement for a station. */
+function DrawingsBoiSummary({ stationId }: { stationId: string }) {
+  const drawingsQ = useQuery({
+    queryKey: ["station_drawings", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("station_drawings")
+        .select("*")
+        .eq("station_id", stationId)
+        .order("category")
+        .order("sort_order");
+      if (error) throw error;
+      return data as StationDrawing[];
+    },
+  });
+
+  const boiQ = useQuery({
+    queryKey: ["boi_brief", stationId],
+    queryFn: async (): Promise<BoiBrief> => {
+      const [{ data: master, error: mErr }, { data: status, error: sErr }] = await Promise.all([
+        supabase.from("boi_master").select("id,scheduled_po_date"),
+        supabase.from("station_boi_status").select("boi_id,actual_po_date,delivery_date,site_receipt_date").eq("station_id", stationId),
+      ]);
+      if (mErr) throw mErr;
+      if (sErr) throw sErr;
+      const sMap = new Map((status ?? []).map((s) => [s.boi_id, s]));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let ordered = 0, delivered = 0, received = 0, overdue = 0;
+      for (const m of master ?? []) {
+        const s = sMap.get(m.id);
+        if (s?.actual_po_date) ordered += 1;
+        if (s?.delivery_date) delivered += 1;
+        if (s?.site_receipt_date) received += 1;
+        if (!s?.actual_po_date && m.scheduled_po_date && new Date(m.scheduled_po_date) < today) overdue += 1;
+      }
+      return { total: (master ?? []).length, ordered, delivered, received, overdue };
+    },
+  });
+
+  const dc = drawingsQ.data ? drawingCounts(drawingsQ.data) : null;
+  const boi = boiQ.data;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <Card className="p-4">
+        <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold">
+          <FileStack className="h-4 w-4 text-primary" /> Drawings (MDL) Summary
+        </div>
+        {dc ? (
+          <div className="grid grid-cols-4 gap-2">
+            <MiniStat label="Total" value={dc.total} />
+            <MiniStat label="Submitted" value={dc.submitted} color="var(--status-blue)" />
+            <MiniStat label="Approved" value={dc.approved} color="var(--status-green)" />
+            <MiniStat label="Pending" value={dc.pending} color="var(--status-amber)" />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Loading…</p>
+        )}
+        {dc && (dc.submissionOverdue > 0 || dc.overdue > 0) && (
+          <div className="mt-2 text-[11px] text-[color:var(--status-red)]">
+            {dc.submissionOverdue} submission · {dc.overdue} approval overdue
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-4">
+        <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold">
+          <Package className="h-4 w-4 text-primary" /> BOI / Procurement Summary
+        </div>
+        {boi ? (
+          <div className="grid grid-cols-4 gap-2">
+            <MiniStat label="Items" value={boi.total} />
+            <MiniStat label="Ordered" value={boi.ordered} color="var(--status-blue)" />
+            <MiniStat label="Delivered" value={boi.delivered} color="var(--status-amber)" />
+            <MiniStat label="Received" value={boi.received} color="var(--status-green)" />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Loading…</p>
+        )}
+        {boi && boi.overdue > 0 && (
+          <div className="mt-2 text-[11px] text-[color:var(--status-red)]">{boi.overdue} PO overdue (past scheduled order date)</div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div className="rounded-md border border-border/60 bg-secondary/20 px-2 py-1.5 text-center">
+      <div className="font-mono text-xl font-bold tabular-nums" style={{ color: color ?? "var(--foreground)" }}>{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+
 export function StationOverview({ station, canEdit }: { station: StationRow; canEdit: boolean }) {
   const [editing, setEditing] = useState(false);
   const contacts = parseContacts(station.agency_contacts);
