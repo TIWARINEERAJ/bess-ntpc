@@ -488,8 +488,56 @@ export function BoiComplianceAnalytics({
         </DialogContent>
       </Dialog>
 
+      {/* Station + stage drill-down (clicked from a chart bar) */}
+      <Dialog open={!!stationDrill} onOpenChange={(o) => !o && setStationDrill(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {stationDrill?.name} — {stationDrill?.stage === "po" ? "PO placed" : stationDrill?.stage === "delivered" ? "Delivered" : "Received at site"} items ({stationDrillItems.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            {stationDrillItems.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No items at this stage for this station.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2">Item</th>
+                    <th className="py-2 text-right" style={{ color: "var(--status-blue)" }}>PO placed</th>
+                    <th className="py-2 text-right" style={{ color: "#8b5cf6" }}>Delivered</th>
+                    <th className="py-2 text-right" style={{ color: "var(--status-green)" }}>Received</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stationDrillItems.map((it) => (
+                    <tr key={it.id} className="border-b border-border/50">
+                      <td className="py-2 font-medium">
+                        {it.name}
+                        {it.category ? <span className="ml-2 text-[10px] text-muted-foreground">{it.category}</span> : null}
+                      </td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.po ?? "—"}</td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.delivery ?? "—"}</td>
+                      <td className="py-2 text-right font-mono text-[11px]">{it.receipt ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {stationDrill && (
+            <div className="flex justify-end">
+              <Link to="/stations/$stationId" params={{ stationId: stationDrill.stationId }} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                Open station <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Compliance */}
       <div>
+
         <SectionHeading title="Statutory Compliances — all stations" sub="Approval status of common statutory items grouped by category, summed across stations" />
         <Card className="p-4">
           <div className="grid grid-cols-4 gap-3">
