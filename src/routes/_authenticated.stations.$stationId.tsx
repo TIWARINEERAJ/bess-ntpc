@@ -218,7 +218,7 @@ function StationPage() {
                 <div>WBS</div><div>Task</div><div className="text-right">Dur</div><div className="text-right">%</div>
                 <div>Plan Start</div><div>Plan Finish</div><div>Act Start</div><div>Act Finish</div><div>Committed</div>
               </div>
-              <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
+              <div ref={wbsBodyRef} onScroll={(e) => syncScroll("wbs", e.currentTarget.scrollTop)} className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
                 {visibleTasks.map(t => {
                   const st = statusMap.get(t.id);
                   const cs = computeRowState(t, st);
