@@ -296,6 +296,33 @@ export function BoiComplianceAnalytics({
 
   const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
 
+  // Drill into a single station + stage (clicked from the chart bars)
+  const [stationDrill, setStationDrill] = useState<{ stationId: string; name: string; stage: "po" | "delivered" | "received" } | null>(null);
+
+  const stationDrillItems = useMemo(() => {
+    if (!stationDrill) return [];
+    const { stationId, stage } = stationDrill;
+    return [...boiMaster]
+      .sort((a, b) => (a as any).sort_order - (b as any).sort_order || a.name.localeCompare(b.name))
+      .map((b) => {
+        const cell = boiStatusMap.get(`${stationId}::${b.id}`);
+        const match =
+          stage === "po" ? !!cell?.actual_po_date :
+          stage === "delivered" ? !!cell?.delivery_date :
+          !!cell?.site_receipt_date;
+        if (!match) return null;
+        return {
+          id: b.id,
+          name: b.name,
+          category: (b as any).inspection_category as string | null,
+          po: cell?.actual_po_date ?? null,
+          delivery: cell?.delivery_date ?? null,
+          receipt: cell?.site_receipt_date ?? null,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [stationDrill, boiMaster, boiStatusMap]);
+
   // Per-station constituents for the drilled component
   const boiDrillStations = useMemo(() => {
     if (!boiDrill) return [];
