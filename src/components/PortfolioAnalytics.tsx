@@ -377,8 +377,87 @@ export function BoiComplianceAnalytics({
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Per-component (item) breakdown — click a component for its station-wise constituents */}
+          {boiByItem.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Components ({boiByItem.length}) · click for station-wise constituents
+              </div>
+              <div className="max-h-72 space-y-1.5 overflow-auto pr-1">
+                {boiByItem.map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => setBoiDrill({ id: it.id, name: it.name })}
+                    className="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-left text-xs transition-colors hover:border-primary/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{it.name}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {it.received}/{it.total} received{it.category ? ` · ${it.category}` : ""}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2 font-mono">
+                      <span style={{ color: "var(--status-blue)" }} title="PO placed">{it.po}</span>
+                      <span style={{ color: "#8b5cf6" }} title="Delivered">{it.delivered}</span>
+                      <span style={{ color: "var(--status-green)" }} title="Received">{it.received}</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
       </div>
+
+      <Dialog open={!!boiDrill} onOpenChange={(o) => !o && setBoiDrill(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{boiDrill?.name} — station-wise constituents</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-card">
+                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <th className="py-2">Station</th>
+                  <th className="py-2">Stage</th>
+                  <th className="py-2 text-right" style={{ color: "var(--status-blue)" }}>PO placed</th>
+                  <th className="py-2 text-right" style={{ color: "#8b5cf6" }}>Delivered</th>
+                  <th className="py-2 text-right" style={{ color: "var(--status-green)" }}>Received</th>
+                  <th className="py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {boiDrillStations.map(({ s, stage, po, delivery, receipt }) => (
+                  <tr key={s.id} className="border-b border-border/50">
+                    <td className="py-2 font-medium">{s.name}</td>
+                    <td className="py-2">
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                        style={{
+                          color: stage === "received" ? "var(--status-green)" : stage === "delivered" ? "#8b5cf6" : stage === "po" ? "var(--status-blue)" : "var(--status-amber)",
+                          background: "color-mix(in oklab, currentColor 12%, transparent)",
+                        }}
+                      >
+                        {stage === "po" ? "PO placed" : stage === "pending" ? "Not started" : stage.charAt(0).toUpperCase() + stage.slice(1)}
+                      </span>
+                    </td>
+                    <td className="py-2 text-right font-mono text-[11px]">{po ?? "—"}</td>
+                    <td className="py-2 text-right font-mono text-[11px]">{delivery ?? "—"}</td>
+                    <td className="py-2 text-right font-mono text-[11px]">{receipt ?? "—"}</td>
+                    <td className="py-2 text-right">
+                      <Link to="/stations/$stationId" params={{ stationId: s.id }} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        Open <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Compliance */}
       <div>
