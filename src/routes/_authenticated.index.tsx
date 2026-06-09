@@ -832,13 +832,14 @@ function LegendDot({ grad, label, dashed }: { grad: string; label: string; dashe
   );
 }
 
-function SectionHeading({ title, sub }: { title: string; sub?: string }) {
+function SectionHeading({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
   return (
-    <div className="mb-3 flex items-end justify-between">
+    <div className="mb-3 flex items-end justify-between gap-3">
       <div>
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
       </div>
+      {right}
     </div>
   );
 }
