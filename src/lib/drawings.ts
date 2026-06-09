@@ -170,3 +170,114 @@ export function drawingCounts(rows: StationDrawing[]): DrawingCounts {
 export function uniqueCategories(rows: StationDrawing[]): string[] {
   return Array.from(new Set(rows.map((r) => r.category))).sort((a, b) => a.localeCompare(b));
 }
+
+
+/* ================================================================== */
+/* Month-wise drawings lifecycle analytics                             */
+/* ================================================================== */
+
+/**
+ * A single month in the MDL drawings lifecycle. Every figure is derived from
+ * the same drawing rows so the picture stays internally consistent:
+ *  - due:        scheduled to be SUBMITTED in this month (by sch_date)
+ *  - submitted:  actually submitted in this month (by submitted_date)
+ *  - approved:   approved (CAT-I / CAT-II / CAT-REL) in this month
+ *  - catIII:     returned for re-submission (CAT-III) reviewed in this month
+ *  - cumDue / cumSubmitted / cumApproved: running totals to end of month
+ *  - slippage:   cumulative submission backlog = cumDue − cumSubmitted
+ */
+export type DrawingMonthBucket = {
+  month: string;
+  label: string;
+  due: number;
+  submitted: number;
+  approved: number;
+  catIII: number;
+  cumDue: number;
+  cumSubmitted: number;
+  cumApproved: number;
+  slippage: number;
+};
+
+function ym(date: string | null): string | null {
+  if (!date) return null;
+  const s = String(date).slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(s) ? s : null;
+}
+
+function monthLabel(m: string): string {
+  const [y, mo] = m.split("-");
+  const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${names[Number(mo) - 1]} '${y.slice(2)}`;
+}
+
+/** Inclusive list of YYYY-MM strings between two months (fills gaps). */
+function monthRange(first: string, last: string): string[] {
+  const out: string[] = [];
+  let [y, m] = first.split("-").map(Number);
+  const [ly, lm] = last.split("-").map(Number);
+  while (y < ly || (y === ly && m <= lm)) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
+}
+
+/**
+ * Build the month-by-month lifecycle series for a set of MDL drawings.
+ * Returns an empty array when there are no dated drawings to plot.
+ */
+export function drawingMonthlySeries(rows: StationDrawing[]): DrawingMonthBucket[] {
+  type Acc = { due: number; submitted: number; approved: number; catIII: number };
+  const map = new Map<string, Acc>();
+  const bump = (m: string, k: keyof Acc) => {
+    let b = map.get(m);
+    if (!b) { b = { due: 0, submitted: 0, approved: 0, catIII: 0 }; map.set(m, b); }
+    b[k] += 1;
+  };
+
+  for (const r of rows) {
+    const dueM = ym(r.sch_date);
+    if (dueM) bump(dueM, "due");
+
+    const subM = ym(r.submitted_date) ?? ym(r.resubmitted_date);
+    if (subM) bump(subM, "submitted");
+
+    if (isApproved(r)) {
+      const apM = ym(r.approved_date);
+      if (apM) bump(apM, "approved");
+    }
+
+    if (catBlocksApproval(r.cat)) {
+      // CAT-III = returned, re-submission requested. Use the review (approved_date)
+      // month, falling back to the (re)submission month.
+      const cm = ym(r.approved_date) ?? ym(r.resubmitted_date) ?? ym(r.submitted_date);
+      if (cm) bump(cm, "catIII");
+    }
+  }
+
+  const months = Array.from(map.keys()).sort();
+  if (months.length === 0) return [];
+
+  const all = monthRange(months[0], months[months.length - 1]);
+  let cumDue = 0, cumSub = 0, cumApp = 0;
+  return all.map((m) => {
+    const b = map.get(m) ?? { due: 0, submitted: 0, approved: 0, catIII: 0 };
+    cumDue += b.due;
+    cumSub += b.submitted;
+    cumApp += b.approved;
+    return {
+      month: m,
+      label: monthLabel(m),
+      due: b.due,
+      submitted: b.submitted,
+      approved: b.approved,
+      catIII: b.catIII,
+      cumDue,
+      cumSubmitted: cumSub,
+      cumApproved: cumApp,
+      slippage: Math.max(0, cumDue - cumSub),
+    };
+  });
+}
