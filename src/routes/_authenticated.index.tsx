@@ -869,8 +869,9 @@ function Kpi({ icon, label, value, unit, tone, onClick, active }: { icon: React.
   );
 }
 
-function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & { health: "green" | "amber" | "red" } }) {
+function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & { idealPct: number; health: "green" | "amber" | "red" } }) {
   const tone = `var(--status-${s.health})`;
+  const behind = Math.max(0, s.idealPct - s.pct);
   return (
     <Link to="/stations/$stationId" params={{ stationId: s.id }}>
       <Card className="group relative overflow-hidden p-3.5 transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_30%,transparent)]">
@@ -889,9 +890,23 @@ function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & 
           <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
         </div>
         <div className="mt-2.5 flex items-center gap-3">
-          <Progress value={s.pct} className="h-1.5" />
-          <span className="font-mono text-xs font-semibold tabular-nums" style={{ color: tone }}>{s.pct}%</span>
+          <div className="relative flex-1">
+            <Progress value={s.pct} className="h-1.5" />
+            <span
+              className="absolute top-1/2 h-2.5 w-0.5 -translate-y-1/2 bg-foreground/70"
+              style={{ left: `${Math.min(100, s.idealPct)}%` }}
+              title={`Ideal / baseline progress: ${s.idealPct}%`}
+            />
+          </div>
+          <span className="font-mono text-xs font-semibold tabular-nums">
+            <span style={{ color: tone }}>{s.pct}%</span>
+            <span className="text-muted-foreground"> / {s.idealPct}%</span>
+          </span>
         </div>
+        <div className="mt-1 text-[10px] text-muted-foreground">
+          {behind > 0 ? <span className="text-[color:var(--status-red)]">{behind}% behind ideal</span> : "on / ahead of ideal"}
+        </div>
+
         <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
           <span className="rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">{s.completed}/{s.total} tasks</span>
           {s.delayed > 0 && <span className="rounded-full px-2 py-0.5" style={{ background: `color-mix(in oklab, var(--status-red) 18%, transparent)`, color: "var(--status-red)" }}>{s.delayed} delayed</span>}
