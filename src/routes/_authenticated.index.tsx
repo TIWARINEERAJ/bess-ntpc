@@ -490,36 +490,19 @@ function Dashboard() {
             <SectionHeading title="Upcoming Meetings" sub="Planned reviews across stations · highlighted important dates" />
             <UpcomingMeetings />
           </div>
-          <div>
-            <SectionHeading title="Station-wise Exceptions" sub="Delayed & blocked activities grouped by station · days overdue against planned finish" />
-          <Card className="divide-y divide-border/60 p-0">
-            {exceptions.length === 0 && !loading && (
-              <div className="p-6 text-center text-sm text-muted-foreground">
-                <CheckCircle2 className="mx-auto mb-2 h-6 w-6 text-[color:var(--status-green)]" />
-                No exceptions. All tasks on schedule.
-              </div>
-            )}
-            {exceptions.map((e, i) => (
-              <Link key={i} to="/stations/$stationId" params={{ stationId: e.stationId }} className="block p-3 transition-colors hover:bg-secondary/60">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{e.station} · <span className="font-mono text-xs text-muted-foreground">{e.wbs}</span></div>
-                    <div className="mt-0.5 truncate text-xs text-muted-foreground">{e.task}</div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">Due {e.planFinish} · Owner: {e.owner}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <StatusBadge status={e.status} />
-                    <div className="font-mono text-xs text-[color:var(--status-red)]" title="Days overdue against planned finish">
-                      {e.slip > 0 ? `overdue ${e.slip}d` : "due"}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </Card>
-          </div>
+          <StationExceptions exceptions={exceptions} loading={loading} />
         </div>
       </section>
+
+      <DrawingTypeAnalytics stations={stations} drawings={drawingsQ.data ?? []} />
+
+      <BoiComplianceAnalytics
+        stations={stations}
+        boiMaster={boiMasterQ.data ?? []}
+        boiStatus={boiStatusQ.data ?? []}
+        complMaster={complMasterQ.data ?? []}
+        complStatus={complStatusQ.data ?? []}
+      />
 
       <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
 
