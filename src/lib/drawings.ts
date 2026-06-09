@@ -61,10 +61,15 @@ function startOfToday(): Date {
   return d;
 }
 
-/** A drawing is "cleared" once it has an approval date. */
-/** A drawing is "cleared" once it has an approval date OR is classified CAT-I / CAT-II. */
+/**
+ * A drawing is "approved" only when classified CAT-I / CAT-II (or CAT-REL).
+ * CAT-III is a returned drawing and is never counted as approved. Drawings with
+ * no CAT classification fall back to the presence of an approval date.
+ */
 export function isApproved(r: StationDrawing): boolean {
-  return !!r.approved_date || catImpliesApproved(r.cat);
+  if (catBlocksApproval(r.cat)) return false;
+  if (catImpliesApproved(r.cat)) return true;
+  return !!r.approved_date;
 }
 
 /** A drawing counts as submitted once it has a submitted or re-submitted date (or is approved). */
