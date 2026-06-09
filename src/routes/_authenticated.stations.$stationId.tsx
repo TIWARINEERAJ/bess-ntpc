@@ -28,6 +28,9 @@ import { MeetingsTab } from "@/components/MeetingsTab";
 import { DrawingsTab } from "@/components/DrawingsTab";
 import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
+import { plannedPctAt } from "@/lib/gantt-utils";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
