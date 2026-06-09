@@ -69,6 +69,7 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
   });
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
+  const revQ = useCommitmentRevisions(stationId, "boi");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
