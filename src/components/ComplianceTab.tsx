@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
+import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; committed_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
