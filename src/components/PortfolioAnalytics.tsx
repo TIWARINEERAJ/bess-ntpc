@@ -398,9 +398,9 @@ export function BoiComplianceAnalytics({
                 <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "po" })} />
+                <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "delivered" })} />
+                <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "received" })} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
