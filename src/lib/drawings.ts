@@ -13,12 +13,29 @@ export type StationDrawing = {
   sort_order: number;
 };
 
-/** CAT-I / CAT-II classification implies the drawing is approved (no separate approval needed). */
-export function catImpliesApproved(cat: string | null): boolean {
-  if (!cat) return false;
+/** Normalise the drawing CAT classification to a canonical code. */
+export function catCode(cat: string | null): "I" | "II" | "III" | "REL" | null {
+  if (!cat) return null;
   const c = cat.toUpperCase().replace(/[\s.]/g, "");
-  return c === "CAT-I" || c === "CATI" || c === "CAT1" ||
-    c === "CAT-II" || c === "CATII" || c === "CAT2";
+  if (c === "CAT-I" || c === "CATI" || c === "CAT1") return "I";
+  if (c === "CAT-II" || c === "CATII" || c === "CAT2") return "II";
+  if (c === "CAT-III" || c === "CATIII" || c === "CAT3") return "III";
+  if (c === "CATREL" || c === "CAT-REL" || c === "REL") return "REL";
+  return null;
+}
+
+/**
+ * CAT-I / CAT-II (and released CAT-REL) classification implies the drawing is
+ * approved. CAT-III is an explicit "returned / not approved" classification.
+ */
+export function catImpliesApproved(cat: string | null): boolean {
+  const c = catCode(cat);
+  return c === "I" || c === "II" || c === "REL";
+}
+
+/** CAT-III is explicitly NOT approved, even if an approval date is present. */
+export function catBlocksApproval(cat: string | null): boolean {
+  return catCode(cat) === "III";
 }
 
 
