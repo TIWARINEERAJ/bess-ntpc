@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Battery, AlertTriangle, FileSpreadsheet, FileWarning, FileText, TrendingUp, Calendar, Zap, CheckCircle2, FileStack, Camera, FileType } from "lucide-react";
 import { toast } from "sonner";
-import { buildStatusMap, stationProgress, computeRowState, statusLabel, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
+import { buildStatusMap, stationProgress, computeRowState, statusLabel, plannedPctAt, type L2Task, type Status, type RowStatus } from "@/lib/gantt-utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { exportWeeklyPDF, type WeeklyPdfExtras } from "@/lib/mis-pdf";
