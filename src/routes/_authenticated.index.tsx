@@ -209,8 +209,7 @@ function Dashboard() {
     const byStation = new Map<string, number>();
     for (const e of list) byStation.set(e.station, (byStation.get(e.station) ?? 0) + 1);
     return list
-      .sort((a, b) => (byStation.get(b.station)! - byStation.get(a.station)!) || a.station.localeCompare(b.station) || b.slip - a.slip)
-      .slice(0, 14);
+      .sort((a, b) => (byStation.get(b.station)! - byStation.get(a.station)!) || a.station.localeCompare(b.station) || b.slip - a.slip);
   }, [stations, tasksByStation, statusByStation]);
 
   // Per-agency (awarded contractor) performance roll-up
