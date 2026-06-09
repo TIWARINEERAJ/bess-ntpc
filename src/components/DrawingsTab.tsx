@@ -15,15 +15,6 @@ import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, is
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
 
-  const stationQ = useQuery({
-    queryKey: ["station_mdl_total", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("stations").select("mdl_total").eq("id", stationId).single();
-      if (error) throw error;
-      return data.mdl_total as number;
-    },
-  });
-
   const drawingsQ = useQuery({
     queryKey: ["station_drawings", stationId],
     queryFn: async () => {
@@ -39,8 +30,9 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
   });
 
   const rows = useMemo(() => drawingsQ.data ?? [], [drawingsQ.data]);
-  const mdlTotal = stationQ.data ?? 0;
-  const counts = useMemo(() => drawingCounts(mdlTotal, rows), [mdlTotal, rows]);
+  // Total MDL is the count of rows in this station's Master Drawing List —
+  // the single source of truth. There is no separate planned total.
+  const counts = useMemo(() => drawingCounts(rows), [rows]);
   const categories = useMemo(() => uniqueCategories(rows), [rows]);
   const catClasses = useMemo(
     () => Array.from(new Set(rows.map((r) => r.cat).filter(Boolean))).sort() as string[],
