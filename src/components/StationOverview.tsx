@@ -57,6 +57,9 @@ export function StationOverview({ station, canEdit }: { station: StationRow; can
 
   return (
     <div className="space-y-4">
+      <DrawingsBoiSummary stationId={station.id} />
+
+
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Station Details</h2>
         {canEdit && (
