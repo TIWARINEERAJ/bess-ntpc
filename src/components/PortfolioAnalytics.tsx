@@ -404,6 +404,8 @@ export function BoiComplianceAnalytics({
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <p className="mt-1 text-center text-[10px] text-muted-foreground">Tip: click a bar to see the underlying items for that station &amp; stage</p>
+
 
           {/* Per-component (item) breakdown — click a component for its station-wise constituents */}
           {boiByItem.length > 0 && (
