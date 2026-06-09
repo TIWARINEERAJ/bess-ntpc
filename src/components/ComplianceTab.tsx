@@ -41,6 +41,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
   }});
 
   const map = useMemo(() => new Map((statQ.data ?? []).map(s => [s.compliance_id, s])), [statQ.data]);
+  const revQ = useCommitmentRevisions(stationId, "compliance");
 
   const save = useMutation({
     mutationFn: async (row: Stat) => {
@@ -48,7 +49,7 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
       const { error } = await supabase.from("station_compliance").upsert({ ...row, updated_by: user?.id ?? null }, { onConflict: "station_id,compliance_id" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["station_compl", stationId] }); qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["station_compl", stationId] }); qc.invalidateQueries({ queryKey: ["commitment_revisions", "compliance", stationId] }); qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Saved"); },
     onError: (e) => toast.error((e as Error).message),
   });
 
