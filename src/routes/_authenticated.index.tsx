@@ -26,6 +26,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Package } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, LabelList, ReferenceLine } from "recharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DrawingTypeAnalytics, BoiComplianceAnalytics } from "@/components/PortfolioAnalytics";
 import { Sparkles, LineChart as LineChartIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
