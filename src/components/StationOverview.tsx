@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Pencil, Loader2, Plus, Trash2 } from "lucide-react";
+import { Pencil, Loader2, Plus, Trash2, FileStack, Package } from "lucide-react";
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
+import { drawingCounts, type StationDrawing } from "@/lib/drawings";
 
 type Contact = { name?: string; role?: string; phone?: string; email?: string };
 
