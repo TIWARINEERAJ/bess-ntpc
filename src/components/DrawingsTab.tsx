@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 
 
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
