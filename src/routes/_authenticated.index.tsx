@@ -18,7 +18,7 @@ import { computePortfolioAnalytics } from "@/lib/mis-analytics";
 import { generateMisNarrative, type MisNarrative, type MisNarrativeInput } from "@/lib/mis-narrative.functions";
 import { bulkExport } from "@/lib/bulk-export";
 import { UpcomingMeetings } from "@/components/UpcomingMeetings";
-import { drawingCounts, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, fetchAllDrawings, type StationDrawing } from "@/lib/drawings";
 import { fetchStatusesByStation, fetchTasksByStation } from "@/lib/task-data";
 import { useMemo, useRef, useState } from "react";
 import { format, addDays } from "date-fns";
