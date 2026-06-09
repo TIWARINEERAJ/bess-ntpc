@@ -8,6 +8,8 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
+import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
+import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
 
 type Boi = {
   id: string;
@@ -82,6 +84,19 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterQ.data, statusQ.data, search, statusFilter]);
 
+  const lifecycleRows = useMemo<BoiLifecycleRow[]>(() => {
+    return (masterQ.data ?? []).map((b) => {
+      const s = map.get(b.id);
+      return {
+        scheduled_po_date: b.scheduled_po_date,
+        actual_po_date: s?.actual_po_date ?? null,
+        delivery_date: s?.delivery_date ?? null,
+        site_receipt_date: s?.site_receipt_date ?? null,
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterQ.data, statusQ.data]);
+
 
   const save = useMutation({
     mutationFn: async (row: BoiStatus) => {
@@ -102,7 +117,9 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
   });
 
   return (
-    <Card className="overflow-hidden p-0">
+    <div className="space-y-4">
+      <BoiLifecycleChart rows={lifecycleRows} />
+      <Card className="overflow-hidden p-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="text-xs text-muted-foreground">{visible.length} of {(masterQ.data ?? []).length} items shown</div>
         <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +193,8 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
           </tbody>
         </table>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
 
