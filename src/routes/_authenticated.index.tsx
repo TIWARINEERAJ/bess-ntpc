@@ -539,7 +539,7 @@ function AiSummaryTab({
   const sCurveData = useMemo(
     () =>
       analytics.sCurve.map((p) => ({
-        label: format(new Date(p.label), "dd MMM"),
+        label: p.label,
         planned: p.planned,
         actual: p.actual,
       })),
