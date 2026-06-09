@@ -117,6 +117,7 @@ function StationPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["status", stationId] });
+      qc.invalidateQueries({ queryKey: ["commitment_revisions", "task", stationId] });
       qc.invalidateQueries({ queryKey: ["all_status"] });
       toast.success("Saved");
     },
