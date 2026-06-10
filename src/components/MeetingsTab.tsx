@@ -451,7 +451,7 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
                 </div>
                 <div className="sm:w-40">
                   <Label className="text-[11px] text-muted-foreground">Committed date</Label>
-                  <Input type="date" value={cmtDate} onChange={(e) => setCmtDate(e.target.value)} />
+                  <DatePicker value={cmtDate} onChange={setCmtDate} />
                 </div>
                 <Button type="button" size="sm" variant="secondary" onClick={addCommitment}><Plus className="mr-1 h-4 w-4" /> Add</Button>
               </div>
