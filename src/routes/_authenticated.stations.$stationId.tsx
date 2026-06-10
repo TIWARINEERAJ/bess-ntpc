@@ -397,7 +397,7 @@ function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit
               <Label htmlFor="cd">Committed Date</Label>
               {!task.is_section && <CommitmentHistory revisions={revisions} />}
             </div>
-            <Input id="cd" type="date" disabled={!canEdit || task.is_section} value={committedDate} onChange={e => setCommittedDate(e.target.value)} />
+            <DatePicker id="cd" disabled={!canEdit || task.is_section} value={committedDate} onChange={setCommittedDate} />
             <p className="mt-1 text-[10px] text-muted-foreground">
               Committed / promised completion date. Each change is versioned (R0, R1 …) to track agency slippage.
             </p>
