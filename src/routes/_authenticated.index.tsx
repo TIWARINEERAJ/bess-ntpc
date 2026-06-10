@@ -14,6 +14,9 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { exportWeeklyPDF, type WeeklyPdfExtras } from "@/lib/mis-pdf";
 import { exportWeeklyDOCX } from "@/lib/mis-docx";
+import { exportWeeklyBriefPDF } from "@/lib/weekly-brief";
+import { exportWeeklyBriefDOCX } from "@/lib/weekly-brief-docx";
+import type { WeeklyBriefInput } from "@/lib/weekly-brief-data";
 import { computePortfolioAnalytics } from "@/lib/mis-analytics";
 
 import { bulkExport } from "@/lib/bulk-export";
@@ -299,6 +302,35 @@ function Dashboard() {
     }
   };
 
+  const [briefExporting, setBriefExporting] = useState<null | "pdf" | "docx">(null);
+  const buildBriefInput = (): WeeklyBriefInput => ({
+    stations,
+    tasks,
+    statusByStation,
+    drawings: drawingsQ.data ?? [],
+    boiMaster: boiMasterQ.data ?? [],
+    boiStatus: boiStatusQ.data ?? [],
+    meetings: meetingsQ.data ?? [],
+    complianceMaster: complMasterQ.data ?? [],
+    complianceStatus: complStatusQ.data ?? [],
+    issues: issuesQ.data ?? [],
+    delays: delaysQ.data ?? [],
+  });
+
+  const runWeeklyBrief = async (kind: "pdf" | "docx") => {
+    setBriefExporting(kind);
+    try {
+      const input = buildBriefInput();
+      if (kind === "pdf") exportWeeklyBriefPDF(input);
+      else await exportWeeklyBriefDOCX(input);
+      toast.success(`Weekly Brief (${kind.toUpperCase()}) downloaded`, { id: "brief-export" });
+    } catch (e) {
+      toast.error(`Brief export failed: ${(e as Error).message}`, { id: "brief-export" });
+    } finally {
+      setBriefExporting(null);
+    }
+  };
+
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
@@ -324,6 +356,14 @@ function Dashboard() {
           <Button size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
             <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
           </Button>
+          <Button variant="outline" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
+            <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief (Word)"}
+          </Button>
+          <Button size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
+            <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief (PDF)"}
+          </Button>
+
+
 
 
         </div>
