@@ -69,11 +69,13 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected ?? MIN_DATE}
+          month={selected ?? today}
+          defaultMonth={selected ?? today}
           captionLayout="dropdown"
           startMonth={MIN_DATE}
           endMonth={MAX_DATE}
           disabled={{ before: MIN_DATE, after: MAX_DATE }}
+          today={today}
           onSelect={(d) => {
             if (d) onChange(format(d, ISO));
             else onChange("");
