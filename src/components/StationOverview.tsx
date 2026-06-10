@@ -12,6 +12,7 @@ import { Pencil, Loader2, Plus, Trash2, FileStack, Package } from "lucide-react"
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
 import { drawingCounts, type StationDrawing } from "@/lib/drawings";
+import { DatePicker } from "@/components/DatePicker";
 
 type Contact = { name?: string; role?: string; phone?: string; email?: string };
 
