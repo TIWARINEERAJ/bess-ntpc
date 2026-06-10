@@ -524,7 +524,7 @@ function IssuesPanel({ stationId, canEdit }: { stationId: string; canEdit: boole
                   <SelectContent>{["low", "medium", "high"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Target Date</Label><Input type="date" value={form.target_date} onChange={e => setForm({ ...form, target_date: e.target.value })} /></div>
+              <div><Label>Target Date</Label><DatePicker value={form.target_date} onChange={v => setForm({ ...form, target_date: v })} /></div>
             </div>
             <div><Label>Owner</Label><Input value={form.owner} onChange={e => setForm({ ...form, owner: e.target.value })} /></div>
             <Button className="w-full" disabled={!form.title || create.isPending} onClick={() => create.mutate()}>
