@@ -427,7 +427,7 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
           </div>
           <div>
             <Label>Next meeting</Label>
-            <Input type="date" value={form.next_meeting_date} onChange={(e) => setForm({ ...form, next_meeting_date: e.target.value })} />
+            <DatePicker value={form.next_meeting_date} onChange={(v) => setForm({ ...form, next_meeting_date: v })} />
           </div>
           <div className="col-span-2 flex items-center justify-between gap-2">
             <Label>Attendees</Label>
