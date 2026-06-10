@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 /** Hard bounds enforced everywhere a date is picked. */
 export const MIN_DATE = new Date(2026, 0, 1); // 01-Jan-2026
-export const MAX_DATE = new Date(2028, 11, 31); // 31-Dec-2029
+export const MAX_DATE = new Date(2028, 11, 31); // 31-Dec-2028
 
 const ISO = "yyyy-MM-dd";
 
