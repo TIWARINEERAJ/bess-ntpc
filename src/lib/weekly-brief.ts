@@ -227,10 +227,20 @@ export function buildWeeklyBriefDoc(input: WeeklyBriefInput): jsPDF {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text(`All-station snapshot · As of ${format(today, "dd MMM yyyy, HH:mm")}`, margin, 40);
-      // inline KPI strip on the right
-      const kpi = `${t.stations} stations · Avg ${t.avgPct}% (ideal ${t.idealPct}%) · ${t.onTrack}▲ ${t.atRisk}◆ ${t.delayed}▼ · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} apprvd`;
+      // inline KPI strip on the right (two lines, ASCII only)
       doc.setFontSize(8.5);
-      doc.text(kpi, pageW - margin, 33, { align: "right" });
+      doc.text(
+        `${t.stations} stations · Avg ${t.avgPct}% vs ideal ${t.idealPct}%`,
+        pageW - margin,
+        22,
+        { align: "right" },
+      );
+      doc.text(
+        `On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
+        pageW - margin,
+        38,
+        { align: "right" },
+      );
       topY = 64;
     } else {
       doc.setFont("helvetica", "bold");
