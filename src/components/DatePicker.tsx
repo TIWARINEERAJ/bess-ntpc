@@ -7,8 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** Hard bounds enforced everywhere a date is picked. */
-export const MIN_DATE = new Date(2025, 0, 1); // 01-Jan-2025
-export const MAX_DATE = new Date(2029, 11, 31); // 31-Dec-2029
+export const MIN_DATE = new Date(2026, 0, 1); // 01-Jan-2026
+export const MAX_DATE = new Date(2028, 11, 31); // 31-Dec-2029
 
 const ISO = "yyyy-MM-dd";
 
@@ -32,7 +32,7 @@ export type DatePickerProps = {
 
 /**
  * Calendar-only date entry. Typing is not allowed (prevents erratic entry) and
- * only dates within [2025, 2029] can be selected. Works as a drop-in for the
+ * only dates within [2026, 2028] can be selected. Works as a drop-in for the
  * former `<Input type="date" />` fields — same ISO `yyyy-MM-dd` value contract.
  */
 export function DatePicker({
