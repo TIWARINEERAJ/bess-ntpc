@@ -382,7 +382,11 @@ function FormField({ label, value, onChange, type }: { label: string; value: str
   return (
     <div>
       <Label className="text-[11px]">{label}</Label>
-      <Input type={type} value={value} onChange={e => onChange(e.target.value)} />
+      {type === "date" ? (
+        <DatePicker value={value} onChange={onChange} />
+      ) : (
+        <Input type={type} value={value} onChange={e => onChange(e.target.value)} />
+      )}
     </div>
   );
 }
