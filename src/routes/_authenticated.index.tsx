@@ -14,6 +14,9 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { exportWeeklyMIS, exportExceptions } from "@/lib/mis-export";
 import { exportWeeklyPDF, type WeeklyPdfExtras } from "@/lib/mis-pdf";
 import { exportWeeklyDOCX } from "@/lib/mis-docx";
+import { exportWeeklyBriefPDF } from "@/lib/weekly-brief";
+import { exportWeeklyBriefDOCX } from "@/lib/weekly-brief-docx";
+import type { WeeklyBriefInput } from "@/lib/weekly-brief-data";
 import { computePortfolioAnalytics } from "@/lib/mis-analytics";
 
 import { bulkExport } from "@/lib/bulk-export";
