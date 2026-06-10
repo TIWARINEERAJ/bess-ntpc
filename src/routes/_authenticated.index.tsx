@@ -302,8 +302,36 @@ function Dashboard() {
     }
   };
 
+  const [briefExporting, setBriefExporting] = useState<null | "pdf" | "docx">(null);
+  const buildBriefInput = (): WeeklyBriefInput => ({
+    stations,
+    tasks,
+    statusByStation,
+    drawings: drawingsQ.data ?? [],
+    boiMaster: boiMasterQ.data ?? [],
+    boiStatus: boiStatusQ.data ?? [],
+    meetings: meetingsQ.data ?? [],
+    complianceMaster: complMasterQ.data ?? [],
+    complianceStatus: complStatusQ.data ?? [],
+    issues: issuesQ.data ?? [],
+    delays: delaysQ.data ?? [],
+  });
 
-  return (
+  const runWeeklyBrief = async (kind: "pdf" | "docx") => {
+    setBriefExporting(kind);
+    try {
+      const input = buildBriefInput();
+      if (kind === "pdf") exportWeeklyBriefPDF(input);
+      else await exportWeeklyBriefDOCX(input);
+      toast.success(`Weekly Brief (${kind.toUpperCase()}) downloaded`, { id: "brief-export" });
+    } catch (e) {
+      toast.error(`Brief export failed: ${(e as Error).message}`, { id: "brief-export" });
+    } finally {
+      setBriefExporting(null);
+    }
+  };
+
+
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
