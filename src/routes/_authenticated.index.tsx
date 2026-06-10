@@ -356,6 +356,14 @@ function Dashboard() {
           <Button size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
             <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
           </Button>
+          <Button variant="outline" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
+            <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief (Word)"}
+          </Button>
+          <Button size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
+            <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief (PDF)"}
+          </Button>
+
+
 
 
         </div>
