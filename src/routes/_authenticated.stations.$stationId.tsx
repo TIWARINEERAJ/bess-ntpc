@@ -385,11 +385,11 @@ function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="as">Actual Start</Label>
-              <Input id="as" type="date" disabled={!canEdit || task.is_section} value={actualStart} onChange={e => setActualStart(e.target.value)} />
+              <DatePicker id="as" disabled={!canEdit || task.is_section} value={actualStart} onChange={setActualStart} />
             </div>
             <div>
               <Label htmlFor="af">Actual Finish</Label>
-              <Input id="af" type="date" disabled={!canEdit || task.is_section} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
+              <DatePicker id="af" disabled={!canEdit || task.is_section} value={actualFinish} onChange={setActualFinish} />
             </div>
           </div>
           <div>
