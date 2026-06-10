@@ -423,7 +423,7 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
           </div>
           <div>
             <Label>Meeting date</Label>
-            <Input type="date" value={form.meeting_date} onChange={(e) => setForm({ ...form, meeting_date: e.target.value })} />
+            <DatePicker value={form.meeting_date} onChange={(v) => setForm({ ...form, meeting_date: v })} />
           </div>
           <div>
             <Label>Next meeting</Label>
