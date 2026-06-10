@@ -129,7 +129,7 @@ export function DelayRegisterTab({ stationId, canEdit, tasks, status }: { statio
                 <div><Label>Corrective Action</Label><Textarea rows={2} value={edit.corrective_action ?? ""} disabled={!canEdit} onChange={e => setEdit({ ...edit, corrective_action: e.target.value })} /></div>
                 <div><Label>Recovery Plan</Label><Textarea rows={2} value={edit.recovery_plan ?? ""} disabled={!canEdit} onChange={e => setEdit({ ...edit, recovery_plan: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Recovery Date</Label><Input type="date" disabled={!canEdit} value={edit.recovery_date ?? ""} onChange={e => setEdit({ ...edit, recovery_date: e.target.value || null })} /></div>
+                  <div><Label>Recovery Date</Label><DatePicker disabled={!canEdit} value={edit.recovery_date ?? ""} onChange={v => setEdit({ ...edit, recovery_date: v || null })} /></div>
                   <div><Label>Status</Label>
                     <Select value={edit.status} onValueChange={v => setEdit({ ...edit, status: v })} disabled={!canEdit}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
