@@ -544,7 +544,7 @@ function PlanMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved
           </div>
           <div>
             <Label>Meeting date</Label>
-            <Input type="date" value={form.planned_date} onChange={(e) => setForm({ ...form, planned_date: e.target.value })} />
+            <DatePicker value={form.planned_date} onChange={(v) => setForm({ ...form, planned_date: v })} />
           </div>
           <div>
             <Label>Time (optional)</Label>
