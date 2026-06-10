@@ -70,7 +70,6 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
-          month={selected ?? today}
           defaultMonth={selected ?? today}
           captionLayout="dropdown"
           startMonth={MIN_DATE}
