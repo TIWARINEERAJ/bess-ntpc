@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtD } from "@/lib/gantt-utils";
+import { DatePicker } from "@/components/DatePicker";
 import { addMonths, differenceInCalendarDays, parseISO, startOfMonth } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -422,11 +423,11 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
           </div>
           <div>
             <Label>Meeting date</Label>
-            <Input type="date" value={form.meeting_date} onChange={(e) => setForm({ ...form, meeting_date: e.target.value })} />
+            <DatePicker value={form.meeting_date} onChange={(v) => setForm({ ...form, meeting_date: v })} />
           </div>
           <div>
             <Label>Next meeting</Label>
-            <Input type="date" value={form.next_meeting_date} onChange={(e) => setForm({ ...form, next_meeting_date: e.target.value })} />
+            <DatePicker value={form.next_meeting_date} onChange={(v) => setForm({ ...form, next_meeting_date: v })} />
           </div>
           <div className="col-span-2 flex items-center justify-between gap-2">
             <Label>Attendees</Label>
@@ -450,7 +451,7 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
                 </div>
                 <div className="sm:w-40">
                   <Label className="text-[11px] text-muted-foreground">Committed date</Label>
-                  <Input type="date" value={cmtDate} onChange={(e) => setCmtDate(e.target.value)} />
+                  <DatePicker value={cmtDate} onChange={setCmtDate} />
                 </div>
                 <Button type="button" size="sm" variant="secondary" onClick={addCommitment}><Plus className="mr-1 h-4 w-4" /> Add</Button>
               </div>
@@ -543,7 +544,7 @@ function PlanMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved
           </div>
           <div>
             <Label>Meeting date</Label>
-            <Input type="date" value={form.planned_date} onChange={(e) => setForm({ ...form, planned_date: e.target.value })} />
+            <DatePicker value={form.planned_date} onChange={(v) => setForm({ ...form, planned_date: v })} />
           </div>
           <div>
             <Label>Time (optional)</Label>

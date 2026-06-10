@@ -29,6 +29,7 @@ import { DrawingsTab } from "@/components/DrawingsTab";
 import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
+import { DatePicker } from "@/components/DatePicker";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
@@ -384,11 +385,11 @@ function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="as">Actual Start</Label>
-              <Input id="as" type="date" disabled={!canEdit || task.is_section} value={actualStart} onChange={e => setActualStart(e.target.value)} />
+              <DatePicker id="as" disabled={!canEdit || task.is_section} value={actualStart} onChange={setActualStart} />
             </div>
             <div>
               <Label htmlFor="af">Actual Finish</Label>
-              <Input id="af" type="date" disabled={!canEdit || task.is_section} value={actualFinish} onChange={e => setActualFinish(e.target.value)} />
+              <DatePicker id="af" disabled={!canEdit || task.is_section} value={actualFinish} onChange={setActualFinish} />
             </div>
           </div>
           <div>
@@ -396,7 +397,7 @@ function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit
               <Label htmlFor="cd">Committed Date</Label>
               {!task.is_section && <CommitmentHistory revisions={revisions} />}
             </div>
-            <Input id="cd" type="date" disabled={!canEdit || task.is_section} value={committedDate} onChange={e => setCommittedDate(e.target.value)} />
+            <DatePicker id="cd" disabled={!canEdit || task.is_section} value={committedDate} onChange={setCommittedDate} />
             <p className="mt-1 text-[10px] text-muted-foreground">
               Committed / promised completion date. Each change is versioned (R0, R1 …) to track agency slippage.
             </p>
@@ -523,7 +524,7 @@ function IssuesPanel({ stationId, canEdit }: { stationId: string; canEdit: boole
                   <SelectContent>{["low", "medium", "high"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Target Date</Label><Input type="date" value={form.target_date} onChange={e => setForm({ ...form, target_date: e.target.value })} /></div>
+              <div><Label>Target Date</Label><DatePicker value={form.target_date} onChange={v => setForm({ ...form, target_date: v })} /></div>
             </div>
             <div><Label>Owner</Label><Input value={form.owner} onChange={e => setForm({ ...form, owner: e.target.value })} /></div>
             <Button className="w-full" disabled={!form.title || create.isPending} onClick={() => create.mutate()}>

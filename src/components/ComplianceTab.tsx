@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
+import { DatePicker } from "@/components/DatePicker";
 
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; committed_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
@@ -138,11 +139,15 @@ export function ComplianceTab({ stationId, canEdit }: { stationId: string; canEd
 function ComplRow({ m, s, canEdit, revisions, onSave }: { m: Master; s: Stat; canEdit: boolean; revisions?: CommitmentRevision[]; onSave: (p: Partial<Stat>) => void }) {
   const [local, setLocal] = useState<Stat>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
-  const inp = (k: keyof Stat, type: "date" | "text" = "text", w = "w-32") => (
-    <Input type={type} disabled={!canEdit} className={`h-7 ${w} bg-transparent text-xs`} value={(local[k] as string) ?? ""}
-      onChange={e => setLocal({ ...local, [k]: e.target.value || null })}
-      onBlur={() => dirty && onSave(local)} />
-  );
+  const inp = (k: keyof Stat, type: "date" | "text" = "text", w = "w-32") =>
+    type === "date" ? (
+      <DatePicker disabled={!canEdit} className={`h-7 ${w} text-xs`} value={(local[k] as string) ?? ""}
+        onChange={v => { const n = { ...local, [k]: v || null }; setLocal(n); onSave(n); }} />
+    ) : (
+      <Input type={type} disabled={!canEdit} className={`h-7 ${w} bg-transparent text-xs`} value={(local[k] as string) ?? ""}
+        onChange={e => setLocal({ ...local, [k]: e.target.value || null })}
+        onBlur={() => dirty && onSave(local)} />
+    );
   return (
     <tr className="border-b border-border/40 hover:bg-secondary/30">
       <td className="px-2 py-1 font-medium">{m.name}</td>

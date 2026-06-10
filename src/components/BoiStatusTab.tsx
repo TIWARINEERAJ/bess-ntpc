@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
 import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
+import { DatePicker } from "@/components/DatePicker";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 
@@ -220,16 +221,24 @@ function BoiRow({
 }) {
   const [local, setLocal] = useState<BoiStatus>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
-  const cell = (k: keyof BoiStatus, type: "date" | "text" = "text", w = "w-32") => (
-    <Input
-      type={type}
-      disabled={!canEdit}
-      className={`h-7 ${w} bg-transparent text-xs`}
-      value={(local[k] as string) ?? ""}
-      onChange={(e) => setLocal({ ...local, [k]: e.target.value || null })}
-      onBlur={() => dirty && onSave(local)}
-    />
-  );
+  const cell = (k: keyof BoiStatus, type: "date" | "text" = "text", w = "w-32") =>
+    type === "date" ? (
+      <DatePicker
+        disabled={!canEdit}
+        className={`h-7 ${w} text-xs`}
+        value={(local[k] as string) ?? ""}
+        onChange={(v) => { const n = { ...local, [k]: v || null }; setLocal(n); onSave(n); }}
+      />
+    ) : (
+      <Input
+        type={type}
+        disabled={!canEdit}
+        className={`h-7 ${w} bg-transparent text-xs`}
+        value={(local[k] as string) ?? ""}
+        onChange={(e) => setLocal({ ...local, [k]: e.target.value || null })}
+        onBlur={() => dirty && onSave(local)}
+      />
+    );
   const select = (k: keyof BoiStatus, opts: string[], w = "w-28") => (
     <Select
       value={(local[k] as string) || "_none"}
