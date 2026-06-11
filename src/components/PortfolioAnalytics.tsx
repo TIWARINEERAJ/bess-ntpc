@@ -230,7 +230,7 @@ export function DrawingTypeAnalytics({
 /* 2. BOI + Compliance analytics (all stations together)               */
 /* ================================================================== */
 
-type BoiMaster = { id: string; name: string; scheduled_po_date?: string | null };
+type BoiMaster = { id: string; station_id: string; name: string; sort_order?: number; inspection_category?: string | null; scheduled_po_date?: string | null };
 type BoiStatus = { station_id: string; boi_id: string; actual_po_date: string | null; delivery_date?: string | null; site_receipt_date?: string | null };
 type ComplMaster = { id: string; category: string; name: string };
 type ComplStatus = { station_id: string; compliance_id: string; status: string | null };
