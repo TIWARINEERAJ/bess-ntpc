@@ -245,11 +245,13 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     // --- Civil ---
     const civil = civilRollup(sTasks, map, today);
 
-    // --- BOI ---
+    // --- BOI (station-specific master list) ---
     const sBoi = boiStatusByStation.get(s.id) ?? new Map<string, BriefBoiStatus>();
+    const sBoiMaster = boiMasterByStation.get(s.id) ?? [];
+    const boiTotal = sBoiMaster.length;
     let ordered = 0, delivered = 0, received = 0;
     const orderedItems: Array<BoiItemBrief & { _sort: number }> = [];
-    for (const b of boiMaster) {
+    for (const b of sBoiMaster) {
       const st = sBoi.get(b.id);
       if (!st) continue;
       if (st.actual_po_date) {
