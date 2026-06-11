@@ -80,7 +80,7 @@ function DrawingsBoiSummary({ stationId }: { stationId: string }) {
     queryKey: ["boi_brief", stationId],
     queryFn: async (): Promise<BoiBrief> => {
       const [{ data: master, error: mErr }, { data: status, error: sErr }] = await Promise.all([
-        supabase.from("boi_master").select("id,scheduled_po_date"),
+        supabase.from("boi_master").select("id,scheduled_po_date").eq("station_id", stationId),
         supabase.from("station_boi_status").select("boi_id,actual_po_date,delivery_date,site_receipt_date").eq("station_id", stationId),
       ]);
       if (mErr) throw mErr;

@@ -24,7 +24,7 @@ type Station = {
   ntpc_eic: string | null;
 };
 
-type BoiMaster = { id: string; sl_no: number; name: string; scheduled_po_date: string | null };
+type BoiMaster = { id: string; station_id: string; sl_no: number; name: string; scheduled_po_date: string | null };
 type BoiStatus = { station_id: string; boi_id: string; actual_po_date: string | null };
 type MeetingRow = { station_id: string; meeting_type: string; meeting_date: string };
 type PlanRow = { station_id: string; meeting_type: string; planned_date: string; title: string | null };
@@ -531,7 +531,7 @@ export function buildWeeklyDoc(
   const boiStatusMap = new Map(boiStatus.map((s) => [`${s.station_id}::${s.boi_id}`, s]));
   const boiExc: Array<{ station: string; equip: string; sch: string; days: number }> = [];
   for (const s of stations) {
-    for (const b of boiMaster) {
+    for (const b of boiMaster.filter((m) => m.station_id === s.id)) {
       if (!b.scheduled_po_date) continue;
       const st = boiStatusMap.get(`${s.id}::${b.id}`);
       if (st?.actual_po_date) continue;

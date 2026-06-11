@@ -23,7 +23,7 @@ export type BriefStation = {
   ntpc_eic: string | null;
 };
 
-export type BriefBoiMaster = { id: string; sl_no: number; name: string; scheduled_po_date?: string | null };
+export type BriefBoiMaster = { id: string; station_id: string; sl_no: number; name: string; scheduled_po_date?: string | null };
 export type BriefBoiStatus = {
   station_id: string;
   boi_id: string;
@@ -205,6 +205,14 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     m.set(b.boi_id, b);
   }
 
+  // Each station has its own BOI master list.
+  const boiMasterByStation = new Map<string, BriefBoiMaster[]>();
+  for (const b of boiMaster) {
+    const arr = boiMasterByStation.get(b.station_id);
+    if (arr) arr.push(b);
+    else boiMasterByStation.set(b.station_id, [b]);
+  }
+
   const meetingsByStation = new Map<string, BriefMeeting[]>();
   for (const m of meetings) (meetingsByStation.get(m.station_id) ?? meetingsByStation.set(m.station_id, []).get(m.station_id)!).push(m);
 
@@ -222,7 +230,6 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
   for (const d of delays) (delaysByStation.get(d.station_id) ?? delaysByStation.set(d.station_id, []).get(d.station_id)!).push(d);
 
   const complTotal = complianceMaster.length;
-  const boiTotal = boiMaster.length;
 
   const stationsBrief: StationBrief[] = stations.map((s) => {
     const map = buildStatusMap(statusByStation[s.id]);
@@ -238,11 +245,13 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     // --- Civil ---
     const civil = civilRollup(sTasks, map, today);
 
-    // --- BOI ---
+    // --- BOI (station-specific master list) ---
     const sBoi = boiStatusByStation.get(s.id) ?? new Map<string, BriefBoiStatus>();
+    const sBoiMaster = boiMasterByStation.get(s.id) ?? [];
+    const boiTotal = sBoiMaster.length;
     let ordered = 0, delivered = 0, received = 0;
     const orderedItems: Array<BoiItemBrief & { _sort: number }> = [];
-    for (const b of boiMaster) {
+    for (const b of sBoiMaster) {
       const st = sBoi.get(b.id);
       if (!st) continue;
       if (st.actual_po_date) {
