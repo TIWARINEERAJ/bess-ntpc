@@ -248,51 +248,65 @@ export function BoiComplianceAnalytics({
   complMaster: ComplMaster[];
   complStatus: ComplStatus[];
 }) {
+  /* ---- BOI master grouped per station (each plant has its own list) ---- */
+  const boiMasterByStation = useMemo(() => {
+    const m = new Map<string, BoiMaster[]>();
+    for (const b of boiMaster) {
+      const arr = m.get(b.station_id) ?? [];
+      arr.push(b);
+      m.set(b.station_id, arr);
+    }
+    return m;
+  }, [boiMaster]);
+
   /* ---- BOI: per-station procurement funnel ---- */
-  const boiByStation = useMemo(() => {
-    const map = new Map<string, BoiStatus>();
-    for (const s of boiStatus) map.set(`${s.station_id}::${s.boi_id}`, s);
-    return stations.map((st) => {
-      let po = 0, delivered = 0, received = 0;
-      for (const b of boiMaster) {
-        const cell = map.get(`${st.id}::${b.id}`);
-        if (cell?.actual_po_date) po += 1;
-        if (cell?.delivery_date) delivered += 1;
-        if (cell?.site_receipt_date) received += 1;
-      }
-      return { id: st.id, name: st.name, po, delivered, received, total: boiMaster.length };
-    });
-  }, [stations, boiMaster, boiStatus]);
-
-  const boiTotals = useMemo(() => {
-    const cells = stations.length * boiMaster.length;
-    const po = boiByStation.reduce((a, s) => a + s.po, 0);
-    const delivered = boiByStation.reduce((a, s) => a + s.delivered, 0);
-    const received = boiByStation.reduce((a, s) => a + s.received, 0);
-    return { cells, po, delivered, received };
-  }, [boiByStation, stations.length, boiMaster.length]);
-
-  /* ---- BOI: per-component (item) roll-up across stations ---- */
   const boiStatusMap = useMemo(() => {
     const m = new Map<string, BoiStatus>();
     for (const s of boiStatus) m.set(`${s.station_id}::${s.boi_id}`, s);
     return m;
   }, [boiStatus]);
 
+  const boiByStation = useMemo(() => {
+    return stations.map((st) => {
+      const items = boiMasterByStation.get(st.id) ?? [];
+      let po = 0, delivered = 0, received = 0;
+      for (const b of items) {
+        const cell = boiStatusMap.get(`${st.id}::${b.id}`);
+        if (cell?.actual_po_date) po += 1;
+        if (cell?.delivery_date) delivered += 1;
+        if (cell?.site_receipt_date) received += 1;
+      }
+      return { id: st.id, name: st.name, po, delivered, received, total: items.length };
+    });
+  }, [stations, boiMasterByStation, boiStatusMap]);
+
+  const boiTotals = useMemo(() => {
+    const cells = boiMaster.length;
+    const po = boiByStation.reduce((a, s) => a + s.po, 0);
+    const delivered = boiByStation.reduce((a, s) => a + s.delivered, 0);
+    const received = boiByStation.reduce((a, s) => a + s.received, 0);
+    return { cells, po, delivered, received };
+  }, [boiByStation, boiMaster.length]);
+
+  /* ---- BOI: per-component (item) roll-up across stations, grouped by item name ---- */
   const boiByItem = useMemo(() => {
-    return [...boiMaster]
-      .sort((a, b) => (a as any).sort_order - (b as any).sort_order || a.name.localeCompare(b.name))
-      .map((b) => {
-        let po = 0, delivered = 0, received = 0;
-        for (const st of stations) {
-          const cell = boiStatusMap.get(`${st.id}::${b.id}`);
-          if (cell?.actual_po_date) po += 1;
-          if (cell?.delivery_date) delivered += 1;
-          if (cell?.site_receipt_date) received += 1;
-        }
-        return { id: b.id, name: b.name, category: (b as any).inspection_category as string | null, po, delivered, received, total: stations.length };
-      });
-  }, [boiMaster, stations, boiStatusMap]);
+    const byName = new Map<string, { name: string; category: string | null; sort: number; po: number; delivered: number; received: number; total: number }>();
+    for (const st of stations) {
+      const items = boiMasterByStation.get(st.id) ?? [];
+      for (const b of items) {
+        let e = byName.get(b.name);
+        if (!e) { e = { name: b.name, category: b.inspection_category ?? null, sort: b.sort_order ?? 0, po: 0, delivered: 0, received: 0, total: 0 }; byName.set(b.name, e); }
+        e.total += 1;
+        const cell = boiStatusMap.get(`${st.id}::${b.id}`);
+        if (cell?.actual_po_date) e.po += 1;
+        if (cell?.delivery_date) e.delivered += 1;
+        if (cell?.site_receipt_date) e.received += 1;
+      }
+    }
+    return Array.from(byName.values())
+      .sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name))
+      .map((e) => ({ id: e.name, name: e.name, category: e.category, po: e.po, delivered: e.delivered, received: e.received, total: e.total }));
+  }, [boiMasterByStation, stations, boiStatusMap]);
 
   const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
 
@@ -302,8 +316,9 @@ export function BoiComplianceAnalytics({
   const stationDrillItems = useMemo(() => {
     if (!stationDrill) return [];
     const { stationId, stage } = stationDrill;
-    return [...boiMaster]
-      .sort((a, b) => (a as any).sort_order - (b as any).sort_order || a.name.localeCompare(b.name))
+    const items = boiMasterByStation.get(stationId) ?? [];
+    return [...items]
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name))
       .map((b) => {
         const cell = boiStatusMap.get(`${stationId}::${b.id}`);
         const match =
@@ -314,20 +329,23 @@ export function BoiComplianceAnalytics({
         return {
           id: b.id,
           name: b.name,
-          category: (b as any).inspection_category as string | null,
+          category: b.inspection_category ?? null,
           po: cell?.actual_po_date ?? null,
           delivery: cell?.delivery_date ?? null,
           receipt: cell?.site_receipt_date ?? null,
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-  }, [stationDrill, boiMaster, boiStatusMap]);
+  }, [stationDrill, boiMasterByStation, boiStatusMap]);
 
-  // Per-station constituents for the drilled component
+  // Per-station constituents for the drilled component (matched by item name)
   const boiDrillStations = useMemo(() => {
     if (!boiDrill) return [];
     return stations.map((st) => {
-      const cell = boiStatusMap.get(`${st.id}::${boiDrill.id}`);
+      const items = boiMasterByStation.get(st.id) ?? [];
+      const b = items.find((x) => x.name === boiDrill.id);
+      if (!b) return null;
+      const cell = boiStatusMap.get(`${st.id}::${b.id}`);
       const stage = cell?.site_receipt_date ? "received" : cell?.delivery_date ? "delivered" : cell?.actual_po_date ? "po" : "pending";
       return {
         s: st,
@@ -336,11 +354,11 @@ export function BoiComplianceAnalytics({
         delivery: cell?.delivery_date ?? null,
         receipt: cell?.site_receipt_date ?? null,
       };
-    }).sort((a, b) => {
+    }).filter((x): x is NonNullable<typeof x> => x !== null).sort((a, b) => {
       const order = { received: 0, delivered: 1, po: 2, pending: 3 } as const;
       return order[a.stage as keyof typeof order] - order[b.stage as keyof typeof order];
     });
-  }, [boiDrill, stations, boiStatusMap]);
+  }, [boiDrill, stations, boiMasterByStation, boiStatusMap]);
 
   /* ---- Compliance: status split by category ---- */
   const complStatusMap = useMemo(() => {
