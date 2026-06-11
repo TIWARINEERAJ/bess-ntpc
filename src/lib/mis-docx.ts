@@ -198,7 +198,7 @@ export async function exportWeeklyDOCX(
   const boiStatusMap = new Map((extras.boiStatus ?? []).map((s) => [`${s.station_id}::${s.boi_id}`, s]));
   const boiExc: Array<{ station: string; equip: string; sch: string; days: number }> = [];
   for (const s of stations) {
-    for (const b of boiMaster) {
+    for (const b of boiMaster.filter((m) => m.station_id === s.id)) {
       if (!b.scheduled_po_date) continue;
       const st = boiStatusMap.get(`${s.id}::${b.id}`);
       if (st?.actual_po_date) continue;
