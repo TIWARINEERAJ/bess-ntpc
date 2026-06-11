@@ -53,9 +53,9 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
 export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
   const masterQ = useQuery({
-    queryKey: ["boi_master"],
+    queryKey: ["boi_master", stationId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("boi_master").select("*").order("sort_order");
+      const { data, error } = await supabase.from("boi_master").select("*").eq("station_id", stationId).order("sort_order");
       if (error) throw error;
       return data as Boi[];
     },
