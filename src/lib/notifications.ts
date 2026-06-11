@@ -52,20 +52,19 @@ export async function loadNotifications(): Promise<Notif[]> {
     }
   }
 
-  // BOI POs due within 7 days, no actual
+  // BOI POs due within 7 days, no actual (each station has its own BOI list)
   const boiMap = new Map<string, string | null>();
   (boiStatus.data ?? []).forEach(r => boiMap.set(`${r.station_id}|${r.boi_id}`, r.actual_po_date));
-  for (const s of stations.data ?? []) {
-    for (const b of boiMaster.data ?? []) {
-      const end = d(b.scheduled_po_date); if (!end) continue;
-      const actual = boiMap.get(`${s.id}|${b.id}`);
-      if (actual) continue;
-      const days = differenceInCalendarDays(end, today);
-      if (days >= -30 && days <= 7) {
-        out.push({ key: `boi:${s.id}:${b.id}`, kind: "boi", severity: days < 0 ? "high" : days <= 2 ? "high" : "medium",
-          title: `PO: ${b.name}`, detail: days < 0 ? `Overdue by ${-days}d at ${s.name}` : `PO due in ${days}d at ${s.name}`,
-          stationId: s.id, stationName: s.name ?? "", tab: "boi", daysUntil: days });
-      }
+  for (const b of boiMaster.data ?? []) {
+    const end = d(b.scheduled_po_date); if (!end) continue;
+    const sName = sMap.get(b.station_id); if (!sName) continue;
+    const actual = boiMap.get(`${b.station_id}|${b.id}`);
+    if (actual) continue;
+    const days = differenceInCalendarDays(end, today);
+    if (days >= -30 && days <= 7) {
+      out.push({ key: `boi:${b.station_id}:${b.id}`, kind: "boi", severity: days < 0 ? "high" : days <= 2 ? "high" : "medium",
+        title: `PO: ${b.name}`, detail: days < 0 ? `Overdue by ${-days}d at ${sName}` : `PO due in ${days}d at ${sName}`,
+        stationId: b.station_id, stationName: sName, tab: "boi", daysUntil: days });
     }
   }
 
