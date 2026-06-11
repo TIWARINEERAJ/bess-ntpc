@@ -401,7 +401,7 @@ export function BoiComplianceAnalytics({
     <section className="grid gap-6 xl:grid-cols-2">
       {/* BOI */}
       <div>
-        <SectionHeading title="BOI Procurement — all stations" sub="Bought-out items: PO placed → delivered → received at site (common item master across stations)" />
+        <SectionHeading title="BOI Procurement — all stations" sub="Bought-out items: PO placed → delivered → received at site (per-station item master)" />
         <Card className="p-4">
           <div className="grid grid-cols-3 gap-3">
             <Stat label="PO placed" value={boiTotals.po} tone="var(--status-blue)" sub={boiTotals.cells ? `${Math.round((boiTotals.po / boiTotals.cells) * 100)}%` : undefined} icon={<Package className="h-3.5 w-3.5" />} />
