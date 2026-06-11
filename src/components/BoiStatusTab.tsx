@@ -50,12 +50,17 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
   return { label: "Ordered", c: "var(--status-blue)" };
 }
 
+console.log("BoiStatusTab stationId =", stationId);
 export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
   const masterQ = useQuery({
     queryKey: ["boi_master", stationId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("boi_master").select("*").eq("station_id", stationId).order("sort_order");
+      const { data, error } = await supabase
+        .from("boi_master")
+        .select("*")
+        .eq("station_id", stationId)
+        .order("sort_order");
       if (error) throw error;
       return data as Boi[];
     },
@@ -82,7 +87,13 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     return (masterQ.data ?? []).filter((b) => {
       const s = map.get(b.id);
       if (statusFilter !== "all" && statusChip(b, s).label !== statusFilter) return false;
-      if (q && !(`${b.name} ${b.sl_no} ${s?.remarks ?? ""} ${s?.drawings_status ?? ""} ${s?.inspection_status ?? ""}`.toLowerCase().includes(q))) return false;
+      if (
+        q &&
+        !`${b.name} ${b.sl_no} ${s?.remarks ?? ""} ${s?.drawings_status ?? ""} ${s?.inspection_status ?? ""}`
+          .toLowerCase()
+          .includes(q)
+      )
+        return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,7 +111,6 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterQ.data, statusQ.data]);
-
 
   const save = useMutation({
     mutationFn: async (row: BoiStatus) => {
@@ -125,80 +135,88 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
     <div className="space-y-4">
       <BoiLifecycleChart rows={lifecycleRows} />
       <Card className="overflow-hidden p-0">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <div className="text-xs text-muted-foreground">{visible.length} of {(masterQ.data ?? []).length} items shown</div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            placeholder="Search equipment / remarks…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-56 text-xs"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {STATUS_OPTIONS.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+          <div className="text-xs text-muted-foreground">
+            {visible.length} of {(masterQ.data ?? []).length} items shown
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="Search equipment / remarks…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 w-56 text-xs"
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-40 text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {STATUS_OPTIONS.map((x) => (
+                  <SelectItem key={x} value={x}>
+                    {x}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
-            <tr>
-              {[
-                "SL",
-                "BOI Equipment",
-                "Dwgs",
-                "Sched PO",
-                "Actual PO",
-                "Committed",
-                "Drawings",
-                "Inspection",
-                "Dispatch",
-                "Site Receipt",
-                "Status",
-                "Remarks",
-                "Docs",
-                "Quality Plan",
-              ].map((h) => (
-                <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((b) => {
-              const s = map.get(b.id) ?? {
-                station_id: stationId,
-                boi_id: b.id,
-                actual_po_date: null,
-                committed_date: null,
-                delivery_date: null,
-                site_receipt_date: null,
-                mobilization_status: null,
-                drawings_status: null,
-                inspection_status: null,
-                remarks: null,
-              };
-              const chip = statusChip(b, s);
-              return (
-                <BoiRow
-                  key={b.id}
-                  b={b}
-                  s={s}
-                  chip={chip}
-                  canEdit={canEdit}
-                  revisions={revQ.data?.get(b.id)}
-                  onSave={(p) => save.mutate({ ...s, ...p })}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <tr>
+                {[
+                  "SL",
+                  "BOI Equipment",
+                  "Dwgs",
+                  "Sched PO",
+                  "Actual PO",
+                  "Committed",
+                  "Drawings",
+                  "Inspection",
+                  "Dispatch",
+                  "Site Receipt",
+                  "Status",
+                  "Remarks",
+                  "Docs",
+                  "Quality Plan",
+                ].map((h) => (
+                  <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((b) => {
+                const s = map.get(b.id) ?? {
+                  station_id: stationId,
+                  boi_id: b.id,
+                  actual_po_date: null,
+                  committed_date: null,
+                  delivery_date: null,
+                  site_receipt_date: null,
+                  mobilization_status: null,
+                  drawings_status: null,
+                  inspection_status: null,
+                  remarks: null,
+                };
+                const chip = statusChip(b, s);
+                return (
+                  <BoiRow
+                    key={b.id}
+                    b={b}
+                    s={s}
+                    chip={chip}
+                    canEdit={canEdit}
+                    revisions={revQ.data?.get(b.id)}
+                    onSave={(p) => save.mutate({ ...s, ...p })}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );
@@ -227,7 +245,11 @@ function BoiRow({
         disabled={!canEdit}
         className={`h-7 ${w} text-xs`}
         value={(local[k] as string) ?? ""}
-        onChange={(v) => { const n = { ...local, [k]: v || null }; setLocal(n); onSave(n); }}
+        onChange={(v) => {
+          const n = { ...local, [k]: v || null };
+          setLocal(n);
+          onSave(n);
+        }}
       />
     ) : (
       <Input
