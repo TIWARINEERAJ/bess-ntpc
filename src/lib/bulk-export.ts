@@ -127,7 +127,7 @@ export async function bulkExport(opts: {
     const wb = XLSX.utils.book_new();
     const rows: Array<Record<string, string | number>> = [];
     for (const s of stations) {
-      for (const b of master ?? []) {
+      for (const b of (master ?? []).filter((m) => m.station_id === s.id)) {
         const r = (stat ?? []).find((x) => x.station_id === s.id && x.boi_id === b.id);
         rows.push({
           Station: s.name,
