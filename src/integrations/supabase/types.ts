@@ -104,6 +104,7 @@ export type Database = {
           scheduled_po_date: string | null
           sl_no: number
           sort_order: number
+          station_id: string
         }
         Insert: {
           drawings_count?: number | null
@@ -113,6 +114,7 @@ export type Database = {
           scheduled_po_date?: string | null
           sl_no: number
           sort_order?: number
+          station_id: string
         }
         Update: {
           drawings_count?: number | null
@@ -122,8 +124,17 @@ export type Database = {
           scheduled_po_date?: string | null
           sl_no?: number
           sort_order?: number
+          station_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "boi_master_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commitment_revisions: {
         Row: {
@@ -826,6 +837,7 @@ export type Database = {
           capacity_mwh: number
           completion_date: string | null
           connectivity_status: string | null
+          connectivity_transformer: string | null
           created_at: string
           eic_contact: string | null
           eic_email: string | null
@@ -852,6 +864,7 @@ export type Database = {
           capacity_mwh: number
           completion_date?: string | null
           connectivity_status?: string | null
+          connectivity_transformer?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
@@ -878,6 +891,7 @@ export type Database = {
           capacity_mwh?: number
           completion_date?: string | null
           connectivity_status?: string | null
+          connectivity_transformer?: string | null
           created_at?: string
           eic_contact?: string | null
           eic_email?: string | null
