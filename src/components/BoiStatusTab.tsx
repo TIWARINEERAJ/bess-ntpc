@@ -51,7 +51,6 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
 }
 
 export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean });
-console.log("BOI stationId:", stationId);
 {
   const qc = useQueryClient();
   const masterQ = useQuery({
