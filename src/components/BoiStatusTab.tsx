@@ -55,13 +55,19 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
   const masterQ = useQuery({
     queryKey: ["boi_master", stationId],
     queryFn: async () => {
+      console.log("Station ID:", stationId);
+
       const { data, error } = await supabase
         .from("boi_master")
-        .select("*")
-        .eq("station_id", stationId)
-        .order("sort_order");
+        .select("id,name,station_id")
+        .eq("station_id", stationId);
+
+      console.log("Returned rows:", data?.length);
+      console.table(data?.slice(0, 10));
+
       if (error) throw error;
-      return data as Boi[];
+
+      return (data ?? []) as unknown as Boi[];
     },
   });
   const statusQ = useQuery({
