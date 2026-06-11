@@ -24,7 +24,7 @@ type Station = {
   ntpc_eic: string | null;
 };
 
-type BoiMaster = { id: string; sl_no: number; name: string; scheduled_po_date: string | null };
+type BoiMaster = { id: string; station_id: string; sl_no: number; name: string; scheduled_po_date: string | null };
 type BoiStatus = { station_id: string; boi_id: string; actual_po_date: string | null };
 type MeetingRow = { station_id: string; meeting_type: string; meeting_date: string };
 type PlanRow = { station_id: string; meeting_type: string; planned_date: string; title: string | null };
