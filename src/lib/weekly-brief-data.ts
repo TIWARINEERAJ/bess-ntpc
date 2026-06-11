@@ -205,6 +205,14 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     m.set(b.boi_id, b);
   }
 
+  // Each station has its own BOI master list.
+  const boiMasterByStation = new Map<string, BriefBoiMaster[]>();
+  for (const b of boiMaster) {
+    const arr = boiMasterByStation.get(b.station_id);
+    if (arr) arr.push(b);
+    else boiMasterByStation.set(b.station_id, [b]);
+  }
+
   const meetingsByStation = new Map<string, BriefMeeting[]>();
   for (const m of meetings) (meetingsByStation.get(m.station_id) ?? meetingsByStation.set(m.station_id, []).get(m.station_id)!).push(m);
 
