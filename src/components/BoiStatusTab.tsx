@@ -50,8 +50,7 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
   return { label: "Ordered", c: "var(--status-blue)" };
 }
 
-export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean });
-{
+export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
   const qc = useQueryClient();
   const masterQ = useQuery({
     queryKey: ["boi_master", stationId],
