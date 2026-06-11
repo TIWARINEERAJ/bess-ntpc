@@ -230,7 +230,6 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
   for (const d of delays) (delaysByStation.get(d.station_id) ?? delaysByStation.set(d.station_id, []).get(d.station_id)!).push(d);
 
   const complTotal = complianceMaster.length;
-  const boiTotal = boiMaster.length;
 
   const stationsBrief: StationBrief[] = stations.map((s) => {
     const map = buildStatusMap(statusByStation[s.id]);
