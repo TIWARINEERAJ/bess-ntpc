@@ -75,7 +75,7 @@ function Dashboard() {
   const boiMasterQ = useQuery({
     queryKey: ["boi_master"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("boi_master").select("id,sl_no,name,scheduled_po_date").order("sort_order");
+      const { data, error } = await supabase.from("boi_master").select("id,station_id,sl_no,name,scheduled_po_date,sort_order,inspection_category").order("sort_order");
       if (error) throw error;
       return data ?? [];
     },
