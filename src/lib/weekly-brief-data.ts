@@ -23,7 +23,7 @@ export type BriefStation = {
   ntpc_eic: string | null;
 };
 
-export type BriefBoiMaster = { id: string; sl_no: number; name: string; scheduled_po_date?: string | null };
+export type BriefBoiMaster = { id: string; station_id: string; sl_no: number; name: string; scheduled_po_date?: string | null };
 export type BriefBoiStatus = {
   station_id: string;
   boi_id: string;
