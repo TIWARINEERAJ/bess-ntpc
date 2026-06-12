@@ -26,6 +26,8 @@ import { ComplianceTab } from "@/components/ComplianceTab";
 import { AuditTrailTab } from "@/components/AuditTrailTab";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { DrawingsTab } from "@/components/DrawingsTab";
+import { VendorApprovalTab } from "@/components/VendorApprovalTab";
+import { ReadinessTab } from "@/components/ReadinessTab";
 import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
