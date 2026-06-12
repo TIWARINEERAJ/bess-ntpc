@@ -159,14 +159,15 @@ function cardCell(b: StationBrief): TableCell {
       right: { style: BorderStyle.SINGLE, size: 4, color: "DDE2E4" },
     },
     children: [
-      // header: name + L2%
+      // header: name + Readiness % (primary) + L2%
       new Paragraph({
         tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
         spacing: { after: 20 },
         children: [
           run(b.name, { bold: true, size: 18, color: INK }),
           run("\t", {}),
-          run(`${b.pct}%`, { bold: true, size: 20, color: BRAND }),
+          run(`Ready ${b.readiness}%`, { bold: true, size: 20, color: readyHex(b.readiness) }),
+          run(`   L2 ${b.pct}%`, { bold: true, size: 14, color: BRAND }),
         ],
       }),
       new Paragraph({
