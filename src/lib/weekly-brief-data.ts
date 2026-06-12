@@ -205,7 +205,11 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     complianceStatus = [],
     issues = [],
     delays = [],
+    vendors = [],
   } = input;
+
+  const vendorsByStation = new Map<string, BriefVendor[]>();
+  for (const v of vendors) (vendorsByStation.get(v.station_id) ?? vendorsByStation.set(v.station_id, []).get(v.station_id)!).push(v);
 
   const drawingsByStation = new Map<string, StationDrawing[]>();
   for (const d of drawings) (drawingsByStation.get(d.station_id) ?? drawingsByStation.set(d.station_id, []).get(d.station_id)!).push(d);
