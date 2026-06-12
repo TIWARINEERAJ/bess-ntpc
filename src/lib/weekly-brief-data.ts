@@ -37,6 +37,14 @@ export type BriefComplMaster = { id: string; category: string; name: string };
 export type BriefComplStatus = { station_id: string; compliance_id: string; status: string };
 export type BriefIssue = { station_id: string; title: string; severity: string; status: string };
 export type BriefDelay = { station_id: string; title: string; root_cause?: string | null; corrective_action?: string | null };
+export type BriefVendor = {
+  station_id: string;
+  package: string;
+  docs_submitted: string | null;
+  engg_approved: string | null;
+  cqa_approved: string | null;
+  final_approved: string | null;
+};
 
 export type WeeklyBriefInput = {
   stations: BriefStation[];
@@ -50,6 +58,7 @@ export type WeeklyBriefInput = {
   complianceStatus?: BriefComplStatus[];
   issues?: BriefIssue[];
   delays?: BriefDelay[];
+  vendors?: BriefVendor[];
 };
 
 /* ------------------------------------------------------------------ */
