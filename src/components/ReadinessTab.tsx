@@ -9,7 +9,6 @@ import {
   maturityColor,
   STAGE_META,
   type StageKey,
-  type L2TaskLike,
 } from "@/lib/maturity";
 import type { L2Task, Status } from "@/lib/gantt-utils";
 
