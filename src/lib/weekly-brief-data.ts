@@ -258,6 +258,22 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     const dRows = drawingsByStation.get(s.id) ?? [];
     const dc = drawingCounts(dRows);
 
+    // --- Readiness / maturity model ---
+    const maturity = computeStationMaturity({
+      tasks: sTasks,
+      statusMap: map,
+      drawings: dRows,
+      boiMaster: (boiMasterByStation.get(s.id) ?? []).map((b) => ({ id: b.id, station_id: b.station_id, name: b.name })),
+      boiStatus: (boiStatusByStation.get(s.id) ? Array.from(boiStatusByStation.get(s.id)!.values()) : []).map((b) => ({
+        station_id: b.station_id,
+        boi_id: b.boi_id,
+        actual_po_date: b.actual_po_date,
+        delivery_date: b.delivery_date ?? null,
+        site_receipt_date: b.site_receipt_date ?? null,
+      })),
+      vendors: vendorsByStation.get(s.id) ?? [],
+    });
+
     // --- Civil ---
     const civil = civilRollup(sTasks, map, today);
 
