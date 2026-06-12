@@ -325,6 +325,7 @@ function Dashboard() {
     complianceStatus: complStatusQ.data ?? [],
     issues: issuesQ.data ?? [],
     delays: delaysQ.data ?? [],
+    vendors: vendorsQ.data ?? [],
   });
 
   const runWeeklyBrief = async (kind: "pdf" | "docx") => {
