@@ -94,6 +94,8 @@ export type StationBrief = {
   compliance: { cleared: number; total: number; pending: number };
   criticalIssues: string[];
   progressNotes: string[];
+  readiness: number;
+  stages: Record<StageKey, number>;
 };
 
 export type WeeklyBrief = {
