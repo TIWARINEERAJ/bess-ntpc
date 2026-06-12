@@ -106,11 +106,12 @@ function drawCard(doc: jsPDF, x: number, y: number, w: number, h: number, b: Sta
   // metric chips row (5)
   cy += 6;
   const chips: Array<[string, string, RGB?]> = [
+    ["READY", `${b.readiness}%`, readyRGB(b.readiness)],
     ["MDL S/A/T", `${b.mdl.submitted}/${b.mdl.approved}/${b.mdl.total}`],
+    ["VENDOR", `${b.stages.vendor}%`],
+    ["BOI ORD", `${b.stages.boi}%`],
     ["CIVIL", `${b.civil.pct}%`],
-    ["L2 DONE", `${b.l2.done}/${b.l2.total}`],
     ["DELAYED", `${b.l2.delayed}`, b.l2.delayed > 0 ? HEALTH_RGB.red : undefined],
-    ["COMPL", `${b.compliance.cleared}/${b.compliance.total}`],
   ];
   const chipGap = 4;
   const chipW = (iw - chipGap * (chips.length - 1)) / chips.length;
