@@ -270,6 +270,7 @@ function StationPage() {
           <Legend />
         </TabsContent>
 
+        <TabsContent value="vendor"><VendorApprovalTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="mdl"><DrawingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
