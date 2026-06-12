@@ -373,6 +373,8 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
       compliance,
       criticalIssues,
       progressNotes: notes,
+      readiness: maturity.readiness,
+      stages: maturity.stages,
     };
   });
 
