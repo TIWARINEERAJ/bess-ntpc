@@ -22,6 +22,14 @@ const HEALTH_RGB: Record<Health, RGB> = {
 };
 const HEALTH_LABEL: Record<Health, string> = { green: "ON TRACK", amber: "AT RISK", red: "DELAYED" };
 
+/** Readiness % → traffic-light RGB (matches the in-app maturity color bands). */
+function readyRGB(pct: number): RGB {
+  if (pct >= 67) return [22, 163, 74];
+  if (pct >= 34) return [217, 119, 6];
+  if (pct > 0) return [220, 38, 38];
+  return [120, 120, 120];
+}
+
 function trunc(doc: jsPDF, text: string, maxW: number): string {
   if (doc.getTextWidth(text) <= maxW) return text;
   let t = text;
