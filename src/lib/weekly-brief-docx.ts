@@ -37,22 +37,29 @@ function run(text: string, opts: { bold?: boolean; color?: string; size?: number
   return new TextRun({ text, bold: opts.bold, color: opts.color, size: opts.size ?? 14 });
 }
 
+function readyHex(pct: number): string {
+  if (pct >= 67) return GREEN;
+  if (pct >= 34) return AMBER;
+  if (pct > 0) return RED;
+  return MUTED;
+}
+
 function metricLine(b: StationBrief): Paragraph {
   return new Paragraph({
     spacing: { before: 40, after: 40 },
     children: [
-      run("MDL S/A/T ", { color: MUTED, size: 12 }),
+      run("Readiness ", { color: MUTED, size: 12 }),
+      run(`${b.readiness}%`, { bold: true, size: 14, color: readyHex(b.readiness) }),
+      run("   Vendor ", { color: MUTED, size: 12 }),
+      run(`${b.stages.vendor}%`, { bold: true, size: 13 }),
+      run("   BOI Ord ", { color: MUTED, size: 12 }),
+      run(`${b.stages.boi}%`, { bold: true, size: 13 }),
+      run("   MDL ", { color: MUTED, size: 12 }),
       run(`${b.mdl.submitted}/${b.mdl.approved}/${b.mdl.total}`, { bold: true, size: 13 }),
       run("   Civil ", { color: MUTED, size: 12 }),
       run(`${b.civil.pct}%`, { bold: true, size: 13 }),
-      run("   L2 ", { color: MUTED, size: 12 }),
-      run(`${b.l2.done}/${b.l2.total}`, { bold: true, size: 13 }),
       run("   Delayed ", { color: MUTED, size: 12 }),
       run(`${b.l2.delayed}`, { bold: true, size: 13, color: b.l2.delayed > 0 ? RED : INK }),
-      run("   Compl ", { color: MUTED, size: 12 }),
-      run(`${b.compliance.cleared}/${b.compliance.total}`, { bold: true, size: 13 }),
-      run("   Mtgs ", { color: MUTED, size: 12 }),
-      run(`${b.meetings.held}`, { bold: true, size: 13 }),
     ],
   });
 }
@@ -152,14 +159,15 @@ function cardCell(b: StationBrief): TableCell {
       right: { style: BorderStyle.SINGLE, size: 4, color: "DDE2E4" },
     },
     children: [
-      // header: name + L2%
+      // header: name + Readiness % (primary) + L2%
       new Paragraph({
         tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
         spacing: { after: 20 },
         children: [
           run(b.name, { bold: true, size: 18, color: INK }),
           run("\t", {}),
-          run(`${b.pct}%`, { bold: true, size: 20, color: BRAND }),
+          run(`Ready ${b.readiness}%`, { bold: true, size: 20, color: readyHex(b.readiness) }),
+          run(`   L2 ${b.pct}%`, { bold: true, size: 14, color: BRAND }),
         ],
       }),
       new Paragraph({
@@ -242,7 +250,7 @@ export async function exportWeeklyBriefDOCX(input: WeeklyBriefInput) {
       spacing: { after: 160 },
       children: [
         run(
-          `${t.stations} stations · Avg ${t.avgPct}% (ideal ${t.idealPct}%) · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
+          `${t.stations} stations · Fleet Readiness ${t.avgReadiness}% · Avg L2 ${t.avgPct}% (ideal ${t.idealPct}%) · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
           { size: 15, bold: true, color: INK },
         ),
       ],

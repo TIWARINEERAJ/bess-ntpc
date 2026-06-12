@@ -8,6 +8,7 @@ import {
   type Status,
 } from "./gantt-utils";
 import { drawingCounts, isApproved, isSubmitted, type StationDrawing } from "./drawings";
+import { computeStationMaturity, type StageKey } from "./maturity";
 
 /* ------------------------------------------------------------------ */
 /* Inputs                                                              */
@@ -36,6 +37,14 @@ export type BriefComplMaster = { id: string; category: string; name: string };
 export type BriefComplStatus = { station_id: string; compliance_id: string; status: string };
 export type BriefIssue = { station_id: string; title: string; severity: string; status: string };
 export type BriefDelay = { station_id: string; title: string; root_cause?: string | null; corrective_action?: string | null };
+export type BriefVendor = {
+  station_id: string;
+  package: string;
+  docs_submitted: string | null;
+  engg_approved: string | null;
+  cqa_approved: string | null;
+  final_approved: string | null;
+};
 
 export type WeeklyBriefInput = {
   stations: BriefStation[];
@@ -49,6 +58,7 @@ export type WeeklyBriefInput = {
   complianceStatus?: BriefComplStatus[];
   issues?: BriefIssue[];
   delays?: BriefDelay[];
+  vendors?: BriefVendor[];
 };
 
 /* ------------------------------------------------------------------ */
@@ -84,6 +94,8 @@ export type StationBrief = {
   compliance: { cleared: number; total: number; pending: number };
   criticalIssues: string[];
   progressNotes: string[];
+  readiness: number;
+  stages: Record<StageKey, number>;
 };
 
 export type WeeklyBrief = {
@@ -93,6 +105,7 @@ export type WeeklyBrief = {
     totalMwh: number;
     avgPct: number;
     idealPct: number;
+    avgReadiness: number;
     onTrack: number;
     atRisk: number;
     delayed: number;
@@ -193,7 +206,11 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     complianceStatus = [],
     issues = [],
     delays = [],
+    vendors = [],
   } = input;
+
+  const vendorsByStation = new Map<string, BriefVendor[]>();
+  for (const v of vendors) (vendorsByStation.get(v.station_id) ?? vendorsByStation.set(v.station_id, []).get(v.station_id)!).push(v);
 
   const drawingsByStation = new Map<string, StationDrawing[]>();
   for (const d of drawings) (drawingsByStation.get(d.station_id) ?? drawingsByStation.set(d.station_id, []).get(d.station_id)!).push(d);
@@ -241,6 +258,22 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     // --- MDL / drawings ---
     const dRows = drawingsByStation.get(s.id) ?? [];
     const dc = drawingCounts(dRows);
+
+    // --- Readiness / maturity model ---
+    const maturity = computeStationMaturity({
+      tasks: sTasks,
+      statusMap: map,
+      drawings: dRows,
+      boiMaster: (boiMasterByStation.get(s.id) ?? []).map((b) => ({ id: b.id, station_id: b.station_id, name: b.name })),
+      boiStatus: (boiStatusByStation.get(s.id) ? Array.from(boiStatusByStation.get(s.id)!.values()) : []).map((b) => ({
+        station_id: b.station_id,
+        boi_id: b.boi_id,
+        actual_po_date: b.actual_po_date,
+        delivery_date: b.delivery_date ?? null,
+        site_receipt_date: b.site_receipt_date ?? null,
+      })),
+      vendors: vendorsByStation.get(s.id) ?? [],
+    });
 
     // --- Civil ---
     const civil = civilRollup(sTasks, map, today);
@@ -341,6 +374,8 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
       compliance,
       criticalIssues,
       progressNotes: notes,
+      readiness: maturity.readiness,
+      stages: maturity.stages,
     };
   });
 
@@ -350,6 +385,7 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     totalMwh: stationsBrief.reduce((a, r) => a + r.capacityMwh, 0),
     avgPct: n ? Math.round(stationsBrief.reduce((a, r) => a + r.pct, 0) / n) : 0,
     idealPct: n ? Math.round(stationsBrief.reduce((a, r) => a + r.ideal, 0) / n) : 0,
+    avgReadiness: n ? Math.round(stationsBrief.reduce((a, r) => a + r.readiness, 0) / n) : 0,
     onTrack: stationsBrief.filter((r) => r.health === "green").length,
     atRisk: stationsBrief.filter((r) => r.health === "amber").length,
     delayed: stationsBrief.filter((r) => r.health === "red").length,
