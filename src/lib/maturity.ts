@@ -209,11 +209,3 @@ export function maturityColor(pct: number): string {
   if (pct > 0) return "var(--status-red)";
   return "var(--status-grey)";
 }
-
-/** Fetch every station's vendor rows, grouped by station_id (browser client). */
-export type VendorRowFull = VendorRow & {
-  id: string;
-  vendor_name: string | null;
-  sort_order: number;
-  remarks: string | null;
-};
