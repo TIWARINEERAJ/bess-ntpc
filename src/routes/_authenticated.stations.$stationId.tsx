@@ -198,7 +198,9 @@ function StationPage() {
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="readiness">Readiness</TabsTrigger>
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
+          <TabsTrigger value="vendor">Vendor Approval</TabsTrigger>
           <TabsTrigger value="boi">BOI Status</TabsTrigger>
           <TabsTrigger value="mdl">MDL Status</TabsTrigger>
           <TabsTrigger value="compliance">Compliances</TabsTrigger>
@@ -211,6 +213,11 @@ function StationPage() {
         <TabsContent value="overview">
           <StationOverview station={station as unknown as StationRow} canEdit={canEdit} />
         </TabsContent>
+
+        <TabsContent value="readiness">
+          <ReadinessTab stationId={stationId} tasks={tasks} statusMap={statusMap} />
+        </TabsContent>
+
 
 
         <TabsContent value="gantt" className="space-y-2">
