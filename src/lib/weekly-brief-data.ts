@@ -384,6 +384,7 @@ export function computeWeeklyBrief(input: WeeklyBriefInput, today: Date = new Da
     totalMwh: stationsBrief.reduce((a, r) => a + r.capacityMwh, 0),
     avgPct: n ? Math.round(stationsBrief.reduce((a, r) => a + r.pct, 0) / n) : 0,
     idealPct: n ? Math.round(stationsBrief.reduce((a, r) => a + r.ideal, 0) / n) : 0,
+    avgReadiness: n ? Math.round(stationsBrief.reduce((a, r) => a + r.readiness, 0) / n) : 0,
     onTrack: stationsBrief.filter((r) => r.health === "green").length,
     atRisk: stationsBrief.filter((r) => r.health === "amber").length,
     delayed: stationsBrief.filter((r) => r.health === "red").length,
