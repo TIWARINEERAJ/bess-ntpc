@@ -41,7 +41,7 @@ function avg(nums: number[]) {
 
 function ReadinessDashboard() {
   const stationsQ = useQuery({
-    queryKey: ["stations"],
+    queryKey: ["stations", "readiness"],
     queryFn: async () => {
       const { data, error } = await supabase.from("stations").select("id,name,capacity_mwh,connectivity_transformer").order("sort_order").order("name");
       if (error) throw error;
