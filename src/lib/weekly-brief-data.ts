@@ -105,6 +105,7 @@ export type WeeklyBrief = {
     totalMwh: number;
     avgPct: number;
     idealPct: number;
+    avgReadiness: number;
     onTrack: number;
     atRisk: number;
     delayed: number;
