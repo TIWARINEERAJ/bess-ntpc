@@ -53,7 +53,7 @@ export function ReadinessTab({
   const result = useMemo(() => {
     const drawings = (drawingsQ.data ?? []).filter((d) => d.station_id === stationId);
     return computeStationMaturity({
-      tasks: tasks as unknown as L2TaskLike[],
+      tasks,
       statusMap,
       drawings,
       boiMaster: boiMasterQ.data ?? [],
