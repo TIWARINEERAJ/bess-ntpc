@@ -245,7 +245,7 @@ export function buildWeeklyBriefDoc(input: WeeklyBriefInput): jsPDF {
         { align: "right" },
       );
       doc.text(
-        `On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
+        `Fleet Readiness ${t.avgReadiness}% · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
         pageW - margin,
         38,
         { align: "right" },
