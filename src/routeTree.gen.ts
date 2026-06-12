@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedWeeklyPlannerRouteImport } from './routes/_authenticated.weekly-planner'
 import { Route as AuthenticatedScheduleHealthRouteImport } from './routes/_authenticated.schedule-health'
 import { Route as AuthenticatedRepositoryRouteImport } from './routes/_authenticated.repository'
+import { Route as AuthenticatedReadinessRouteImport } from './routes/_authenticated.readiness'
 import { Route as AuthenticatedDrawingsRouteImport } from './routes/_authenticated.drawings'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedStationsStationIdRouteImport } from './routes/_authenticated.stations.$stationId'
@@ -51,6 +52,11 @@ const AuthenticatedRepositoryRoute = AuthenticatedRepositoryRouteImport.update({
   path: '/repository',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedReadinessRoute = AuthenticatedReadinessRouteImport.update({
+  id: '/readiness',
+  path: '/readiness',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDrawingsRoute = AuthenticatedDrawingsRouteImport.update({
   id: '/drawings',
   path: '/drawings',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/drawings': typeof AuthenticatedDrawingsRoute
+  '/readiness': typeof AuthenticatedReadinessRoute
   '/repository': typeof AuthenticatedRepositoryRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/drawings': typeof AuthenticatedDrawingsRoute
+  '/readiness': typeof AuthenticatedReadinessRoute
   '/repository': typeof AuthenticatedRepositoryRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/drawings': typeof AuthenticatedDrawingsRoute
+  '/_authenticated/readiness': typeof AuthenticatedReadinessRoute
   '/_authenticated/repository': typeof AuthenticatedRepositoryRoute
   '/_authenticated/schedule-health': typeof AuthenticatedScheduleHealthRoute
   '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/drawings'
+    | '/readiness'
     | '/repository'
     | '/schedule-health'
     | '/weekly-planner'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/drawings'
+    | '/readiness'
     | '/repository'
     | '/schedule-health'
     | '/weekly-planner'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/admin'
     | '/_authenticated/drawings'
+    | '/_authenticated/readiness'
     | '/_authenticated/repository'
     | '/_authenticated/schedule-health'
     | '/_authenticated/weekly-planner'
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRepositoryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/readiness': {
+      id: '/_authenticated/readiness'
+      path: '/readiness'
+      fullPath: '/readiness'
+      preLoaderRoute: typeof AuthenticatedReadinessRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/drawings': {
       id: '/_authenticated/drawings'
       path: '/drawings'
@@ -230,6 +249,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDrawingsRoute: typeof AuthenticatedDrawingsRoute
+  AuthenticatedReadinessRoute: typeof AuthenticatedReadinessRoute
   AuthenticatedRepositoryRoute: typeof AuthenticatedRepositoryRoute
   AuthenticatedScheduleHealthRoute: typeof AuthenticatedScheduleHealthRoute
   AuthenticatedWeeklyPlannerRoute: typeof AuthenticatedWeeklyPlannerRoute
@@ -240,6 +260,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDrawingsRoute: AuthenticatedDrawingsRoute,
+  AuthenticatedReadinessRoute: AuthenticatedReadinessRoute,
   AuthenticatedRepositoryRoute: AuthenticatedRepositoryRoute,
   AuthenticatedScheduleHealthRoute: AuthenticatedScheduleHealthRoute,
   AuthenticatedWeeklyPlannerRoute: AuthenticatedWeeklyPlannerRoute,
@@ -259,3 +280,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
