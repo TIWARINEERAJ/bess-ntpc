@@ -250,7 +250,7 @@ export async function exportWeeklyBriefDOCX(input: WeeklyBriefInput) {
       spacing: { after: 160 },
       children: [
         run(
-          `${t.stations} stations · Avg ${t.avgPct}% (ideal ${t.idealPct}%) · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
+          `${t.stations} stations · Fleet Readiness ${t.avgReadiness}% · Avg L2 ${t.avgPct}% (ideal ${t.idealPct}%) · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
           { size: 15, bold: true, color: INK },
         ),
       ],
