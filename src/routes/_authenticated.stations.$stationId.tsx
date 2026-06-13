@@ -332,8 +332,9 @@ function StationPage() {
                   const pctDisplay = t.is_section ? (roll?.pct ?? 0) : (st?.percent_complete ?? 0);
                   const aStart = t.is_section ? (roll?.actual_start ?? null) : (st?.actual_start ?? null);
                   const aFinish = t.is_section ? (roll?.actual_finish ?? null) : (st?.actual_finish ?? null);
+                  const isFocused = tab === "gantt" && focus === t.id;
                   return (
-                    <div key={t.id} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
+                    <div key={t.id} ref={isFocused ? focusRowRef : undefined} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""} ${isFocused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
                       <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 10 }}>
                         {hasChildren ? (
