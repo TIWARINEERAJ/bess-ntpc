@@ -246,6 +246,10 @@ export function BoiStatusTab({
                     chip={chip}
                     canEdit={canEdit}
                     revisions={revQ.data?.get(b.id)}
+                    link={links.get(b.id)}
+                    focused={focusId === b.id}
+                    onFocusDrawing={onFocusDrawing}
+                    onFocusTask={onFocusTask}
                     onSave={(p) => save.mutate({ ...s, ...p })}
                   />
                 );
