@@ -50,9 +50,15 @@ export const Route = createFileRoute("/_authenticated/stations/$stationId")({
 
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
+  const { tab, focus } = Route.useSearch();
+  const navigate = useNavigate({ from: "/_authenticated/stations/$stationId" });
   const qc = useQueryClient();
   const { canEditStation } = useAuth();
   const canEdit = canEditStation(stationId);
+
+  const setTab = (t: string) => navigate({ search: (prev) => ({ ...prev, tab: t, focus: undefined }) });
+  const focusOn = (t: string, id?: string) =>
+    navigate({ search: (prev) => ({ ...prev, tab: t, focus: id }) });
 
   const stationQ = useQuery({
     queryKey: ["station", stationId],
@@ -71,6 +77,41 @@ function StationPage() {
     queryFn: () => fetchStationTaskStatuses(stationId),
   });
 
+  // BOI master / status / MDL drawings — used to build the BOI↔MDL↔L2 link layer.
+  const boisQ = useQuery({
+    queryKey: ["boi_master", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("boi_master")
+        .select("id,name,sl_no,drawings_count,scheduled_po_date,inspection_category,station_id")
+        .eq("station_id", stationId)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; scheduled_po_date: string | null }[];
+    },
+  });
+  const boiStatusQ = useQuery({
+    queryKey: ["boi_status", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("station_boi_status").select("*").eq("station_id", stationId);
+      if (error) throw error;
+      return (data ?? []) as { boi_id: string; actual_po_date: string | null; delivery_date: string | null; site_receipt_date: string | null }[];
+    },
+  });
+  const drawingsQ = useQuery({
+    queryKey: ["station_drawings", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("station_drawings")
+        .select("*")
+        .eq("station_id", stationId)
+        .order("category")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as StationDrawing[];
+    },
+  });
+
   const tasks = tasksQ.data ?? [];
   const status = statusQ.data ?? [];
   const station = stationQ.data;
@@ -78,6 +119,40 @@ function StationPage() {
   const progress = useMemo(() => stationProgress(tasks, statusMap), [tasks, statusMap]);
   const idealPct = useMemo(() => (tasks.length ? Math.round(plannedPctAt(tasks, new Date())) : 0), [tasks]);
   const taskRevQ = useCommitmentRevisions(stationId, "task");
+
+  // ---- BOI ↔ MDL ↔ L2 link layer ----
+  const bois: BoiLite[] = useMemo(
+    () => (boisQ.data ?? []).map((b) => ({ id: b.id, name: b.name })),
+    [boisQ.data],
+  );
+  const boiLinks = useMemo(
+    () => buildBoiLinks(bois, drawingsQ.data ?? [], tasks),
+    [bois, drawingsQ.data, tasks],
+  );
+  const drawingBoiMap = useMemo(() => drawingToBois(boiLinks, bois), [boiLinks, bois]);
+  const taskBoiMap = useMemo(() => taskToBois(boiLinks, bois), [boiLinks, bois]);
+  const boiById = useMemo(() => new Map((boisQ.data ?? []).map((b) => [b.id, b])), [boisQ.data]);
+  const boiStatusByBoi = useMemo(
+    () => new Map((boiStatusQ.data ?? []).map((s) => [s.boi_id, s])),
+    [boiStatusQ.data],
+  );
+
+  // Linked BOI rows shown inside the L2 task drawer for the currently open task.
+  const drawerLinks = useMemo(() => {
+    if (!openTaskId) return [];
+    return (taskBoiMap.get(openTaskId) ?? []).map((boi) => {
+      const link = boiLinks.get(boi.id);
+      const master = boiById.get(boi.id);
+      const st = boiStatusByBoi.get(boi.id);
+      return {
+        boi,
+        drawings: link?.drawings ?? [],
+        chip: boiChip(master?.scheduled_po_date ?? null, st),
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTaskIdMemoKey, taskBoiMap, boiLinks, boiById, boiStatusByBoi]);
+
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   useEffect(() => {
