@@ -420,11 +420,15 @@ function StationPage() {
         status={openTask ? statusMap.get(openTask.id) : undefined}
         revisions={openTask ? taskRevQ.data?.get(openTask.id) : undefined}
         derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
+        linkedBois={drawerLinks}
+        onOpenBoi={(id) => { setOpenTask(null); focusOn("boi", id); }}
+        onOpenDrawing={(id) => { setOpenTask(null); focusOn("mdl", id); }}
         onClose={() => setOpenTask(null)}
         canEdit={canEdit}
         saving={upsert.isPending}
         onSave={async (p) => { if (!openTask) return; await upsert.mutateAsync({ ...p, task_id: openTask.id }); setOpenTask(null); }}
       />
+
     </div>
   );
 }
