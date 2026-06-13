@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileStack } from "lucide-react";
+import { Plus, FileStack, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 import { DatePicker } from "@/components/DatePicker";
+import type { BoiLite } from "@/lib/boi-links";
 
 
 export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
