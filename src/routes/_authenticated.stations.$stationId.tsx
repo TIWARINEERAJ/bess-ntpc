@@ -185,8 +185,6 @@ function StationPage() {
     });
   };
 
-  const [openTask, setOpenTask] = useState<L2Task | null>(null);
-
   // Sync vertical scroll between the WBS table pane and the Gantt chart pane.
   const wbsBodyRef = useRef<HTMLDivElement | null>(null);
   const ganttBodyRef = useRef<HTMLDivElement | null>(null);
