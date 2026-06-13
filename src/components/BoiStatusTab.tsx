@@ -54,23 +54,31 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
   return { label: "Ordered", c: "var(--status-blue)" };
 }
 
-export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
+export function BoiStatusTab({
+  stationId,
+  canEdit,
+  tasks = [],
+  focusId,
+  onFocusDrawing,
+  onFocusTask,
+}: {
+  stationId: string;
+  canEdit: boolean;
+  tasks?: L2Task[];
+  focusId?: string | null;
+  onFocusDrawing?: (drawingId: string) => void;
+  onFocusTask?: (taskId: string) => void;
+}) {
   const qc = useQueryClient();
   const masterQ = useQuery({
     queryKey: ["boi_master", stationId],
     queryFn: async () => {
-      console.log("Station ID:", stationId);
-
       const { data, error } = await supabase
         .from("boi_master")
-        .select("id,name,station_id")
-        .eq("station_id", stationId);
-
-      console.log("Returned rows:", data?.length);
-      console.table(data?.slice(0, 10));
-
+        .select("id,name,sl_no,drawings_count,scheduled_po_date,inspection_category,station_id")
+        .eq("station_id", stationId)
+        .order("sort_order");
       if (error) throw error;
-
       return (data ?? []) as unknown as Boi[];
     },
   });
@@ -82,9 +90,28 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
       return (data ?? []) as unknown as BoiStatus[];
     },
   });
+  const drawingsQ = useQuery({
+    queryKey: ["station_drawings", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("station_drawings")
+        .select("*")
+        .eq("station_id", stationId)
+        .order("category")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as StationDrawing[];
+    },
+  });
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
   const revQ = useCommitmentRevisions(stationId, "boi");
+
+  const links = useMemo(
+    () => buildBoiLinks(masterQ.data ?? [], drawingsQ.data ?? [], tasks),
+    [masterQ.data, drawingsQ.data, tasks],
+  );
+
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
