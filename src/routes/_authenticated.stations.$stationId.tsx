@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCircle, Loader2, Link2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { GanttChart } from "@/components/GanttChart";
@@ -31,9 +31,20 @@ import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { DatePicker } from "@/components/DatePicker";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
+import { buildBoiLinks, drawingToBois, taskToBois, type BoiLink, type BoiLite } from "@/lib/boi-links";
+import type { StationDrawing } from "@/lib/drawings";
+
+const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
+
+type StationSearch = { tab: string; focus?: string };
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
+  validateSearch: (search: Record<string, unknown>): StationSearch => {
+    const tab = typeof search.tab === "string" && STATION_TABS.includes(search.tab) ? search.tab : "overview";
+    const focus = typeof search.focus === "string" && search.focus ? search.focus : undefined;
+    return { tab, focus };
+  },
   component: StationPage,
 });
 
