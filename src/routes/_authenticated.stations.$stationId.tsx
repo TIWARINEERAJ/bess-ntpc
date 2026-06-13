@@ -56,9 +56,12 @@ function StationPage() {
   const { canEditStation } = useAuth();
   const canEdit = canEditStation(stationId);
 
-  const setTab = (t: string) => navigate({ search: (prev) => ({ ...prev, tab: t, focus: undefined }) });
+  const setTab = (t: string) =>
+    navigate({ search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined }) });
   const focusOn = (t: string, id?: string) =>
-    navigate({ search: (prev) => ({ ...prev, tab: t, focus: id }) });
+    navigate({ search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id }) });
+
+  const [openTask, setOpenTask] = useState<L2Task | null>(null);
 
   const stationQ = useQuery({
     queryKey: ["station", stationId],
