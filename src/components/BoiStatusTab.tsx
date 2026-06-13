@@ -268,6 +268,10 @@ function BoiRow({
   chip,
   canEdit,
   revisions,
+  link,
+  focused,
+  onFocusDrawing,
+  onFocusTask,
   onSave,
 }: {
   b: Boi;
@@ -275,10 +279,19 @@ function BoiRow({
   chip: { label: string; c: string };
   canEdit: boolean;
   revisions?: CommitmentRevision[];
+  link?: BoiLink;
+  focused?: boolean;
+  onFocusDrawing?: (drawingId: string) => void;
+  onFocusTask?: (taskId: string) => void;
   onSave: (p: Partial<BoiStatus>) => void;
 }) {
   const [local, setLocal] = useState<BoiStatus>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (focused) rowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focused]);
+  const orderDate = link?.orderFinish ?? null;
   const cell = (k: keyof BoiStatus, type: "date" | "text" = "text", w = "w-32") =>
     type === "date" ? (
       <DatePicker
