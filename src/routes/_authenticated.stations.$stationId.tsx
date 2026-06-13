@@ -296,7 +296,7 @@ function StationPage() {
         </div>
       </Card>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
