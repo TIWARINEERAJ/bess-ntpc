@@ -344,20 +344,14 @@ function BoiRow({
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.sl_no}</td>
       <td className="px-2 py-1 font-medium">
         {link?.poTask ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help underline decoration-dotted underline-offset-2">{b.name}</span>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs">
-              <div className="font-semibold">L2 ordering: {link.poTask.name}</div>
-              <div className="text-muted-foreground">
-                {fmtD(link.orderStart)} → {fmtD(link.orderFinish)}
-              </div>
-              {link.drawings.length > 0 && (
-                <div className="mt-1">Drawings: {link.drawings.map((d) => d.drg_ref).join(", ")}</div>
-              )}
-            </TooltipContent>
-          </Tooltip>
+          <span
+            className="cursor-help underline decoration-dotted underline-offset-2"
+            title={`L2 ordering: ${link.poTask.name}\n${fmtD(link.orderStart)} → ${fmtD(link.orderFinish)}${
+              link.drawings.length > 0 ? `\nDrawings: ${link.drawings.map((d) => d.drg_ref).join(", ")}` : ""
+            }`}
+          >
+            {b.name}
+          </span>
         ) : (
           b.name
         )}
