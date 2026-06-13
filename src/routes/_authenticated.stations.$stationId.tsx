@@ -462,11 +462,20 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
   );
 }
 
-function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit, saving }: {
+type DrawerLink = {
+  boi: BoiLite;
+  drawings: { id: string; drg_ref: string; drg_desc: string }[];
+  chip: { label: string; c: string };
+};
+
+function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
   task: L2Task | null;
   status: Status | undefined;
   revisions?: CommitmentRevision[];
   derived: { pct: number; actual_start: Date | null; actual_finish: Date | null; leafCount: number } | null;
+  linkedBois?: DrawerLink[];
+  onOpenBoi?: (boiId: string) => void;
+  onOpenDrawing?: (drawingId: string) => void;
   onClose: () => void;
   onSave: (p: Partial<Status>) => Promise<void>;
   canEdit: boolean;
