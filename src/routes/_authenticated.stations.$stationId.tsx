@@ -142,8 +142,8 @@ function StationPage() {
 
   // Linked BOI rows shown inside the L2 task drawer for the currently open task.
   const drawerLinks = useMemo(() => {
-    if (!openTaskId) return [];
-    return (taskBoiMap.get(openTaskId) ?? []).map((boi) => {
+    if (!openTask) return [];
+    return (taskBoiMap.get(openTask.id) ?? []).map((boi) => {
       const link = boiLinks.get(boi.id);
       const master = boiById.get(boi.id);
       const st = boiStatusByBoi.get(boi.id);
@@ -153,8 +153,7 @@ function StationPage() {
         chip: boiChip(master?.scheduled_po_date ?? null, st),
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openTaskIdMemoKey, taskBoiMap, boiLinks, boiById, boiStatusByBoi]);
+  }, [openTask, taskBoiMap, boiLinks, boiById, boiStatusByBoi]);
 
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
