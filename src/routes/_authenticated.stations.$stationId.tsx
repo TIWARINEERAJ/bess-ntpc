@@ -215,6 +215,30 @@ function StationPage() {
     }
   };
 
+  // When navigating to the L2 Gantt with a focused task (from a BOI link),
+  // expand its ancestors, open its drawer, scroll its WBS row into view.
+  const focusRowRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (tab !== "gantt" || !focus || tasks.length === 0) return;
+    const t = tasks.find((x) => x.id === focus);
+    if (!t) return;
+    setExpanded((prev) => {
+      const n = new Set(prev);
+      let p: string | null = t.parent_wbs;
+      while (p) {
+        n.add(p);
+        const parent = tasks.find((x) => x.wbs_code === p);
+        p = parent?.parent_wbs ?? null;
+      }
+      return n;
+    });
+    setOpenTask(t);
+    const id = window.setTimeout(() => focusRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    return () => window.clearTimeout(id);
+  }, [tab, focus, tasks]);
+
+
+
 
 
   const upsert = useMutation({
