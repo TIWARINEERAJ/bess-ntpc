@@ -234,11 +234,18 @@ function statusOf(r: StationDrawing) {
 
 const CAT_OPTIONS = ["CAT-I", "CAT-II", "CAT-III", "CATREL"];
 
-function DrawingRow({ row, canEdit, onSave }: {
-  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void;
+function DrawingRow({ row, canEdit, bois, focused, onFocusBoi, onSave }: {
+  row: StationDrawing; canEdit: boolean;
+  bois?: BoiLite[]; focused?: boolean; onFocusBoi?: (boiId: string) => void;
+  onSave: (p: Partial<StationDrawing>) => void;
 }) {
   const [local, setLocal] = useState<StationDrawing>(row);
   const st = statusOf(local);
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (focused) rowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focused]);
+
 
   // Editable actual-date fields (commit immediately).
   const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
