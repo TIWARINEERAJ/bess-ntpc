@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCircle, Loader2, Link2, FileText } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronRight, FileSpreadsheet, Plus, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { GanttChart } from "@/components/GanttChart";
@@ -31,54 +31,17 @@ import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { DatePicker } from "@/components/DatePicker";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
-import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/boi-links";
-import type { StationDrawing } from "@/lib/drawings";
-
-const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
-
-type StationSearch = { tab: string; focus?: string };
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
-  validateSearch: (search: Record<string, unknown>): StationSearch => {
-    const tab = typeof search.tab === "string" && STATION_TABS.includes(search.tab) ? search.tab : "overview";
-    const focus = typeof search.focus === "string" && search.focus ? search.focus : undefined;
-    return { tab, focus };
-  },
   component: StationPage,
 });
 
-/** Live BOI procurement status chip used in the L2 task drawer. */
-function boiChip(
-  scheduledPoDate: string | null,
-  s: { actual_po_date: string | null; delivery_date: string | null; site_receipt_date: string | null } | undefined,
-): { label: string; c: string } {
-  if (!s?.actual_po_date) {
-    if (scheduledPoDate && new Date() > new Date(scheduledPoDate))
-      return { label: "Overdue", c: "var(--status-red)" };
-    return { label: "Pending", c: "var(--status-amber)" };
-  }
-  if (s.site_receipt_date) return { label: "Received", c: "var(--status-green)" };
-  if (s.delivery_date) return { label: "In Transit", c: "var(--status-blue)" };
-  return { label: "Ordered", c: "var(--status-blue)" };
-}
-
-
-
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
-  const { tab, focus } = Route.useSearch();
-  const navigate = useNavigate({ from: "/_authenticated/stations/$stationId" });
   const qc = useQueryClient();
   const { canEditStation } = useAuth();
   const canEdit = canEditStation(stationId);
-
-  const setTab = (t: string) =>
-    navigate({ search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined }) });
-  const focusOn = (t: string, id?: string) =>
-    navigate({ search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id }) });
-
-  const [openTask, setOpenTask] = useState<L2Task | null>(null);
 
   const stationQ = useQuery({
     queryKey: ["station", stationId],
@@ -97,41 +60,6 @@ function StationPage() {
     queryFn: () => fetchStationTaskStatuses(stationId),
   });
 
-  // BOI master / status / MDL drawings — used to build the BOI↔MDL↔L2 link layer.
-  const boisQ = useQuery({
-    queryKey: ["boi_master", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("boi_master")
-        .select("id,name,sl_no,drawings_count,scheduled_po_date,inspection_category,station_id")
-        .eq("station_id", stationId)
-        .order("sort_order");
-      if (error) throw error;
-      return (data ?? []) as { id: string; name: string; scheduled_po_date: string | null }[];
-    },
-  });
-  const boiStatusQ = useQuery({
-    queryKey: ["boi_status", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("station_boi_status").select("*").eq("station_id", stationId);
-      if (error) throw error;
-      return (data ?? []) as { boi_id: string; actual_po_date: string | null; delivery_date: string | null; site_receipt_date: string | null }[];
-    },
-  });
-  const drawingsQ = useQuery({
-    queryKey: ["station_drawings", stationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("station_drawings")
-        .select("*")
-        .eq("station_id", stationId)
-        .order("category")
-        .order("sort_order");
-      if (error) throw error;
-      return (data ?? []) as StationDrawing[];
-    },
-  });
-
   const tasks = tasksQ.data ?? [];
   const status = statusQ.data ?? [];
   const station = stationQ.data;
@@ -139,39 +67,6 @@ function StationPage() {
   const progress = useMemo(() => stationProgress(tasks, statusMap), [tasks, statusMap]);
   const idealPct = useMemo(() => (tasks.length ? Math.round(plannedPctAt(tasks, new Date())) : 0), [tasks]);
   const taskRevQ = useCommitmentRevisions(stationId, "task");
-
-  // ---- BOI ↔ MDL ↔ L2 link layer ----
-  const bois: BoiLite[] = useMemo(
-    () => (boisQ.data ?? []).map((b) => ({ id: b.id, name: b.name })),
-    [boisQ.data],
-  );
-  const boiLinks = useMemo(
-    () => buildBoiLinks(bois, drawingsQ.data ?? [], tasks),
-    [bois, drawingsQ.data, tasks],
-  );
-  const drawingBoiMap = useMemo(() => drawingToBois(boiLinks, bois), [boiLinks, bois]);
-  const taskBoiMap = useMemo(() => taskToBois(boiLinks, bois), [boiLinks, bois]);
-  const boiById = useMemo(() => new Map((boisQ.data ?? []).map((b) => [b.id, b])), [boisQ.data]);
-  const boiStatusByBoi = useMemo(
-    () => new Map((boiStatusQ.data ?? []).map((s) => [s.boi_id, s])),
-    [boiStatusQ.data],
-  );
-
-  // Linked BOI rows shown inside the L2 task drawer for the currently open task.
-  const drawerLinks = useMemo(() => {
-    if (!openTask) return [];
-    return (taskBoiMap.get(openTask.id) ?? []).map((boi) => {
-      const link = boiLinks.get(boi.id);
-      const master = boiById.get(boi.id);
-      const st = boiStatusByBoi.get(boi.id);
-      return {
-        boi,
-        drawings: link?.drawings ?? [],
-        chip: boiChip(master?.scheduled_po_date ?? null, st),
-      };
-    });
-  }, [openTask, taskBoiMap, boiLinks, boiById, boiStatusByBoi]);
-
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -202,6 +97,8 @@ function StationPage() {
     });
   };
 
+  const [openTask, setOpenTask] = useState<L2Task | null>(null);
+
   // Sync vertical scroll between the WBS table pane and the Gantt chart pane.
   const wbsBodyRef = useRef<HTMLDivElement | null>(null);
   const ganttBodyRef = useRef<HTMLDivElement | null>(null);
@@ -214,30 +111,6 @@ function StationPage() {
       target.scrollTop = scrollTop;
     }
   };
-
-  // When navigating to the L2 Gantt with a focused task (from a BOI link),
-  // expand its ancestors, open its drawer, scroll its WBS row into view.
-  const focusRowRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (tab !== "gantt" || !focus || tasks.length === 0) return;
-    const t = tasks.find((x) => x.id === focus);
-    if (!t) return;
-    setExpanded((prev) => {
-      const n = new Set(prev);
-      let p: string | null = t.parent_wbs;
-      while (p) {
-        n.add(p);
-        const parent = tasks.find((x) => x.wbs_code === p);
-        p = parent?.parent_wbs ?? null;
-      }
-      return n;
-    });
-    setOpenTask(t);
-    const id = window.setTimeout(() => focusRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
-    return () => window.clearTimeout(id);
-  }, [tab, focus, tasks]);
-
-
 
 
 
@@ -320,7 +193,7 @@ function StationPage() {
         </div>
       </Card>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs defaultValue="overview">
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="gantt">L2 Gantt</TabsTrigger>
@@ -356,9 +229,8 @@ function StationPage() {
                   const pctDisplay = t.is_section ? (roll?.pct ?? 0) : (st?.percent_complete ?? 0);
                   const aStart = t.is_section ? (roll?.actual_start ?? null) : (st?.actual_start ?? null);
                   const aFinish = t.is_section ? (roll?.actual_finish ?? null) : (st?.actual_finish ?? null);
-                  const isFocused = tab === "gantt" && focus === t.id;
                   return (
-                    <div key={t.id} ref={isFocused ? focusRowRef : undefined} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""} ${isFocused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}>
+                    <div key={t.id} className={`grid h-12 grid-cols-[70px_minmax(300px,1fr)_44px_44px_84px_84px_84px_84px_84px] items-center gap-2 px-3 text-xs border-b border-border/40 ${t.is_section ? "bg-secondary/40 font-semibold" : ""}`}>
                       <div className="font-mono text-[10px] text-muted-foreground">{t.wbs_code}</div>
                       <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 10 }}>
                         {hasChildren ? (
@@ -389,25 +261,8 @@ function StationPage() {
           <Legend />
         </TabsContent>
 
-        <TabsContent value="boi">
-          <BoiStatusTab
-            stationId={stationId}
-            canEdit={canEdit}
-            tasks={tasks}
-            focusId={tab === "boi" ? focus : null}
-            onFocusDrawing={(id) => focusOn("mdl", id)}
-            onFocusTask={(id) => focusOn("gantt", id)}
-          />
-        </TabsContent>
-        <TabsContent value="mdl">
-          <DrawingsTab
-            stationId={stationId}
-            canEdit={canEdit}
-            boiByDrawing={drawingBoiMap}
-            focusId={tab === "mdl" ? focus : null}
-            onFocusBoi={(id) => focusOn("boi", id)}
-          />
-        </TabsContent>
+        <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="mdl"><DrawingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
         <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
@@ -420,15 +275,11 @@ function StationPage() {
         status={openTask ? statusMap.get(openTask.id) : undefined}
         revisions={openTask ? taskRevQ.data?.get(openTask.id) : undefined}
         derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
-        linkedBois={drawerLinks}
-        onOpenBoi={(id) => { setOpenTask(null); focusOn("boi", id); }}
-        onOpenDrawing={(id) => { setOpenTask(null); focusOn("mdl", id); }}
         onClose={() => setOpenTask(null)}
         canEdit={canEdit}
         saving={upsert.isPending}
         onSave={async (p) => { if (!openTask) return; await upsert.mutateAsync({ ...p, task_id: openTask.id }); setOpenTask(null); }}
       />
-
     </div>
   );
 }
@@ -462,20 +313,11 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
   );
 }
 
-type DrawerLink = {
-  boi: BoiLite;
-  drawings: { id: string; drg_ref: string; drg_desc: string }[];
-  chip: { label: string; c: string };
-};
-
-function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
+function TaskDrawer({ task, status, revisions, derived, onClose, onSave, canEdit, saving }: {
   task: L2Task | null;
   status: Status | undefined;
   revisions?: CommitmentRevision[];
   derived: { pct: number; actual_start: Date | null; actual_finish: Date | null; leafCount: number } | null;
-  linkedBois?: DrawerLink[];
-  onOpenBoi?: (boiId: string) => void;
-  onOpenDrawing?: (drawingId: string) => void;
   onClose: () => void;
   onSave: (p: Partial<Status>) => Promise<void>;
   canEdit: boolean;
@@ -535,50 +377,6 @@ function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, o
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4 px-4">
-          {linkedBois && linkedBois.length > 0 && (
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <Link2 className="h-3.5 w-3.5" /> Linked BOI &amp; Drawings
-              </div>
-              <div className="space-y-2">
-                {linkedBois.map((l) => (
-                  <div key={l.boi.id} className="rounded border border-border/60 bg-card/60 p-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onOpenBoi?.(l.boi.id)}
-                        className="text-left text-xs font-medium text-primary hover:underline"
-                      >
-                        {l.boi.name}
-                      </button>
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 text-[10px]"
-                        style={{ color: l.chip.c, borderColor: l.chip.c }}
-                      >
-                        {l.chip.label}
-                      </Badge>
-                    </div>
-                    {l.drawings.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {l.drawings.map((d) => (
-                          <button
-                            key={d.id}
-                            type="button"
-                            title={d.drg_desc}
-                            onClick={() => onOpenDrawing?.(d.id)}
-                            className="inline-flex items-center gap-0.5 rounded border border-border bg-secondary/40 px-1 py-0.5 font-mono text-[9px] text-foreground/80 hover:bg-secondary"
-                          >
-                            <FileText className="h-2.5 w-2.5" /> {d.drg_ref}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           {task.is_section && (
             <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-xs text-primary-foreground/90">
               <AlertCircle className="mr-1 inline h-3 w-3" /> This is a roll-up (section) row. Its % complete and actual dates are derived automatically from its sub-tasks (1.x.1, 1.x.2…). Update the leaf rows below to drive this section.
