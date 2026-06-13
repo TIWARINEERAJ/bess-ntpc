@@ -535,6 +535,50 @@ function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, o
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4 px-4">
+          {linkedBois && linkedBois.length > 0 && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Link2 className="h-3.5 w-3.5" /> Linked BOI &amp; Drawings
+              </div>
+              <div className="space-y-2">
+                {linkedBois.map((l) => (
+                  <div key={l.boi.id} className="rounded border border-border/60 bg-card/60 p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onOpenBoi?.(l.boi.id)}
+                        className="text-left text-xs font-medium text-primary hover:underline"
+                      >
+                        {l.boi.name}
+                      </button>
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 text-[10px]"
+                        style={{ color: l.chip.c, borderColor: l.chip.c }}
+                      >
+                        {l.chip.label}
+                      </Badge>
+                    </div>
+                    {l.drawings.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {l.drawings.map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            title={d.drg_desc}
+                            onClick={() => onOpenDrawing?.(d.id)}
+                            className="inline-flex items-center gap-0.5 rounded border border-border bg-secondary/40 px-1 py-0.5 font-mono text-[9px] text-foreground/80 hover:bg-secondary"
+                          >
+                            <FileText className="h-2.5 w-2.5" /> {d.drg_ref}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {task.is_section && (
             <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-xs text-primary-foreground/90">
               <AlertCircle className="mr-1 inline h-3 w-3" /> This is a roll-up (section) row. Its % complete and actual dates are derived automatically from its sub-tasks (1.x.1, 1.x.2…). Update the leaf rows below to drive this section.
