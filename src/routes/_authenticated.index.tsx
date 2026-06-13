@@ -144,16 +144,6 @@ function Dashboard() {
       return data ?? [];
     },
   });
-  const vendorsQ = useQuery({
-    queryKey: ["all_vendor_status"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("station_vendor_status")
-        .select("station_id,package,docs_submitted,engg_approved,cqa_approved,final_approved");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
 
   const loading = stationsQ.isLoading || tasksQ.isLoading || statusQ.isLoading;
   const tasksByStation = tasksQ.data ?? {};
@@ -325,7 +315,6 @@ function Dashboard() {
     complianceStatus: complStatusQ.data ?? [],
     issues: issuesQ.data ?? [],
     delays: delaysQ.data ?? [],
-    vendors: vendorsQ.data ?? [],
   });
 
   const runWeeklyBrief = async (kind: "pdf" | "docx") => {

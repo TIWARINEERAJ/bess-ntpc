@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Battery, LogOut, Shield, CalendarDays, Users, LineChart, FileStack, BookOpen, Gauge } from "lucide-react";
+import { Battery, LogOut, Shield, CalendarDays, Users, LineChart, FileStack, BookOpen } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,6 @@ export function AppHeader() {
         </Link>
         <nav className="ml-6 hidden gap-1 md:flex">
           <Link to="/" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} activeOptions={{ exact: true }}>Dashboard</Link>
-          <Link to="/readiness" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
-            <Gauge className="h-3.5 w-3.5" /> Readiness
-          </Link>
           <Link to="/drawings" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} title="Drawings = Master Drawing List (MDL)">
             <FileStack className="h-3.5 w-3.5" /> Drawings (MDL)
           </Link>

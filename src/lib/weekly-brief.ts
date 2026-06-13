@@ -22,14 +22,6 @@ const HEALTH_RGB: Record<Health, RGB> = {
 };
 const HEALTH_LABEL: Record<Health, string> = { green: "ON TRACK", amber: "AT RISK", red: "DELAYED" };
 
-/** Readiness % → traffic-light RGB (matches the in-app maturity color bands). */
-function readyRGB(pct: number): RGB {
-  if (pct >= 67) return [22, 163, 74];
-  if (pct >= 34) return [217, 119, 6];
-  if (pct > 0) return [220, 38, 38];
-  return [120, 120, 120];
-}
-
 function trunc(doc: jsPDF, text: string, maxW: number): string {
   if (doc.getTextWidth(text) <= maxW) return text;
   let t = text;
@@ -106,12 +98,11 @@ function drawCard(doc: jsPDF, x: number, y: number, w: number, h: number, b: Sta
   // metric chips row (5)
   cy += 6;
   const chips: Array<[string, string, RGB?]> = [
-    ["READY", `${b.readiness}%`, readyRGB(b.readiness)],
     ["MDL S/A/T", `${b.mdl.submitted}/${b.mdl.approved}/${b.mdl.total}`],
-    ["VENDOR", `${b.stages.vendor}%`],
-    ["BOI ORD", `${b.stages.boi}%`],
     ["CIVIL", `${b.civil.pct}%`],
+    ["L2 DONE", `${b.l2.done}/${b.l2.total}`],
     ["DELAYED", `${b.l2.delayed}`, b.l2.delayed > 0 ? HEALTH_RGB.red : undefined],
+    ["COMPL", `${b.compliance.cleared}/${b.compliance.total}`],
   ];
   const chipGap = 4;
   const chipW = (iw - chipGap * (chips.length - 1)) / chips.length;
@@ -245,7 +236,7 @@ export function buildWeeklyBriefDoc(input: WeeklyBriefInput): jsPDF {
         { align: "right" },
       );
       doc.text(
-        `Fleet Readiness ${t.avgReadiness}% · On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
+        `On Track ${t.onTrack} / At Risk ${t.atRisk} / Delayed ${t.delayed} · BOI ${t.boiOrdered}/${t.boiTotal} ordered · MDL ${t.mdlApproved}/${t.mdlTotal} approved`,
         pageW - margin,
         38,
         { align: "right" },
