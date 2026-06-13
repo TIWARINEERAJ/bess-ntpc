@@ -15,7 +15,19 @@ import { DatePicker } from "@/components/DatePicker";
 import type { BoiLite } from "@/lib/boi-links";
 
 
-export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
+export function DrawingsTab({
+  stationId,
+  canEdit,
+  boiByDrawing,
+  focusId,
+  onFocusBoi,
+}: {
+  stationId: string;
+  canEdit: boolean;
+  boiByDrawing?: Map<string, BoiLite[]>;
+  focusId?: string | null;
+  onFocusBoi?: (boiId: string) => void;
+}) {
   const qc = useQueryClient();
 
   const drawingsQ = useQuery({
