@@ -48,6 +48,23 @@ export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   component: StationPage,
 });
 
+/** Live BOI procurement status chip used in the L2 task drawer. */
+function boiChip(
+  scheduledPoDate: string | null,
+  s: { actual_po_date: string | null; delivery_date: string | null; site_receipt_date: string | null } | undefined,
+): { label: string; c: string } {
+  if (!s?.actual_po_date) {
+    if (scheduledPoDate && new Date() > new Date(scheduledPoDate))
+      return { label: "Overdue", c: "var(--status-red)" };
+    return { label: "Pending", c: "var(--status-amber)" };
+  }
+  if (s.site_receipt_date) return { label: "Received", c: "var(--status-green)" };
+  if (s.delivery_date) return { label: "In Transit", c: "var(--status-blue)" };
+  return { label: "Ordered", c: "var(--status-blue)" };
+}
+
+
+
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
   const { tab, focus } = Route.useSearch();
