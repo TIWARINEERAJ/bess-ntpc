@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileStack } from "lucide-react";
+import { Plus, FileStack, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 import { DatePicker } from "@/components/DatePicker";
+import type { BoiLite } from "@/lib/boi-links";
 
 
-export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
+export function DrawingsTab({
+  stationId,
+  canEdit,
+  boiByDrawing,
+  focusId,
+  onFocusBoi,
+}: {
+  stationId: string;
+  canEdit: boolean;
+  boiByDrawing?: Map<string, BoiLite[]>;
+  focusId?: string | null;
+  onFocusBoi?: (boiId: string) => void;
+}) {
   const qc = useQueryClient();
 
   const drawingsQ = useQuery({
@@ -193,7 +206,15 @@ export function DrawingsTab({ stationId, canEdit }: { stationId: string; canEdit
                 <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
-                <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} />
+                <DrawingRow
+                  key={r.id}
+                  row={r}
+                  canEdit={canEdit}
+                  bois={boiByDrawing?.get(r.id)}
+                  focused={focusId === r.id}
+                  onFocusBoi={onFocusBoi}
+                  onSave={(p) => save.mutate({ ...p, id: r.id })}
+                />
               ))}
             </tbody>
           </table>
@@ -213,11 +234,18 @@ function statusOf(r: StationDrawing) {
 
 const CAT_OPTIONS = ["CAT-I", "CAT-II", "CAT-III", "CATREL"];
 
-function DrawingRow({ row, canEdit, onSave }: {
-  row: StationDrawing; canEdit: boolean; onSave: (p: Partial<StationDrawing>) => void;
+function DrawingRow({ row, canEdit, bois, focused, onFocusBoi, onSave }: {
+  row: StationDrawing; canEdit: boolean;
+  bois?: BoiLite[]; focused?: boolean; onFocusBoi?: (boiId: string) => void;
+  onSave: (p: Partial<StationDrawing>) => void;
 }) {
   const [local, setLocal] = useState<StationDrawing>(row);
   const st = statusOf(local);
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (focused) rowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focused]);
+
 
   // Editable actual-date fields (commit immediately).
   const date = (k: "submitted_date" | "resubmitted_date" | "approved_date") => (
@@ -247,10 +275,30 @@ function DrawingRow({ row, canEdit, onSave }: {
   );
 
   return (
-    <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
+    <tr
+      ref={rowRef}
+      className={`border-b border-border/40 align-top hover:bg-secondary/30 ${focused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}
+    >
       <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "break-words font-medium")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "break-all font-mono text-[10px] text-muted-foreground")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}</td>
+      <td className="px-2 py-1.5 align-middle">
+        {frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}
+        {bois && bois.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {bois.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onFocusBoi?.(b.id)}
+                className="inline-flex items-center gap-0.5 rounded border border-primary/40 bg-primary/10 px-1 py-0.5 text-[9px] text-primary hover:bg-primary/20"
+                title="Open linked BOI item"
+              >
+                <Link2 className="h-2.5 w-2.5" /> {b.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_apprvl_date)}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
