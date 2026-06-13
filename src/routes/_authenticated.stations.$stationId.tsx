@@ -389,8 +389,25 @@ function StationPage() {
           <Legend />
         </TabsContent>
 
-        <TabsContent value="boi"><BoiStatusTab stationId={stationId} canEdit={canEdit} /></TabsContent>
-        <TabsContent value="mdl"><DrawingsTab stationId={stationId} canEdit={canEdit} /></TabsContent>
+        <TabsContent value="boi">
+          <BoiStatusTab
+            stationId={stationId}
+            canEdit={canEdit}
+            tasks={tasks}
+            focusId={tab === "boi" ? focus : null}
+            onFocusDrawing={(id) => focusOn("mdl", id)}
+            onFocusTask={(id) => focusOn("gantt", id)}
+          />
+        </TabsContent>
+        <TabsContent value="mdl">
+          <DrawingsTab
+            stationId={stationId}
+            canEdit={canEdit}
+            boiByDrawing={drawingBoiMap}
+            focusId={tab === "mdl" ? focus : null}
+            onFocusBoi={(id) => focusOn("boi", id)}
+          />
+        </TabsContent>
         <TabsContent value="compliance"><ComplianceTab stationId={stationId} canEdit={canEdit} /></TabsContent>
         <TabsContent value="delays"><DelayRegisterTab stationId={stationId} canEdit={canEdit} tasks={tasks} status={status} /></TabsContent>
         <TabsContent value="issues"><IssuesPanel stationId={stationId} canEdit={canEdit} /></TabsContent>
