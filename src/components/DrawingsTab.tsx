@@ -275,10 +275,30 @@ function DrawingRow({ row, canEdit, bois, focused, onFocusBoi, onSave }: {
   );
 
   return (
-    <tr className="border-b border-border/40 align-top hover:bg-secondary/30">
+    <tr
+      ref={rowRef}
+      className={`border-b border-border/40 align-top hover:bg-secondary/30 ${focused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}
+    >
       <td className="px-2 py-1.5 align-middle">{frozenText(local.category, "break-words font-medium")}</td>
       <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_ref, "break-all font-mono text-[10px] text-muted-foreground")}</td>
-      <td className="px-2 py-1.5 align-middle">{frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}</td>
+      <td className="px-2 py-1.5 align-middle">
+        {frozenText(local.drg_desc, "whitespace-normal break-words leading-snug")}
+        {bois && bois.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {bois.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onFocusBoi?.(b.id)}
+                className="inline-flex items-center gap-0.5 rounded border border-primary/40 bg-primary/10 px-1 py-0.5 text-[9px] text-primary hover:bg-primary/20"
+                title="Open linked BOI item"
+              >
+                <Link2 className="h-2.5 w-2.5" /> {b.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_date)}</td>
       <td className="px-2 py-1.5 align-middle">{frozenDate(local.sch_apprvl_date)}</td>
       <td className="px-1 py-1">{date("submitted_date")}</td>
