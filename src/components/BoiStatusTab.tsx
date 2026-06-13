@@ -337,11 +337,64 @@ function BoiRow({
     </Select>
   );
   return (
-    <tr className="border-b border-border/40 hover:bg-secondary/30">
+    <tr
+      ref={rowRef}
+      className={`border-b border-border/40 hover:bg-secondary/30 ${focused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}
+    >
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.sl_no}</td>
-      <td className="px-2 py-1 font-medium">{b.name}</td>
-      <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
-      <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
+      <td className="px-2 py-1 font-medium">
+        {link?.poTask ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help underline decoration-dotted underline-offset-2">{b.name}</span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-xs">
+              <div className="font-semibold">L2 ordering: {link.poTask.name}</div>
+              <div className="text-muted-foreground">
+                {fmtD(link.orderStart)} → {fmtD(link.orderFinish)}
+              </div>
+              {link.drawings.length > 0 && (
+                <div className="mt-1">Drawings: {link.drawings.map((d) => d.drg_ref).join(", ")}</div>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          b.name
+        )}
+      </td>
+      <td className="px-2 py-1 text-[10px]">
+        {link && link.drawings.length > 0 ? (
+          <div className="flex max-w-[160px] flex-col gap-0.5">
+            {link.drawings.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                title={d.drg_desc}
+                onClick={() => onFocusDrawing?.(d.id)}
+                className="truncate text-left font-mono text-[9px] text-primary hover:underline"
+              >
+                {d.drg_ref}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="font-mono text-muted-foreground">{b.drawings_count ?? "—"}</span>
+        )}
+      </td>
+      <td className="px-2 py-1 font-mono text-[10px]">
+        {orderDate ? (
+          <button
+            type="button"
+            onClick={() => link?.poTask && onFocusTask?.(link.poTask.id)}
+            className="text-primary hover:underline"
+            title={`From L2: ${link?.poTask?.name ?? ""} (ordering finish)`}
+          >
+            {fmtD(orderDate)}
+          </button>
+        ) : (
+          <span className="text-muted-foreground">{b.scheduled_po_date ?? "—"}</span>
+        )}
+      </td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
       <td className="px-1 py-1">
         <div className="flex items-center gap-1">
