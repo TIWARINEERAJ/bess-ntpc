@@ -206,7 +206,15 @@ export function DrawingsTab({
                 <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No drawings listed yet.</td></tr>
               )}
               {visible.map((r) => (
-                <DrawingRow key={r.id} row={r} canEdit={canEdit} onSave={(p) => save.mutate({ ...p, id: r.id })} />
+                <DrawingRow
+                  key={r.id}
+                  row={r}
+                  canEdit={canEdit}
+                  bois={boiByDrawing?.get(r.id)}
+                  focused={focusId === r.id}
+                  onFocusBoi={onFocusBoi}
+                  onSave={(p) => save.mutate({ ...p, id: r.id })}
+                />
               ))}
             </tbody>
           </table>
