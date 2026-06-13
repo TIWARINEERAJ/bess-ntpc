@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
@@ -13,6 +14,9 @@ import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
 import { DatePicker } from "@/components/DatePicker";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
+import { buildBoiLinks, type BoiLink } from "@/lib/boi-links";
+import { fmtD, type L2Task } from "@/lib/gantt-utils";
+import type { StationDrawing } from "@/lib/drawings";
 
 type Boi = {
   id: string;
