@@ -31,7 +31,7 @@ import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { DatePicker } from "@/components/DatePicker";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
-import { buildBoiLinks, drawingToBois, taskToBois, type BoiLink, type BoiLite } from "@/lib/boi-links";
+import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/boi-links";
 import type { StationDrawing } from "@/lib/drawings";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
