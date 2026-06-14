@@ -61,41 +61,61 @@ export function classifyBoi(name: string): string | null {
 }
 
 type ConceptDef = {
-  /** regex matched against a PO ("PO for …") task name */
-  po: RegExp | null;
+  /**
+   * Ordered matchers for the L2 ordering task name. The FIRST regex that yields
+   * a hit wins (most specific first), so e.g. an IDT links to
+   * "Ordering-Inverter Duty Transformer" rather than "Ordering of POWER TRANSFORMER".
+   */
+  po: RegExp[];
   /** ordered drawing matchers; the FIRST regex that yields hits wins (most specific) */
   dwg: RegExp[];
 };
 
 const CONCEPTS: Record<string, ConceptDef> = {
-  battery: { po: /battery|bess/, dwg: [/bess container/, /\bbms\b/, /battery/] },
-  pcs: { po: /pcs|inverter/, dwg: [/pcs\/inverter/, /pcs container/, /inverter/] },
-  pcs_transformer: { po: /transformer/, dwg: [/pcs\/idt transformer/, /\bidt\b/] },
-  power_transformer: { po: /transformer/, dwg: [/tie\/power transformer/, /power transformer/] },
-  aux_transformer: { po: /transformer/, dwg: [/aux trafo/, /auxiliary/] },
-  ups: { po: /scada|ems|battery/, dwg: [/\bups\b/, /smps/, /charger/] },
-  breaker: { po: /switchgear/, dwg: [/breaker/, /isolator/] },
-  scada_ems: { po: /scada|ems/, dwg: [/ems\/scada/, /scada/, /agc/] },
-  metering: { po: /switchgear|scada/, dwg: [/metering/, /abt meter/, /\bcrp\b/] },
-  switchgear: { po: /switchgear/, dwg: [/crp & metering/, /switchgear/, /\bbom\b/] },
-  ofc_cable: { po: /cable/, dwg: [/ofc/, /fibre|fiber/] },
-  dc_cable: { po: /cable/, dwg: [/dc cable/] },
-  ht_cable: { po: /cable/, dwg: [/ehv cable/, /ht cable/] },
-  lt_cable: { po: /cable/, dwg: [/lt cable/] },
-  cable_generic: { po: /cable/, dwg: [/cabling system/, /cable/] },
-  fire: { po: /fire|hvac/, dwg: [/nifps/, /fire/] },
-  hvac: { po: /fire|hvac/, dwg: [/hvac/] },
-  cctv: { po: /scada|ems/, dwg: [/cctv/] },
-  earthing: { po: null, dwg: [/earthing/, /illumination/, /lighting/] },
-  switchyard: { po: /switchgear|structural/, dwg: [/switchyard/, /poi feeder/] },
+  battery: { po: [/battery/, /bess container/, /bess/], dwg: [/bess container/, /\bbms\b/, /battery/] },
+  // PCS but NOT a PCS/inverter transformer (negative lookahead excludes "… transformer")
+  pcs: { po: [/(pcs|inverter)(?!.*transformer)/], dwg: [/pcs\/inverter/, /pcs container/, /inverter/] },
+  pcs_transformer: {
+    po: [/inverter duty transformer/, /pcs ?\(inverter\) ?transformer/, /\bidt\b/, /inverter transformer/, /pcs.*transformer/],
+    dwg: [/pcs\/idt transformer/, /inverter.*transformer/, /\bidt\b/],
+  },
+  power_transformer: { po: [/power transformer/], dwg: [/tie\/power transformer/, /power transformer/] },
+  aux_transformer: { po: [/auxiliary transformer/, /aux\.? transformer/], dwg: [/aux trafo/, /auxiliary/] },
+  ups: { po: [/\bups\b/, /dc battery/, /battery charger/], dwg: [/\bups\b/, /smps/, /charger/] },
+  breaker: { po: [/circuit breaker/, /isolator/, /switchgear/], dwg: [/breaker/, /isolator/] },
+  scada_ems: { po: [/scada/, /\bems\b/, /\bsas\b/, /relay/], dwg: [/ems\/scada/, /scada/, /agc/] },
+  metering: { po: [/metering/, /\babt\b/, /\bcrp\b/], dwg: [/metering/, /abt meter/, /\bcrp\b/] },
+  switchgear: { po: [/switchgear/, /\blt panel\b/, /\bht panel\b/], dwg: [/crp & metering/, /switchgear/, /\bbom\b/] },
+  ofc_cable: { po: [/fo cable/, /communication cable/, /ofc/], dwg: [/ofc/, /fibre|fiber/] },
+  dc_cable: { po: [/dc cable/], dwg: [/dc cable/] },
+  ht_cable: { po: [/ehv cable/, /ht cable/], dwg: [/ehv cable/, /ht cable/] },
+  lt_cable: { po: [/lt cable/], dwg: [/lt cable/] },
+  cable_generic: { po: [/cabling system/, /\bcable\b/], dwg: [/cabling system/, /cable/] },
+  fire: { po: [/nifps/, /fire system/, /fire/], dwg: [/nifps/, /fire/] },
+  hvac: { po: [/hvac/, /heating, ventilation/], dwg: [/hvac/] },
+  cctv: { po: [/cctv/], dwg: [/cctv/] },
+  earthing: { po: [/earthing/, /lightning protection/], dwg: [/earthing/, /illumination/, /lighting/] },
+  switchyard: { po: [/switchyard/, /poi feeder/], dwg: [/switchyard/, /poi feeder/] },
 };
 
 function isBoiEngg(d: StationDrawing): boolean {
   return /boi/i.test(d.category);
 }
 
+/**
+ * An L2 procurement/ordering activity. Real data names these
+ * "Ordering of …" / "Ordering-…" (not "PO for …"), so match both styles.
+ */
 function isPoTask(t: L2Task): boolean {
-  return !t.is_section && /(^|\b)po\b|po for/i.test(t.name);
+  return !t.is_section && /\bordering\b|^ordering|po for|(^|\b)po\b/i.test(t.name);
+}
+
+function matchPoTask(def: ConceptDef, poTasks: L2Task[]): L2Task | null {
+  for (const re of def.po) {
+    const hit = poTasks.find((t) => re.test(t.name.toLowerCase()));
+    if (hit) return hit;
+  }
+  return null;
 }
 
 function matchDrawings(def: ConceptDef, boiDwgs: StationDrawing[]): LinkedDrawing[] {
