@@ -829,6 +829,62 @@ export type Database = {
           },
         ]
       }
+      station_vendor_status: {
+        Row: {
+          cqa_approved: string | null
+          created_at: string
+          docs_submitted: string | null
+          engg_approved: string | null
+          final_approved: string | null
+          id: string
+          package: string
+          remarks: string | null
+          sort_order: number
+          station_id: string
+          updated_at: string
+          updated_by: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          cqa_approved?: string | null
+          created_at?: string
+          docs_submitted?: string | null
+          engg_approved?: string | null
+          final_approved?: string | null
+          id?: string
+          package: string
+          remarks?: string | null
+          sort_order?: number
+          station_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          cqa_approved?: string | null
+          created_at?: string
+          docs_submitted?: string | null
+          engg_approved?: string | null
+          final_approved?: string | null
+          id?: string
+          package?: string
+          remarks?: string | null
+          sort_order?: number
+          station_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_vendor_status_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stations: {
         Row: {
           agency: string | null
