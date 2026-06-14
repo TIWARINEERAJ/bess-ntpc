@@ -1,49 +1,69 @@
-# Plan: Drawing exceptions, editable Cat, weekly trend & world-class MIS report
+## Goal
 
-## 1. MDL register — freeze Category, make "Cat" an editable dropdown
-In `src/components/DrawingsTab.tsx`:
-- Swap the two columns' behaviour. **Category** becomes a frozen read-only display (master, constant). **Cat** becomes an editable `Select` dropdown (options: `CAT-I`, `CAT-II`, `CAT-III`, `CATREL`, plus blank "—"), committing on change like the date fields.
-- Keep all other fields (Drg Ref, Description, Sch. dates) frozen and submission/approval dates editable as today.
+Create one intelligent linking layer that ties together the three data sets that already exist per station, and make the whole app navigable between them:
 
-## 2. Drawing "submission-overdue" exception logic
-In `src/lib/drawings.ts`:
-- Add `isSubmissionOverdue(r)` → `true` when `sch_date` is in the past AND the drawing has no `submitted_date`/`resubmitted_date` AND is not approved.
-- Extend `DrawingCounts` with `submissionOverdue` and surface it in `drawingCounts()`.
+1. **BOI items** (`boi_master` / `station_boi_status`) — e.g. *Battery Container, PCS, 33/220 KV Power Transformer*
+2. **MDL drawings** (`station_drawings`, category **BOI Engg**) — e.g. *BESS Container: GA, Datasheet… → 8004-…-B-032*
+3. **L2 ordering tasks** (`l2_tasks` under WBS **1.6 Procurement & Manufacturing**) — e.g. *PO for Battery Modules*
 
-In `src/routes/_authenticated.drawings.tsx` (Drawings summary page):
-- Add a KPI card "Submission Overdue" and a station-wise exceptions panel listing drawings whose scheduled submission date has passed without submission (station, ref, description, scheduled date, days overdue), sorted by days overdue.
+## Approach: one shared mapping module (no DB change needed)
 
-## 3. Weekly progress snapshots (trend data) — stored in DB
-New table `weekly_progress_snapshots` (migration):
-- Columns: `snapshot_date` (date), `station_id`, `station_name`, `pct`, `delayed`, `completed`, `total`, `health`, plus standard id/created_at. Grant + RLS: authenticated read/insert; service_role all. One row per station per snapshot date (unique on `snapshot_date, station_id`).
-- A public server route `src/routes/api/public/hooks/weekly-snapshot.ts` recomputes each station's progress/health from `l2_tasks` + `station_task_status` (using existing gantt-utils logic, server-side via `supabaseAdmin`) and upserts a snapshot row dated to the current weekend.
-- Schedule it every Sunday via `pg_cron` + `pg_net` (insert tool, anon `apikey` header).
-- Add a **"Capture snapshot now"** button on the dashboard header that calls the same endpoint, so a trend point can be recorded on demand. Trend uses **all** stored snapshots.
+I'll build `src/lib/boi-links.ts` — a deterministic, keyword-based matcher that understands BESS terminology. Given a station's BOI items + drawings + L2 tasks, it returns for each BOI item:
 
-## 4. Rebuild the Weekly MIS PDF — `src/lib/mis-pdf.ts`
-Make `exportWeeklyPDF` accept extra data (drawings, BOI master+status, meetings/plans, snapshots) and produce a denser, chart-led report. All charts drawn as crisp native vector shapes (jsPDF rects/lines) — no DOM dependency. Larger fonts throughout (body ~9.5→11, headings up accordingly).
+- `drawings: { drg_ref, drg_desc, id }[]` — matched MDL **BOI Engg** drawings
+- `poTask: L2Task | null` — matched L2 "PO for …" ordering task
+- `orderStart / orderFinish` — the PO task's baseline start / finish
 
-Report structure:
-1. **Header + KPI strip** (larger).
-2. **Charts band (top of report):**
-   - Station health distribution (On Track / At Risk / Delayed) as a column chart.
-   - **Progress trend over weekends** — line/area chart of portfolio avg % from `weekly_progress_snapshots` (all weeks).
-   - **Agency performance** as a full-width column chart (avg progress per agency) sized to use the whole page width.
-3. **Station Status Summary** table (grouped by health).
-4. **Drawings Exceptions** — drawings overdue from scheduled submission date (station, ref, scheduled sub date, days overdue).
-5. **BOI Exceptions** — BOI items past `scheduled_po_date` with no `actual_po_date` (station, equipment, scheduled PO, days overdue).
-6. **L2 Station-wise exceptions** (existing, retained).
-7. **Meetings** — Upcoming planned meetings and Last concluded meetings (type, station, date).
-8. Footer page numbers.
+Computing this in code (rather than freezing it into the DB) means it auto-updates whenever you edit the BOI master, MDL, or L2 in the database — which fits the per-station/per-voltage masters you just set up. The same module is reused everywhere so every screen agrees.
 
-## 5. Wire data into the dashboard
-In `src/routes/_authenticated.index.tsx`:
-- Add queries for BOI master+status, meetings + meeting_plans, and weekly snapshots.
-- Pass them to `exportWeeklyPDF(...)`.
-- Add the "Capture snapshot now" button and optionally a small on-screen trend chart fed by snapshots.
+### Mapping rules (BESS-aware keyword scoring)
+
+Each BOI item name is tokenised and scored against drawing descriptions and PO-task names using synonym groups. Proposed groups:
+
+```text
+BOI item                         → L2 PO task                  → MDL BOI-Engg drawing(s)
+Battery Container / BESS         → PO for Battery Modules        BESS Container GA…(B-032), BMS…(W-036), FAT…(W-033/34)
+PCS                              → PO for PCS / Inverters        PCS/Inverter GA…(B-037), PCS Earthing(U-038)
+33/220 KV Power Transformer      → PO for Transformers           TIE/Power Transformer…(B-065)
+Transformers (PCS/Aux), IDT      → PO for Transformers           PCS/IDT Transformer(B-064), Aux Trafo(B-063)
+HT/MV/LT Switchgear, HT Panel    → PO for HT / LT Switchgear     CRP & Metering Panel(B-076)…
+SCADA/PPC, EMS                   → PO for SCADA / EMS            EMS/SCADA Logic(W-041), FAT(W-042/43), AGC(W-045)
+Fire Protection, HVAC            → PO for Fire & HVAC Systems    (NIFPS refs in B-064/065)
+HT/DC/AC/OFC/Control Cables      → PO for HT / LT Cables         EHV(B-066), HT(B-067), LT(B-068), DC(B-069)
+220 KV Circuit Breakers          → PO for HT / LT Switchgear     220kV Breaker(B-046), Isolator(B-047)
+UPS                              → PO for SCADA / EMS (aux)      UPS & Battery(B-039), SMPS charger(B-082)
+```
+
+Items with no confident match are simply left unlinked (your "wherever possible" requirement). Scoring is conservative — better to leave blank than mis-link.
+
+## Wiring across the codebase
+
+### A. BOI Status tab (`BoiStatusTab.tsx`)
+- **Dwgs column**: render the matched `drg_ref`(s) as clickable chips → jump to MDL tab with that drawing highlighted. (Drawing count stays as a tooltip.)
+- **Sched PO column**: show the linked L2 PO task's **finish date** (ordering date) as a clickable value → jump to L2 Gantt with that task highlighted. Falls back to existing `scheduled_po_date` if unlinked.
+- Hover tooltip on the equipment name showing "L2: PO for … (start→finish)" and linked drawing refs.
+
+### B. L2 Gantt task popup (`TaskDrawer` in the station route)
+- When the opened task is an ordering task (or any task that maps to a BOI item), add a **"Linked BOI & Drawings"** panel showing: BOI item name + live status chip (Ordered/In Transit/Received…), the matched drawing ref(s), and **two buttons**: "Open BOI status" and "Open drawing" that navigate to the right tab and highlight the row.
+
+### C. MDL / Drawings tab (`DrawingsTab.tsx`)
+- For BOI-Engg drawings, show a small "BOI: <item>" badge that links back to the BOI tab row.
+
+### D. Cross-tab navigation (station route)
+- Convert the `Tabs` from uncontrolled `defaultValue` to **controlled via URL search params** (`?tab=boi&focus=<id>`), validated with `validateSearch`.
+- Add a shared highlight+scroll behaviour: when `focus` is present, the target row in BOI/MDL/Gantt briefly highlights and scrolls into view.
+
+### E. Portfolio / exports (optional, same module)
+- Reuse `boi-links.ts` so the Weekly Brief / MIS exports can show the linked PO date and drawing ref consistently. (Can be a follow-up; core ask is the in-app linking.)
+
+## Files
+
+- **New**: `src/lib/boi-links.ts` (matcher + types + token/synonym tables)
+- **Edit**: `src/components/BoiStatusTab.tsx` (Dwgs + Sched PO links, needs drawings+tasks data)
+- **Edit**: `src/routes/_authenticated.stations.$stationId.tsx` (controlled tabs + search params, TaskDrawer linked panel, row highlight/scroll, pass tasks/drawings into BOI tab)
+- **Edit**: `src/components/DrawingsTab.tsx` (BOI back-link badge)
 
 ## Technical notes
-- Cat dropdown values come from existing data (`CAT-I/CAT-II/CAT-III/CATREL`).
-- Snapshot server route uses `supabaseAdmin` and the existing `buildStatusMap`/`stationProgress` logic ported to run server-side.
-- PDF charts are computed and drawn manually (bars, axis ticks, trend polyline) for reliability in the browser export.
-- No change to BOI/meeting schemas; meetings reads from `meetings` (concluded) and `meeting_plans` (upcoming).
+
+- No schema migration required; matching is computed client-side from data already fetched. If you later want the matches frozen/editable in the DB, that's an additive follow-up (a `boi_drawing_map` table) — I'll flag it but not build it unless you ask.
+- "Sched PO date = L2 ordering finish date" is implemented as a derived display value; the stored `scheduled_po_date` remains the fallback so nothing breaks for unlinked items.

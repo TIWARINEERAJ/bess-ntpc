@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploads } from "@/components/DocumentUploads";
 import { BoiLifecycleChart } from "@/components/BoiLifecycleChart";
@@ -13,6 +14,9 @@ import type { BoiLifecycleRow } from "@/lib/boi-lifecycle";
 import { DatePicker } from "@/components/DatePicker";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
+import { buildBoiLinks, type BoiLink } from "@/lib/boi-links";
+import { fmtD, type L2Task } from "@/lib/gantt-utils";
+import type { StationDrawing } from "@/lib/drawings";
 
 type Boi = {
   id: string;
@@ -50,23 +54,31 @@ function statusChip(b: Boi, s: BoiStatus | undefined) {
   return { label: "Ordered", c: "var(--status-blue)" };
 }
 
-export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdit: boolean }) {
+export function BoiStatusTab({
+  stationId,
+  canEdit,
+  tasks = [],
+  focusId,
+  onFocusDrawing,
+  onFocusTask,
+}: {
+  stationId: string;
+  canEdit: boolean;
+  tasks?: L2Task[];
+  focusId?: string | null;
+  onFocusDrawing?: (drawingId: string) => void;
+  onFocusTask?: (taskId: string) => void;
+}) {
   const qc = useQueryClient();
   const masterQ = useQuery({
     queryKey: ["boi_master", stationId],
     queryFn: async () => {
-      console.log("Station ID:", stationId);
-
       const { data, error } = await supabase
         .from("boi_master")
-        .select("id,name,station_id")
-        .eq("station_id", stationId);
-
-      console.log("Returned rows:", data?.length);
-      console.table(data?.slice(0, 10));
-
+        .select("id,name,sl_no,drawings_count,scheduled_po_date,inspection_category,station_id")
+        .eq("station_id", stationId)
+        .order("sort_order");
       if (error) throw error;
-
       return (data ?? []) as unknown as Boi[];
     },
   });
@@ -78,9 +90,28 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
       return (data ?? []) as unknown as BoiStatus[];
     },
   });
+  const drawingsQ = useQuery({
+    queryKey: ["station_drawings", stationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("station_drawings")
+        .select("*")
+        .eq("station_id", stationId)
+        .order("category")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as StationDrawing[];
+    },
+  });
 
   const map = new Map((statusQ.data ?? []).map((s) => [s.boi_id, s]));
   const revQ = useCommitmentRevisions(stationId, "boi");
+
+  const links = useMemo(
+    () => buildBoiLinks(masterQ.data ?? [], drawingsQ.data ?? [], tasks),
+    [masterQ.data, drawingsQ.data, tasks],
+  );
+
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -215,6 +246,10 @@ export function BoiStatusTab({ stationId, canEdit }: { stationId: string; canEdi
                     chip={chip}
                     canEdit={canEdit}
                     revisions={revQ.data?.get(b.id)}
+                    link={links.get(b.id)}
+                    focused={focusId === b.id}
+                    onFocusDrawing={onFocusDrawing}
+                    onFocusTask={onFocusTask}
                     onSave={(p) => save.mutate({ ...s, ...p })}
                   />
                 );
@@ -233,6 +268,10 @@ function BoiRow({
   chip,
   canEdit,
   revisions,
+  link,
+  focused,
+  onFocusDrawing,
+  onFocusTask,
   onSave,
 }: {
   b: Boi;
@@ -240,10 +279,19 @@ function BoiRow({
   chip: { label: string; c: string };
   canEdit: boolean;
   revisions?: CommitmentRevision[];
+  link?: BoiLink;
+  focused?: boolean;
+  onFocusDrawing?: (drawingId: string) => void;
+  onFocusTask?: (taskId: string) => void;
   onSave: (p: Partial<BoiStatus>) => void;
 }) {
   const [local, setLocal] = useState<BoiStatus>(s);
   const dirty = JSON.stringify(local) !== JSON.stringify(s);
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (focused) rowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focused]);
+  const orderDate = link?.orderFinish ?? null;
   const cell = (k: keyof BoiStatus, type: "date" | "text" = "text", w = "w-32") =>
     type === "date" ? (
       <DatePicker
@@ -289,11 +337,58 @@ function BoiRow({
     </Select>
   );
   return (
-    <tr className="border-b border-border/40 hover:bg-secondary/30">
+    <tr
+      ref={rowRef}
+      className={`border-b border-border/40 hover:bg-secondary/30 ${focused ? "bg-primary/10 ring-1 ring-primary/50" : ""}`}
+    >
       <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.sl_no}</td>
-      <td className="px-2 py-1 font-medium">{b.name}</td>
-      <td className="px-2 py-1 text-center font-mono text-[10px]">{b.drawings_count ?? "—"}</td>
-      <td className="px-2 py-1 font-mono text-[10px] text-muted-foreground">{b.scheduled_po_date ?? "—"}</td>
+      <td className="px-2 py-1 font-medium">
+        {link?.poTask ? (
+          <span
+            className="cursor-help underline decoration-dotted underline-offset-2"
+            title={`L2 ordering: ${link.poTask.name}\n${fmtD(link.orderStart)} → ${fmtD(link.orderFinish)}${
+              link.drawings.length > 0 ? `\nDrawings: ${link.drawings.map((d) => d.drg_ref).join(", ")}` : ""
+            }`}
+          >
+            {b.name}
+          </span>
+        ) : (
+          b.name
+        )}
+      </td>
+      <td className="px-2 py-1 text-[10px]">
+        {link && link.drawings.length > 0 ? (
+          <div className="flex max-w-[160px] flex-col gap-0.5">
+            {link.drawings.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                title={d.drg_desc}
+                onClick={() => onFocusDrawing?.(d.id)}
+                className="truncate text-left font-mono text-[9px] text-primary hover:underline"
+              >
+                {d.drg_ref}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="font-mono text-muted-foreground">{b.drawings_count ?? "—"}</span>
+        )}
+      </td>
+      <td className="px-2 py-1 font-mono text-[10px]">
+        {orderDate ? (
+          <button
+            type="button"
+            onClick={() => link?.poTask && onFocusTask?.(link.poTask.id)}
+            className="text-primary hover:underline"
+            title={`From L2: ${link?.poTask?.name ?? ""} (ordering finish)`}
+          >
+            {fmtD(orderDate)}
+          </button>
+        ) : (
+          <span className="text-muted-foreground">{b.scheduled_po_date ?? "—"}</span>
+        )}
+      </td>
       <td className="px-1 py-1">{cell("actual_po_date", "date", "w-32")}</td>
       <td className="px-1 py-1">
         <div className="flex items-center gap-1">
