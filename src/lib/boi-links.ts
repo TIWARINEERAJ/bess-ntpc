@@ -146,7 +146,7 @@ export function buildBoiLinks(
       const def = CONCEPTS[concept];
       if (def) {
         linkedDrawings = matchDrawings(def, boiDwgs);
-        if (def.po) poTask = poTasks.find((t) => def.po!.test(t.name.toLowerCase())) ?? null;
+        poTask = matchPoTask(def, poTasks);
       }
     }
     out.set(b.id, {
