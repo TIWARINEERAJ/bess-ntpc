@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileStack, ArrowRight, FileCheck2, FileClock, FileWarning } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
-import { drawingCounts, fetchAllDrawings, uniqueCategories, isApproved, isSubmitted, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, drawingCatSummary, fetchAllDrawings, uniqueCategories, isApproved, isSubmitted, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 
 export const Route = createFileRoute("/_authenticated/drawings")({
