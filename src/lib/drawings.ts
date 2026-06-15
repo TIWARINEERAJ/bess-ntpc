@@ -196,6 +196,8 @@ export function drawingCatSummary(rows: StationDrawing[]): DrawingCatSummary {
   };
 }
 
+/**
+ * Derive MDL counts from a station's (or the portfolio's) drawing register.
  *
  * The MDL register is the SINGLE source of truth: the total is simply the
  * number of drawing rows — there is no separately stored planned total. Every
