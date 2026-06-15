@@ -710,6 +710,7 @@ export type Database = {
       station_drawings: {
         Row: {
           approved_date: string | null
+          boi_name: string | null
           cat: string | null
           category: string
           created_at: string
@@ -727,6 +728,7 @@ export type Database = {
         }
         Insert: {
           approved_date?: string | null
+          boi_name?: string | null
           cat?: string | null
           category?: string
           created_at?: string
@@ -744,6 +746,7 @@ export type Database = {
         }
         Update: {
           approved_date?: string | null
+          boi_name?: string | null
           cat?: string | null
           category?: string
           created_at?: string
