@@ -239,6 +239,62 @@ function DrawingsPage() {
                 </table>
               </div>
             </Card>
+
+            {/* Station-wise MDL Summary — approval-category conclusion view */}
+            <Card className="p-0">
+              <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <FileCheck2 className="h-4 w-4 text-primary" /> Station-wise MDL Summary — Approval Category Conclusion
+                </div>
+                <Badge variant="outline" className="text-[10px]">{catTotals.total} drawings · {catSummaries.length} stations</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      {["Station", "Total MDL", "Submitted", "Appr. (I+II)", "Appr. (I+II+REL)", "CAT-I", "CAT-II", "CATREL", "CAT-III", "I+II+III+REL", "Apprvl Pending", "Balance Subm."].map((h, i) =>
+                        <th key={i} className={`whitespace-nowrap border-b border-border px-3 py-2 font-semibold ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catSummaries.map(({ s, sum }) => (
+                      <tr key={s.id} className="border-b border-border/40 hover:bg-secondary/30">
+                        <td className="px-3 py-2">
+                          <Link to="/stations/$stationId" params={{ stationId: s.id }} className="font-medium hover:text-primary">{s.name}</Link>
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.total}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{sum.submitted}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.approvedCat12}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{sum.approvedCat12Rel}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.catI}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.catII}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.catREL}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{sum.catIII}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.categorized}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{sum.approvalPending}</td>
+                        <td className="px-3 py-2 text-right font-mono">{sum.balanceSubmission}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-border bg-sidebar/40 font-semibold">
+                      <td className="px-3 py-2">Total</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.total}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{catTotals.submitted}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.approvedCat12}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{catTotals.approvedCat12Rel}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.catI}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.catII}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.catREL}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{catTotals.catIII}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.categorized}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{catTotals.approvalPending}</td>
+                      <td className="px-3 py-2 text-right font-mono">{catTotals.balanceSubmission}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </Card>
           </TabsContent>
 
           {categories.map((cat) => (
