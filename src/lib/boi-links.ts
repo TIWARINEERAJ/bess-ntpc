@@ -155,7 +155,8 @@ export function buildBoiLinks(
   tasks: L2Task[],
 ): Map<string, BoiLink> {
   const boiDwgs = drawings.filter(isBoiEngg);
-  const poTasks = tasks.filter(isPoTask);
+  const orderingSecs = orderingSectionCodes(tasks);
+  const poTasks = tasks.filter((t) => isPoTask(t, orderingSecs));
   const out = new Map<string, BoiLink>();
   for (const b of bois) {
     const concept = classifyBoi(b.name);
