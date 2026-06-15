@@ -137,10 +137,19 @@ function matchPoTask(def: ConceptDef, poTasks: L2Task[]): L2Task | null {
   return null;
 }
 
-function matchDrawings(def: ConceptDef, boiDwgs: StationDrawing[]): LinkedDrawing[] {
+function toLinked(d: StationDrawing): LinkedDrawing {
+  return { id: d.id, drg_ref: d.drg_ref, drg_desc: d.drg_desc };
+}
+
+function matchDrawings(concept: string, def: ConceptDef, boiDwgs: StationDrawing[]): LinkedDrawing[] {
+  // 1) Authoritative: drawings whose explicit MDL "BOI Name" classifies to the
+  //    same BESS concept as this BOI item (most accurate when present).
+  const byName = boiDwgs.filter((d) => d.boi_name && classifyBoi(d.boi_name) === concept);
+  if (byName.length) return byName.map(toLinked);
+  // 2) Fallback: keyword match on the drawing description.
   for (const re of def.dwg) {
     const hits = boiDwgs.filter((d) => re.test(d.drg_desc.toLowerCase()));
-    if (hits.length) return hits.map((d) => ({ id: d.id, drg_ref: d.drg_ref, drg_desc: d.drg_desc }));
+    if (hits.length) return hits.map(toLinked);
   }
   return [];
 }
