@@ -76,11 +76,11 @@ const CONCEPTS: Record<string, ConceptDef> = {
   // PCS but NOT a PCS/inverter transformer (negative lookahead excludes "… transformer")
   pcs: { po: [/(pcs|inverter)(?!.*transformer)/], dwg: [/pcs\/inverter/, /pcs container/, /inverter/] },
   pcs_transformer: {
-    po: [/inverter duty transformer/, /pcs ?\(inverter\) ?transformer/, /\bidt\b/, /inverter transformer/, /pcs.*transformer/],
+    po: [/inverter duty transformer/, /pcs ?\(inverter\) ?transformer/, /\bidt\b/, /inverter transformer/, /pcs.*transformer/, /transformers? ?\(pcs/, /pcs duty/],
     dwg: [/pcs\/idt transformer/, /inverter.*transformer/, /\bidt\b/],
   },
   power_transformer: { po: [/power transformer/], dwg: [/tie\/power transformer/, /power transformer/] },
-  aux_transformer: { po: [/auxiliary transformer/, /aux\.? transformer/], dwg: [/aux trafo/, /auxiliary/] },
+  aux_transformer: { po: [/auxiliary transformer/, /aux\.? transformer/, /pcs duty and auxiliary/, /duty and auxiliary/], dwg: [/aux trafo/, /auxiliary/] },
   ups: { po: [/\bups\b/, /dc battery/, /battery charger/], dwg: [/\bups\b/, /smps/, /charger/] },
   breaker: { po: [/circuit breaker/, /isolator/, /switchgear/], dwg: [/breaker/, /isolator/] },
   scada_ems: { po: [/scada/, /\bems\b/, /\bsas\b/, /relay/], dwg: [/ems\/scada/, /scada/, /agc/] },
