@@ -15,6 +15,8 @@ export type StationDrawing = {
   category: string;
   drg_ref: string;
   drg_desc: string;
+  /** Equipment (BOI) item this drawing belongs to, from the MDL "BOI Name" column. */
+  boi_name: string | null;
   cat: string | null;
   sch_date: string | null;
   sch_apprvl_date: string | null;
