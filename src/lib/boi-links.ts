@@ -76,11 +76,11 @@ const CONCEPTS: Record<string, ConceptDef> = {
   // PCS but NOT a PCS/inverter transformer (negative lookahead excludes "… transformer")
   pcs: { po: [/(pcs|inverter)(?!.*transformer)/], dwg: [/pcs\/inverter/, /pcs container/, /inverter/] },
   pcs_transformer: {
-    po: [/inverter duty transformer/, /pcs ?\(inverter\) ?transformer/, /\bidt\b/, /inverter transformer/, /pcs.*transformer/],
+    po: [/inverter duty transformer/, /pcs ?\(inverter\) ?transformer/, /\bidt\b/, /inverter transformer/, /pcs.*transformer/, /transformers? ?\(pcs/, /pcs duty/],
     dwg: [/pcs\/idt transformer/, /inverter.*transformer/, /\bidt\b/],
   },
   power_transformer: { po: [/power transformer/], dwg: [/tie\/power transformer/, /power transformer/] },
-  aux_transformer: { po: [/auxiliary transformer/, /aux\.? transformer/], dwg: [/aux trafo/, /auxiliary/] },
+  aux_transformer: { po: [/auxiliary transformer/, /aux\.? transformer/, /pcs duty and auxiliary/, /duty and auxiliary/], dwg: [/aux trafo/, /auxiliary/] },
   ups: { po: [/\bups\b/, /dc battery/, /battery charger/], dwg: [/\bups\b/, /smps/, /charger/] },
   breaker: { po: [/circuit breaker/, /isolator/, /switchgear/], dwg: [/breaker/, /isolator/] },
   scada_ems: { po: [/scada/, /\bems\b/, /\bsas\b/, /relay/], dwg: [/ems\/scada/, /scada/, /agc/] },
@@ -103,11 +103,30 @@ function isBoiEngg(d: StationDrawing): boolean {
 }
 
 /**
- * An L2 procurement/ordering activity. Real data names these
- * "Ordering of …" / "Ordering-…" (not "PO for …"), so match both styles.
+ * Collect the WBS codes of "Ordering" sections (e.g. "Ordering of BOIs").
+ * Leaf tasks nested under such a section are procurement tasks even when their
+ * own name is just the bare BOI name (e.g. "Power Transformer", "Switchgear",
+ * "BESS") — as happens for Kudgi-style schedules.
  */
-function isPoTask(t: L2Task): boolean {
-  return !t.is_section && /\bordering\b|^ordering|po for|(^|\b)po\b/i.test(t.name);
+function orderingSectionCodes(tasks: L2Task[]): Set<string> {
+  const set = new Set<string>();
+  for (const t of tasks) {
+    if (t.is_section && t.wbs_code && /ordering/i.test(t.name)) set.add(t.wbs_code);
+  }
+  return set;
+}
+
+/**
+ * An L2 procurement/ordering activity. Real data names these
+ * "Ordering of …" / "Ordering-…" (not "PO for …"); some stations instead nest
+ * bare BOI names directly under an "Ordering of BOIs" section, so a leaf whose
+ * parent is an ordering section also counts.
+ */
+function isPoTask(t: L2Task, orderingSecs: Set<string>): boolean {
+  if (t.is_section) return false;
+  if (/\bordering\b|^ordering|po for|(^|\b)po\b/i.test(t.name)) return true;
+  if (t.parent_wbs && orderingSecs.has(t.parent_wbs)) return true;
+  return false;
 }
 
 function matchPoTask(def: ConceptDef, poTasks: L2Task[]): L2Task | null {
@@ -118,10 +137,19 @@ function matchPoTask(def: ConceptDef, poTasks: L2Task[]): L2Task | null {
   return null;
 }
 
-function matchDrawings(def: ConceptDef, boiDwgs: StationDrawing[]): LinkedDrawing[] {
+function toLinked(d: StationDrawing): LinkedDrawing {
+  return { id: d.id, drg_ref: d.drg_ref, drg_desc: d.drg_desc };
+}
+
+function matchDrawings(concept: string, def: ConceptDef, boiDwgs: StationDrawing[]): LinkedDrawing[] {
+  // 1) Authoritative: drawings whose explicit MDL "BOI Name" classifies to the
+  //    same BESS concept as this BOI item (most accurate when present).
+  const byName = boiDwgs.filter((d) => d.boi_name && classifyBoi(d.boi_name) === concept);
+  if (byName.length) return byName.map(toLinked);
+  // 2) Fallback: keyword match on the drawing description.
   for (const re of def.dwg) {
     const hits = boiDwgs.filter((d) => re.test(d.drg_desc.toLowerCase()));
-    if (hits.length) return hits.map((d) => ({ id: d.id, drg_ref: d.drg_ref, drg_desc: d.drg_desc }));
+    if (hits.length) return hits.map(toLinked);
   }
   return [];
 }
@@ -136,7 +164,8 @@ export function buildBoiLinks(
   tasks: L2Task[],
 ): Map<string, BoiLink> {
   const boiDwgs = drawings.filter(isBoiEngg);
-  const poTasks = tasks.filter(isPoTask);
+  const orderingSecs = orderingSectionCodes(tasks);
+  const poTasks = tasks.filter((t) => isPoTask(t, orderingSecs));
   const out = new Map<string, BoiLink>();
   for (const b of bois) {
     const concept = classifyBoi(b.name);
@@ -145,7 +174,7 @@ export function buildBoiLinks(
     if (concept) {
       const def = CONCEPTS[concept];
       if (def) {
-        linkedDrawings = matchDrawings(def, boiDwgs);
+        linkedDrawings = matchDrawings(concept, def, boiDwgs);
         poTask = matchPoTask(def, poTasks);
       }
     }

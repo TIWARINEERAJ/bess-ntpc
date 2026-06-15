@@ -15,6 +15,8 @@ export type StationDrawing = {
   category: string;
   drg_ref: string;
   drg_desc: string;
+  /** Equipment (BOI) item this drawing belongs to, from the MDL "BOI Name" column. */
+  boi_name: string | null;
   cat: string | null;
   sch_date: string | null;
   sch_apprvl_date: string | null;
@@ -132,6 +134,66 @@ export function isUpcoming(r: StationDrawing, months = 2, today = startOfToday()
   const horizon = new Date(today);
   horizon.setMonth(horizon.getMonth() + months);
   return d <= horizon;
+}
+
+/* ================================================================== */
+/* Station-wise MDL approval summary (matches the MDL Station Summary)  */
+/* ================================================================== */
+
+/**
+ * Per-station MDL approval-category breakdown — the same conclusion view as the
+ * consolidated MDL "Station Summary" sheet. Every figure is derived from the
+ * drawing rows (single source of truth) using these definitions:
+ *  - submitted        : has a submission date
+ *  - catI/II/REL/III  : count by approval category
+ *  - approvedCat12     : CAT-I + CAT-II
+ *  - approvedCat12Rel  : CAT-I + CAT-II + CAT-REL (the app's "approved")
+ *  - categorized       : CAT-I + II + III + REL (all reviewed)
+ *  - approvalPending   : submitted but not yet categorised (= submitted − categorized)
+ *  - balanceSubmission : not yet categorised at all (= total − categorized)
+ */
+export type DrawingCatSummary = {
+  total: number;
+  submitted: number;
+  catI: number;
+  catII: number;
+  catREL: number;
+  catIII: number;
+  approvedCat12: number;
+  approvedCat12Rel: number;
+  categorized: number;
+  approvalPending: number;
+  balanceSubmission: number;
+};
+
+export function drawingCatSummary(rows: StationDrawing[]): DrawingCatSummary {
+  const total = rows.length;
+  const submitted = rows.filter(isSubmitted).length;
+  let catI = 0, catII = 0, catREL = 0, catIII = 0;
+  for (const r of rows) {
+    switch (catCode(r.cat)) {
+      case "I": catI++; break;
+      case "II": catII++; break;
+      case "REL": catREL++; break;
+      case "III": catIII++; break;
+    }
+  }
+  const approvedCat12 = catI + catII;
+  const approvedCat12Rel = catI + catII + catREL;
+  const categorized = catI + catII + catREL + catIII;
+  return {
+    total,
+    submitted,
+    catI,
+    catII,
+    catREL,
+    catIII,
+    approvedCat12,
+    approvedCat12Rel,
+    categorized,
+    approvalPending: Math.max(0, submitted - categorized),
+    balanceSubmission: Math.max(0, total - categorized),
+  };
 }
 
 /**

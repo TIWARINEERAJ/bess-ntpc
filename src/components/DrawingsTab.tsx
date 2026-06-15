@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FileStack, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { drawingCounts, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, drawingCatSummary, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
 import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 import { DatePicker } from "@/components/DatePicker";
 import type { BoiLite } from "@/lib/boi-links";
@@ -48,6 +48,7 @@ export function DrawingsTab({
   // Total MDL is the count of rows in this station's Master Drawing List —
   // the single source of truth. There is no separate planned total.
   const counts = useMemo(() => drawingCounts(rows), [rows]);
+  const catSum = useMemo(() => drawingCatSummary(rows), [rows]);
   const categories = useMemo(() => uniqueCategories(rows), [rows]);
   const catClasses = useMemo(
     () => Array.from(new Set(rows.map((r) => r.cat).filter(Boolean))).sort() as string[],
@@ -128,6 +129,34 @@ export function DrawingsTab({
         <SummaryCard label="Apprvl Overdue" value={counts.overdue} tone="red" />
         <SummaryCard label="Due in 2 mo" value={counts.upcoming} tone="violet" />
       </div>
+
+      {/* MDL approval-category conclusion (mirrors the consolidated MDL Station Summary) */}
+      <Card className="p-3">
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          MDL Approval Summary — Conclusion
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-5 lg:grid-cols-9">
+          {[
+            { l: "Total MDL", v: catSum.total },
+            { l: "Submitted", v: catSum.submitted, c: "var(--status-blue)" },
+            { l: "Appr. (I+II)", v: catSum.approvedCat12 },
+            { l: "Appr. (I+II+REL)", v: catSum.approvedCat12Rel, c: "var(--status-green)" },
+            { l: "CAT-I", v: catSum.catI },
+            { l: "CAT-II", v: catSum.catII },
+            { l: "CATREL", v: catSum.catREL },
+            { l: "CAT-III", v: catSum.catIII, c: "var(--status-red)" },
+            { l: "Apprvl Pending", v: catSum.approvalPending, c: "var(--status-amber)" },
+          ].map((x) => (
+            <div key={x.l} className="rounded-md border border-border/60 bg-secondary/20 px-2 py-1.5">
+              <div className="font-mono text-base font-semibold" style={x.c ? { color: x.c } : undefined}>{x.v}</div>
+              <div className="text-[10px] leading-tight text-muted-foreground">{x.l}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 text-[11px] text-muted-foreground">
+          Balance submission pending: <span className="font-mono font-semibold text-foreground">{catSum.balanceSubmission}</span> of {catSum.total} drawings not yet categorised.
+        </div>
+      </Card>
 
       <DrawingsLifecycleChart rows={rows} />
 
