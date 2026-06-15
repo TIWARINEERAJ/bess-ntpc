@@ -55,6 +55,30 @@ function DrawingsPage() {
     stations.map((s) => ({ s, c: drawingCounts(byStation.get(s.id) ?? []) })),
     [stations, byStation]);
 
+  // Station-wise MDL approval-category summary (the "conclusion" view).
+  const catSummaries = useMemo(() =>
+    stations
+      .map((s) => ({ s, sum: drawingCatSummary(byStation.get(s.id) ?? []) }))
+      .filter((x) => x.sum.total > 0),
+    [stations, byStation]);
+
+  const catTotals = useMemo(() => catSummaries.reduce((a, x) => ({
+    total: a.total + x.sum.total,
+    submitted: a.submitted + x.sum.submitted,
+    approvedCat12: a.approvedCat12 + x.sum.approvedCat12,
+    approvedCat12Rel: a.approvedCat12Rel + x.sum.approvedCat12Rel,
+    catI: a.catI + x.sum.catI,
+    catII: a.catII + x.sum.catII,
+    catREL: a.catREL + x.sum.catREL,
+    catIII: a.catIII + x.sum.catIII,
+    categorized: a.categorized + x.sum.categorized,
+    approvalPending: a.approvalPending + x.sum.approvalPending,
+    balanceSubmission: a.balanceSubmission + x.sum.balanceSubmission,
+  }), { total: 0, submitted: 0, approvedCat12: 0, approvedCat12Rel: 0, catI: 0, catII: 0, catREL: 0, catIII: 0, categorized: 0, approvalPending: 0, balanceSubmission: 0 }),
+    [catSummaries]);
+
+
+
 
   const portfolio = useMemo(() => {
     const total = stationCounts.reduce((a, x) => a + x.c.total, 0);
