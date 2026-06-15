@@ -103,11 +103,30 @@ function isBoiEngg(d: StationDrawing): boolean {
 }
 
 /**
- * An L2 procurement/ordering activity. Real data names these
- * "Ordering of …" / "Ordering-…" (not "PO for …"), so match both styles.
+ * Collect the WBS codes of "Ordering" sections (e.g. "Ordering of BOIs").
+ * Leaf tasks nested under such a section are procurement tasks even when their
+ * own name is just the bare BOI name (e.g. "Power Transformer", "Switchgear",
+ * "BESS") — as happens for Kudgi-style schedules.
  */
-function isPoTask(t: L2Task): boolean {
-  return !t.is_section && /\bordering\b|^ordering|po for|(^|\b)po\b/i.test(t.name);
+function orderingSectionCodes(tasks: L2Task[]): Set<string> {
+  const set = new Set<string>();
+  for (const t of tasks) {
+    if (t.is_section && t.wbs_code && /ordering/i.test(t.name)) set.add(t.wbs_code);
+  }
+  return set;
+}
+
+/**
+ * An L2 procurement/ordering activity. Real data names these
+ * "Ordering of …" / "Ordering-…" (not "PO for …"); some stations instead nest
+ * bare BOI names directly under an "Ordering of BOIs" section, so a leaf whose
+ * parent is an ordering section also counts.
+ */
+function isPoTask(t: L2Task, orderingSecs: Set<string>): boolean {
+  if (t.is_section) return false;
+  if (/\bordering\b|^ordering|po for|(^|\b)po\b/i.test(t.name)) return true;
+  if (t.parent_wbs && orderingSecs.has(t.parent_wbs)) return true;
+  return false;
 }
 
 function matchPoTask(def: ConceptDef, poTasks: L2Task[]): L2Task | null {
