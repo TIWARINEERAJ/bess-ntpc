@@ -174,7 +174,7 @@ export function buildBoiLinks(
     if (concept) {
       const def = CONCEPTS[concept];
       if (def) {
-        linkedDrawings = matchDrawings(def, boiDwgs);
+        linkedDrawings = matchDrawings(concept, def, boiDwgs);
         poTask = matchPoTask(def, poTasks);
       }
     }
