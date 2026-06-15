@@ -48,6 +48,7 @@ export function DrawingsTab({
   // Total MDL is the count of rows in this station's Master Drawing List —
   // the single source of truth. There is no separate planned total.
   const counts = useMemo(() => drawingCounts(rows), [rows]);
+  const catSum = useMemo(() => drawingCatSummary(rows), [rows]);
   const categories = useMemo(() => uniqueCategories(rows), [rows]);
   const catClasses = useMemo(
     () => Array.from(new Set(rows.map((r) => r.cat).filter(Boolean))).sort() as string[],
