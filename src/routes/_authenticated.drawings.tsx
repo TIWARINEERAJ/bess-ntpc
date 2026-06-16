@@ -263,11 +263,20 @@ function DrawingsPage() {
             </Card>
           </TabsContent>
 
-          {categories.map((cat) => (
-            <TabsContent key={cat} value={cat}>
-              <CategoryTable cat={cat} drawings={drawings.filter((d) => d.category === cat)} stations={stations} />
-            </TabsContent>
-          ))}
+          {categories.map((cat) => {
+            const catRows = drawings.filter((d) => d.category === cat);
+            return (
+              <TabsContent key={cat} value={cat} className="space-y-4">
+                <DrawingsLifecycleChart
+                  rows={catRows}
+                  title={`${cat} — Month-wise Flow`}
+                  subtitle={`${cat} drawings across all stations — scheduled vs actual submissions, approvals, re-submissions and cumulative slippage`}
+                  height={420}
+                />
+                <CategoryTable cat={cat} drawings={catRows} stations={stations} />
+              </TabsContent>
+            );
+          })}
         </Tabs>
       )}
     </div>
