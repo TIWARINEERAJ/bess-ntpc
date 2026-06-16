@@ -414,6 +414,8 @@ function StationPage() {
             canEdit={canEdit}
             boiByDrawing={drawingBoiMap}
             focusId={tab === "mdl" ? focus : null}
+            view={tab === "mdl" ? dview : undefined}
+            onClearView={() => navigate({ to: "/stations/$stationId", params: { stationId }, search: (prev: StationSearch) => ({ ...prev, dview: undefined }) })}
             onFocusBoi={(id) => focusOn("boi", id)}
           />
         </TabsContent>
