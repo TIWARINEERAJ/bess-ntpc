@@ -129,41 +129,7 @@ function DrawingsPage() {
       </section>
 
       {!loading && submissionExceptions.length > 0 && (
-        <Card className="p-0">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <FileWarning className="h-4 w-4 text-[color:var(--status-red)]" />
-              Drawings Exceptions — Submission Overdue
-            </div>
-            <Badge variant="outline" className="text-[10px]" style={{ color: "var(--status-red)", borderColor: "var(--status-red)" }}>
-              {submissionExceptions.length} drawings
-            </Badge>
-          </div>
-          <div className="max-h-[360px] overflow-auto">
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-sidebar/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
-                <tr>
-                  {["Station", "Drg Ref", "Drawing Description", "Category", "Sch. Submission", "Days Overdue"].map((h, i) =>
-                    <th key={h} className={`whitespace-nowrap border-b border-border px-3 py-2 font-semibold ${i === 5 ? "text-right" : "text-left"}`}>{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {submissionExceptions.slice(0, 200).map((d) => (
-                  <tr key={d.id} className="border-b border-border/40 align-top hover:bg-secondary/30">
-                    <td className="px-3 py-2">
-                      <Link to="/stations/$stationId" params={{ stationId: d.station_id }} className="font-medium hover:text-primary">{d.station}</Link>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px] text-muted-foreground">{d.drg_ref || "—"}</td>
-                    <td className="max-w-[26rem] whitespace-normal break-words px-3 py-2 leading-snug">{d.drg_desc || "—"}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{d.category}</td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.sch_date}</td>
-                    <td className="px-3 py-2 text-right font-mono font-semibold text-[color:var(--status-red)]">{d.daysOverdue}d</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <SubmissionExceptionsTable rows={submissionExceptions} />
       )}
 
       {loading ? (
