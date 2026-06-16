@@ -68,7 +68,7 @@ function boiChip(
 
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
-  const { tab, focus } = Route.useSearch();
+  const { tab, focus, dview } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { canEditStation } = useAuth();
@@ -78,13 +78,13 @@ function StationPage() {
     navigate({
       to: "/stations/$stationId",
       params: { stationId },
-      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined }),
+      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined, dview: undefined }),
     });
   const focusOn = (t: string, id?: string) =>
     navigate({
       to: "/stations/$stationId",
       params: { stationId },
-      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id }),
+      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id, dview: undefined }),
     });
 
   const [openTask, setOpenTask] = useState<L2Task | null>(null);
