@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FileStack, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { drawingCounts, drawingCatSummary, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, type StationDrawing } from "@/lib/drawings";
+import { drawingCounts, drawingCatSummary, uniqueCategories, isApproved, isSubmitted, isOverdue, isUpcoming, isSubmissionOverdue, catCode, type StationDrawing } from "@/lib/drawings";
 import { DrawingsLifecycleChart } from "@/components/DrawingsLifecycleChart";
 import { DatePicker } from "@/components/DatePicker";
 import type { BoiLite } from "@/lib/boi-links";
