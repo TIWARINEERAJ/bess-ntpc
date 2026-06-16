@@ -36,14 +36,15 @@ import type { StationDrawing } from "@/lib/drawings";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
 
-type StationSearch = { tab: string; focus?: string };
+type StationSearch = { tab: string; focus?: string; dview?: string };
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
   validateSearch: (search: Record<string, unknown>): StationSearch => {
     const tab = typeof search.tab === "string" && STATION_TABS.includes(search.tab) ? search.tab : "overview";
     const focus = typeof search.focus === "string" && search.focus ? search.focus : undefined;
-    return { tab, focus };
+    const dview = typeof search.dview === "string" && search.dview ? search.dview : undefined;
+    return { tab, focus, dview };
   },
   component: StationPage,
 });
