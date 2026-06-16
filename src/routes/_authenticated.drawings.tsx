@@ -262,17 +262,17 @@ function DrawingsPage() {
                         <td className="px-3 py-2">
                           <Link to="/stations/$stationId" params={{ stationId: s.id }} className="font-medium hover:text-primary">{s.name}</Link>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.total}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{sum.submitted}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.approvedCat12}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{sum.approvedCat12Rel}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.catI}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.catII}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.catREL}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{sum.catIII}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.categorized}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{sum.approvalPending}</td>
-                        <td className="px-3 py-2 text-right font-mono">{sum.balanceSubmission}</td>
+                        <SumCell stationId={s.id} view="total" value={sum.total} />
+                        <SumCell stationId={s.id} view="submitted" value={sum.submitted} color="var(--status-blue)" />
+                        <SumCell stationId={s.id} view="appr12" value={sum.approvedCat12} />
+                        <SumCell stationId={s.id} view="appr12rel" value={sum.approvedCat12Rel} color="var(--status-green)" />
+                        <SumCell stationId={s.id} view="catI" value={sum.catI} />
+                        <SumCell stationId={s.id} view="catII" value={sum.catII} />
+                        <SumCell stationId={s.id} view="catREL" value={sum.catREL} />
+                        <SumCell stationId={s.id} view="catIII" value={sum.catIII} color="var(--status-red)" />
+                        <SumCell stationId={s.id} view="categorized" value={sum.categorized} />
+                        <SumCell stationId={s.id} view="pending" value={sum.approvalPending} color="var(--status-amber)" />
+                        <SumCell stationId={s.id} view="balance" value={sum.balanceSubmission} />
                       </tr>
                     ))}
                   </tbody>
