@@ -189,7 +189,7 @@ export function DrawingsTab({
               key={x.l}
               to="/stations/$stationId"
               params={{ stationId }}
-              search={(prev) => ({ ...prev, tab: "mdl", focus: undefined, dview: x.view })}
+              search={(prev: Record<string, unknown>) => ({ ...prev, tab: "mdl", focus: undefined, dview: x.view })}
               className={`rounded-md border bg-secondary/20 px-2 py-1.5 transition-colors hover:bg-secondary/50 ${view === x.view ? "border-primary ring-1 ring-primary/50" : "border-border/60"}`}
               title={`Show ${x.l} drawings`}
             >
@@ -203,7 +203,7 @@ export function DrawingsTab({
           <Link
             to="/stations/$stationId"
             params={{ stationId }}
-            search={(prev) => ({ ...prev, tab: "mdl", focus: undefined, dview: "balance" })}
+            search={(prev: Record<string, unknown>) => ({ ...prev, tab: "mdl", focus: undefined, dview: "balance" })}
             className="font-mono font-semibold text-foreground underline-offset-2 hover:underline"
           >
             {catSum.balanceSubmission}
