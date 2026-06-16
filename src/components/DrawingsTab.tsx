@@ -95,9 +95,12 @@ export function DrawingsTab({
     }
   };
 
+  const viewPred = view ? MDL_VIEWS[view]?.pred : undefined;
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
+      if (viewPred && !viewPred(r)) return false;
       if (filter !== "all" && r.category !== filter) return false;
       if (catFilter !== "all") {
         if (catFilter === "_none" ? !!r.cat : r.cat !== catFilter) return false;
@@ -107,7 +110,7 @@ export function DrawingsTab({
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, filter, catFilter, statusFilter, search]);
+  }, [rows, filter, catFilter, statusFilter, search, view]);
 
   const save = useMutation({
     mutationFn: async (row: Partial<StationDrawing> & { id: string }) => {
