@@ -159,33 +159,61 @@ export function DrawingsTab({
 
       {/* MDL approval-category conclusion (mirrors the consolidated MDL Station Summary) */}
       <Card className="p-3">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          MDL Approval Summary — Conclusion
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            MDL Approval Summary — Conclusion
+          </div>
+          {view && MDL_VIEWS[view] && (
+            <button
+              type="button"
+              onClick={() => onClearView?.()}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20"
+            >
+              Filtered: {MDL_VIEWS[view].label} · clear ✕
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-5 lg:grid-cols-9">
           {[
-            { l: "Total MDL", v: catSum.total },
-            { l: "Submitted", v: catSum.submitted, c: "var(--status-blue)" },
-            { l: "Appr. (I+II)", v: catSum.approvedCat12 },
-            { l: "Appr. (I+II+REL)", v: catSum.approvedCat12Rel, c: "var(--status-green)" },
-            { l: "CAT-I", v: catSum.catI },
-            { l: "CAT-II", v: catSum.catII },
-            { l: "CATREL", v: catSum.catREL },
-            { l: "CAT-III", v: catSum.catIII, c: "var(--status-red)" },
-            { l: "Apprvl Pending", v: catSum.approvalPending, c: "var(--status-amber)" },
+            { l: "Total MDL", v: catSum.total, view: "total" },
+            { l: "Submitted", v: catSum.submitted, c: "var(--status-blue)", view: "submitted" },
+            { l: "Appr. (I+II)", v: catSum.approvedCat12, view: "appr12" },
+            { l: "Appr. (I+II+REL)", v: catSum.approvedCat12Rel, c: "var(--status-green)", view: "appr12rel" },
+            { l: "CAT-I", v: catSum.catI, view: "catI" },
+            { l: "CAT-II", v: catSum.catII, view: "catII" },
+            { l: "CATREL", v: catSum.catREL, view: "catREL" },
+            { l: "CAT-III", v: catSum.catIII, c: "var(--status-red)", view: "catIII" },
+            { l: "Apprvl Pending", v: catSum.approvalPending, c: "var(--status-amber)", view: "pending" },
           ].map((x) => (
-            <div key={x.l} className="rounded-md border border-border/60 bg-secondary/20 px-2 py-1.5">
+            <Link
+              key={x.l}
+              to="/stations/$stationId"
+              params={{ stationId }}
+              search={(prev) => ({ ...prev, tab: "mdl", focus: undefined, dview: x.view })}
+              className={`rounded-md border bg-secondary/20 px-2 py-1.5 transition-colors hover:bg-secondary/50 ${view === x.view ? "border-primary ring-1 ring-primary/50" : "border-border/60"}`}
+              title={`Show ${x.l} drawings`}
+            >
               <div className="font-mono text-base font-semibold" style={x.c ? { color: x.c } : undefined}>{x.v}</div>
               <div className="text-[10px] leading-tight text-muted-foreground">{x.l}</div>
-            </div>
+            </Link>
           ))}
         </div>
         <div className="mt-2 text-[11px] text-muted-foreground">
-          Balance submission pending: <span className="font-mono font-semibold text-foreground">{catSum.balanceSubmission}</span> of {catSum.total} drawings not yet categorised.
+          Balance submission pending:{" "}
+          <Link
+            to="/stations/$stationId"
+            params={{ stationId }}
+            search={(prev) => ({ ...prev, tab: "mdl", focus: undefined, dview: "balance" })}
+            className="font-mono font-semibold text-foreground underline-offset-2 hover:underline"
+          >
+            {catSum.balanceSubmission}
+          </Link>{" "}
+          of {catSum.total} drawings not yet categorised.
         </div>
       </Card>
 
-      <DrawingsLifecycleChart rows={rows} />
+      <DrawingsLifecycleChart rows={view && viewPred ? rows.filter(viewPred) : rows} />
+
 
 
 
