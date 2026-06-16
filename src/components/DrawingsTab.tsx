@@ -15,17 +15,40 @@ import { DatePicker } from "@/components/DatePicker";
 import type { BoiLite } from "@/lib/boi-links";
 
 
+/**
+ * Summary "view" predicates — these map 1:1 to the Station-wise MDL Summary
+ * (Approval Category Conclusion) columns so that clicking a digit there lands
+ * here and filters the register to exactly the rows behind that number.
+ */
+export const MDL_VIEWS: Record<string, { label: string; pred: (r: StationDrawing) => boolean }> = {
+  total: { label: "Total MDL", pred: () => true },
+  submitted: { label: "Submitted", pred: (r) => isSubmitted(r) },
+  appr12: { label: "Approved (CAT I+II)", pred: (r) => catCode(r.cat) === "I" || catCode(r.cat) === "II" },
+  appr12rel: { label: "Approved (CAT I+II+REL)", pred: (r) => ["I", "II", "REL"].includes(catCode(r.cat) ?? "") },
+  catI: { label: "CAT-I", pred: (r) => catCode(r.cat) === "I" },
+  catII: { label: "CAT-II", pred: (r) => catCode(r.cat) === "II" },
+  catREL: { label: "CAT-REL", pred: (r) => catCode(r.cat) === "REL" },
+  catIII: { label: "CAT-III", pred: (r) => catCode(r.cat) === "III" },
+  categorized: { label: "Categorised (I+II+III+REL)", pred: (r) => ["I", "II", "REL", "III"].includes(catCode(r.cat) ?? "") },
+  pending: { label: "Approval Pending", pred: (r) => isSubmitted(r) && catCode(r.cat) === null },
+  balance: { label: "Balance Submission", pred: (r) => catCode(r.cat) === null },
+};
+
 export function DrawingsTab({
   stationId,
   canEdit,
   boiByDrawing,
   focusId,
+  view,
+  onClearView,
   onFocusBoi,
 }: {
   stationId: string;
   canEdit: boolean;
   boiByDrawing?: Map<string, BoiLite[]>;
   focusId?: string | null;
+  view?: string;
+  onClearView?: () => void;
   onFocusBoi?: (boiId: string) => void;
 }) {
   const qc = useQueryClient();
