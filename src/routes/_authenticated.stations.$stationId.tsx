@@ -36,14 +36,15 @@ import type { StationDrawing } from "@/lib/drawings";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
 
-type StationSearch = { tab: string; focus?: string };
+type StationSearch = { tab: string; focus?: string; dview?: string };
 
 export const Route = createFileRoute("/_authenticated/stations/$stationId")({
   head: () => ({ meta: [{ title: "Station L2 Gantt — NTPC BESS" }] }),
   validateSearch: (search: Record<string, unknown>): StationSearch => {
     const tab = typeof search.tab === "string" && STATION_TABS.includes(search.tab) ? search.tab : "overview";
     const focus = typeof search.focus === "string" && search.focus ? search.focus : undefined;
-    return { tab, focus };
+    const dview = typeof search.dview === "string" && search.dview ? search.dview : undefined;
+    return { tab, focus, dview };
   },
   component: StationPage,
 });
@@ -67,7 +68,7 @@ function boiChip(
 
 function StationPage() {
   const { stationId } = useParams({ from: "/_authenticated/stations/$stationId" });
-  const { tab, focus } = Route.useSearch();
+  const { tab, focus, dview } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { canEditStation } = useAuth();
@@ -77,13 +78,13 @@ function StationPage() {
     navigate({
       to: "/stations/$stationId",
       params: { stationId },
-      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined }),
+      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: undefined, dview: undefined }),
     });
   const focusOn = (t: string, id?: string) =>
     navigate({
       to: "/stations/$stationId",
       params: { stationId },
-      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id }),
+      search: (prev: StationSearch) => ({ ...prev, tab: t, focus: id, dview: undefined }),
     });
 
   const [openTask, setOpenTask] = useState<L2Task | null>(null);
@@ -413,6 +414,8 @@ function StationPage() {
             canEdit={canEdit}
             boiByDrawing={drawingBoiMap}
             focusId={tab === "mdl" ? focus : null}
+            view={tab === "mdl" ? dview : undefined}
+            onClearView={() => navigate({ to: "/stations/$stationId", params: { stationId }, search: (prev: StationSearch) => ({ ...prev, dview: undefined }) })}
             onFocusBoi={(id) => focusOn("boi", id)}
           />
         </TabsContent>
