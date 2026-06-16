@@ -359,3 +359,127 @@ function Kpi({ icon, label, value, sub, tone }: { icon: React.ReactNode; label: 
     </Card>
   );
 }
+
+/** A numeric MDL-summary cell that deep-links to the station's MDL tab pre-filtered to the matching subset. */
+function SumCell({ stationId, view, value, color }: { stationId: string; view: string; value: number; color?: string }) {
+  return (
+    <td className="px-3 py-2 text-right font-mono">
+      <Link
+        to="/stations/$stationId"
+        params={{ stationId }}
+        search={{ tab: "mdl", dview: view }}
+        className="rounded px-1 hover:bg-secondary/60 hover:underline"
+        style={color ? { color } : undefined}
+        title="Open these drawings"
+      >
+        {value}
+      </Link>
+    </td>
+  );
+}
+
+type ExceptionRow = StationDrawing & { station: string; daysOverdue: number };
+
+/** Drawings Exceptions (Submission Overdue) with per-column filtering and sorting. */
+function SubmissionExceptionsTable({ rows }: { rows: ExceptionRow[] }) {
+  const [f, setF] = useState({ station: "", drg_ref: "", drg_desc: "", category: "", sch_date: "" });
+  const [sort, setSort] = useState<{ key: keyof ExceptionRow; dir: "asc" | "desc" }>({ key: "daysOverdue", dir: "desc" });
+
+  const categories = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.category))).sort((a, b) => a.localeCompare(b)),
+    [rows],
+  );
+
+  const filtered = useMemo(() => {
+    const has = (v: string | null | undefined, q: string) => !q || (v ?? "").toLowerCase().includes(q.toLowerCase());
+    const out = rows.filter((r) =>
+      has(r.station, f.station) &&
+      has(r.drg_ref, f.drg_ref) &&
+      has(r.drg_desc, f.drg_desc) &&
+      (!f.category || r.category === f.category) &&
+      has(r.sch_date, f.sch_date),
+    );
+    out.sort((a, b) => {
+      const av = a[sort.key];
+      const bv = b[sort.key];
+      let cmp: number;
+      if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
+      else cmp = String(av ?? "").localeCompare(String(bv ?? ""));
+      return sort.dir === "asc" ? cmp : -cmp;
+    });
+    return out;
+  }, [rows, f, sort]);
+
+  const cols: { key: keyof ExceptionRow; label: string; align?: "right" }[] = [
+    { key: "station", label: "Station" },
+    { key: "drg_ref", label: "Drg Ref" },
+    { key: "drg_desc", label: "Drawing Description" },
+    { key: "category", label: "Category" },
+    { key: "sch_date", label: "Sch. Submission" },
+    { key: "daysOverdue", label: "Days Overdue", align: "right" },
+  ];
+
+  const toggleSort = (key: keyof ExceptionRow) =>
+    setSort((p) => (p.key === key ? { key, dir: p.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+
+  const inputCls = "h-7 w-full rounded border border-border bg-transparent px-1.5 text-[11px] outline-none focus:border-primary";
+
+  return (
+    <Card className="p-0">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <FileWarning className="h-4 w-4 text-[color:var(--status-red)]" />
+          Drawings Exceptions — Submission Overdue
+        </div>
+        <Badge variant="outline" className="text-[10px]" style={{ color: "var(--status-red)", borderColor: "var(--status-red)" }}>
+          {filtered.length} of {rows.length} drawings
+        </Badge>
+      </div>
+      <div className="max-h-[420px] overflow-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 z-10 bg-sidebar/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
+            <tr>
+              {cols.map((c) => (
+                <th
+                  key={c.key as string}
+                  onClick={() => toggleSort(c.key)}
+                  className={`cursor-pointer select-none whitespace-nowrap border-b border-border px-3 py-2 font-semibold hover:text-foreground ${c.align === "right" ? "text-right" : "text-left"}`}
+                >
+                  {c.label}{sort.key === c.key ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              <th className="px-2 py-1.5"><input className={inputCls} placeholder="Filter…" value={f.station} onChange={(e) => setF((p) => ({ ...p, station: e.target.value }))} /></th>
+              <th className="px-2 py-1.5"><input className={inputCls} placeholder="Filter…" value={f.drg_ref} onChange={(e) => setF((p) => ({ ...p, drg_ref: e.target.value }))} /></th>
+              <th className="px-2 py-1.5"><input className={inputCls} placeholder="Filter…" value={f.drg_desc} onChange={(e) => setF((p) => ({ ...p, drg_desc: e.target.value }))} /></th>
+              <th className="px-2 py-1.5">
+                <select className={inputCls} value={f.category} onChange={(e) => setF((p) => ({ ...p, category: e.target.value }))}>
+                  <option value="">All</option>
+                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </th>
+              <th className="px-2 py-1.5"><input className={inputCls} placeholder="YYYY-MM…" value={f.sch_date} onChange={(e) => setF((p) => ({ ...p, sch_date: e.target.value }))} /></th>
+              <th className="px-2 py-1.5" />
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">No drawings match the filters.</td></tr>}
+            {filtered.slice(0, 300).map((d) => (
+              <tr key={d.id} className="border-b border-border/40 align-top hover:bg-secondary/30">
+                <td className="px-3 py-2">
+                  <Link to="/stations/$stationId" params={{ stationId: d.station_id }} search={{ tab: "mdl" }} className="font-medium hover:text-primary">{d.station}</Link>
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px] text-muted-foreground">{d.drg_ref || "—"}</td>
+                <td className="max-w-[26rem] whitespace-normal break-words px-3 py-2 leading-snug">{d.drg_desc || "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{d.category}</td>
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-[10px]">{d.sch_date}</td>
+                <td className="px-3 py-2 text-right font-mono font-semibold text-[color:var(--status-red)]">{d.daysOverdue}d</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
