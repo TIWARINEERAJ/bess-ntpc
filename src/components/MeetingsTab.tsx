@@ -389,8 +389,8 @@ function CadenceCard({ row, canEdit, isCurrentMonth, onPlan, onLog }: {
 // ────────────────────────────────────────────────────────────────────────────
 // Log meeting dialog (conducted minutes)
 // ────────────────────────────────────────────────────────────────────────────
-function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved }: {
-  stationId: string; initialType: MeetingType | null; open: boolean; onOpenChange: (o: boolean) => void; onSaved: () => void;
+function LogMeetingDialog({ stationId, agency, initialType, open, onOpenChange, onSaved }: {
+  stationId: string; agency: string; initialType: MeetingType | null; open: boolean; onOpenChange: (o: boolean) => void; onSaved: () => void;
 }) {
   const [type, setType] = useState<MeetingType>(initialType ?? "weekly");
   const blank = {
@@ -412,7 +412,12 @@ function LogMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved 
     setCommitments([]); setCmtItem(""); setCmtDate("");
   }
 
-  const tpl = TEMPLATES[type];
+  const rawTpl = TEMPLATES[type];
+  const tpl = {
+    attendees: applyAgency(rawTpl.attendees, agency),
+    agenda: applyAgency(rawTpl.agenda, agency),
+    action_items: applyAgency(rawTpl.action_items, agency),
+  };
   const useSample = () => setForm((f) => ({ ...f, attendees: tpl.attendees, agenda: tpl.agenda, action_items: tpl.action_items }));
   const addCommitment = () => {
     if (!cmtItem || !cmtDate) { toast.error("Pick an L2 item and a date"); return; }
