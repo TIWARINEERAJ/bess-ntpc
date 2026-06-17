@@ -42,6 +42,16 @@ const CRM_L2_ITEMS = [
   "BBU submission for the supplies",
 ] as const;
 
+/** Strip the trailing vendor-code (e.g. ", 1148481") from agency names for display. */
+function cleanAgency(agency: string | null): string {
+  if (!agency) return "Agency";
+  return agency.split(",")[0].trim() || "Agency";
+}
+/** Replace the {AGENCY} placeholder in a meeting template with the station's agency. */
+function applyAgency(text: string, agency: string): string {
+  return text.replace(/\{AGENCY\}/g, agency);
+}
+
 const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action_items: string }> = {
   weekly: {
     attendees: "NTPC EIC, PM Coordinator, Site Engineer, Agency PM, Sub-vendor reps",
