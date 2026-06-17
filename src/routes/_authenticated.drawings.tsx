@@ -76,7 +76,10 @@ function DrawingsPage() {
     balanceSubmission: a.balanceSubmission + x.sum.balanceSubmission,
   }), { total: 0, submitted: 0, approvedCat12: 0, approvedCat12Rel: 0, catI: 0, catII: 0, catREL: 0, catIII: 0, categorized: 0, approvalPending: 0, balanceSubmission: 0 }),
     [catSummaries]);
-
+  // Single merged per-station view: lifecycle counts + approval-category breakdown.
+  const mergedRows = useMemo(() =>
+    stationCounts.map((x) => ({ s: x.s, c: x.c, sum: drawingCatSummary(byStation.get(x.s.id) ?? []) })),
+    [stationCounts, byStation]);
 
 
 
@@ -167,101 +170,80 @@ function DrawingsPage() {
               </div>
             </Card>
 
+            {/* Unified Station-wise MDL register — lifecycle + approval-category, every digit deep-links */}
             <Card className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "Pending", "Overdue", "Due 2mo", "Approval Progress", ""].map((h, i) =>
-                        <th key={i} className={`border-b border-border px-3 py-2 font-semibold ${i >= 2 && i <= 7 ? "text-right" : "text-left"}`}>{h}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stationCounts.map((x, i) => (
-                      <tr key={x.s.id} className="border-b border-border/40 hover:bg-secondary/30">
-                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{i + 1}</td>
-                        <td className="px-3 py-2">
-                          <Link to="/stations/$stationId" params={{ stationId: x.s.id }} className="font-medium hover:text-primary">{x.s.name}</Link>
-                          <Badge variant="outline" className="ml-2 text-[10px]">{x.s.lot}</Badge>
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono">{x.c.total}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{x.c.submitted}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{x.c.approved}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{x.c.pending}</td>
-                        <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{x.c.overdue}</td>
-                        <td className="px-3 py-2 text-right font-mono" style={{ color: "#8b5cf6" }}>{x.c.upcoming}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <Progress value={x.c.approvedPct} className="h-1.5 w-28" />
-                            <span className="w-9 text-right font-mono text-[10px] text-muted-foreground">{x.c.approvedPct}%</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Link to="/stations/$stationId" params={{ stationId: x.s.id }} className="text-muted-foreground hover:text-primary"><ArrowRight className="h-4 w-4" /></Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-
-            {/* Station-wise MDL Summary — approval-category conclusion view */}
-            <Card className="p-0">
-              <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
-                  <FileCheck2 className="h-4 w-4 text-primary" /> Station-wise MDL Summary — Approval Category Conclusion
+                  <FileCheck2 className="h-4 w-4 text-primary" /> Station-wise MDL Summary
                 </div>
-                <Badge variant="outline" className="text-[10px]">{catTotals.total} drawings · {catSummaries.length} stations</Badge>
+                <Badge variant="outline" className="text-[10px]">{portfolio.total} drawings · {stations.length} stations · click any number to drill in</Badge>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-sidebar/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      {["Station", "Total MDL", "Submitted", "Appr. (I+II)", "Appr. (I+II+REL)", "CAT-I", "CAT-II", "CATREL", "CAT-III", "I+II+III+REL", "Apprvl Pending", "Balance Subm."].map((h, i) =>
-                        <th key={i} className={`whitespace-nowrap border-b border-border px-3 py-2 font-semibold ${i === 0 ? "text-left" : "text-right"}`}>{h}</th>)}
+                      {["Sl", "Station", "Total MDL", "Submitted", "Approved", "CAT-I", "CAT-II", "CAT-REL", "CAT-III", "Appr (I+II+REL)", "Apprvl Pending", "Balance Subm.", "Sub. Overdue", "Appr. Overdue", "Due 2mo", "Approval Progress", ""].map((h, i) =>
+                        <th key={i} className={`whitespace-nowrap border-b border-border px-3 py-2 font-semibold ${i === 0 || i === 1 ? "text-left" : i === 15 || i === 16 ? "text-center" : "text-right"}`}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {catSummaries.map(({ s, sum }) => (
+                    {mergedRows.map(({ s, c, sum }, i) => (
                       <tr key={s.id} className="border-b border-border/40 hover:bg-secondary/30">
+                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{i + 1}</td>
                         <td className="px-3 py-2">
                           <Link to="/stations/$stationId" params={{ stationId: s.id }} className="font-medium hover:text-primary">{s.name}</Link>
+                          <Badge variant="outline" className="ml-2 text-[10px]">{s.lot}</Badge>
                         </td>
-                        <SumCell stationId={s.id} view="total" value={sum.total} />
-                        <SumCell stationId={s.id} view="submitted" value={sum.submitted} color="var(--status-blue)" />
-                        <SumCell stationId={s.id} view="appr12" value={sum.approvedCat12} />
-                        <SumCell stationId={s.id} view="appr12rel" value={sum.approvedCat12Rel} color="var(--status-green)" />
+                        <SumCell stationId={s.id} view="total" value={c.total} />
+                        <SumCell stationId={s.id} view="submitted" value={c.submitted} color="var(--status-blue)" />
+                        <SumCell stationId={s.id} view="approved" value={c.approved} color="var(--status-green)" />
                         <SumCell stationId={s.id} view="catI" value={sum.catI} />
                         <SumCell stationId={s.id} view="catII" value={sum.catII} />
                         <SumCell stationId={s.id} view="catREL" value={sum.catREL} />
                         <SumCell stationId={s.id} view="catIII" value={sum.catIII} color="var(--status-red)" />
-                        <SumCell stationId={s.id} view="categorized" value={sum.categorized} />
+                        <SumCell stationId={s.id} view="appr12rel" value={sum.approvedCat12Rel} color="var(--status-green)" />
                         <SumCell stationId={s.id} view="pending" value={sum.approvalPending} color="var(--status-amber)" />
                         <SumCell stationId={s.id} view="balance" value={sum.balanceSubmission} />
+                        <SumCell stationId={s.id} view="subOverdue" value={c.submissionOverdue} color="var(--status-red)" />
+                        <SumCell stationId={s.id} view="overdue" value={c.overdue} color="var(--status-red)" />
+                        <SumCell stationId={s.id} view="due2mo" value={c.upcoming} color="#8b5cf6" />
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Progress value={c.approvedPct} className="h-1.5 w-24" />
+                            <span className="w-9 text-right font-mono text-[10px] text-muted-foreground">{c.approvedPct}%</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Link to="/stations/$stationId" params={{ stationId: s.id }} className="text-muted-foreground hover:text-primary"><ArrowRight className="mx-auto h-4 w-4" /></Link>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-border bg-sidebar/40 font-semibold">
-                      <td className="px-3 py-2">Total</td>
-                      <td className="px-3 py-2 text-right font-mono">{catTotals.total}</td>
-                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{catTotals.submitted}</td>
-                      <td className="px-3 py-2 text-right font-mono">{catTotals.approvedCat12}</td>
-                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{catTotals.approvedCat12Rel}</td>
+                      <td className="px-3 py-2" colSpan={2}>Total</td>
+                      <td className="px-3 py-2 text-right font-mono">{portfolio.total}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-blue)]">{portfolio.submitted}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{portfolio.approved}</td>
                       <td className="px-3 py-2 text-right font-mono">{catTotals.catI}</td>
                       <td className="px-3 py-2 text-right font-mono">{catTotals.catII}</td>
                       <td className="px-3 py-2 text-right font-mono">{catTotals.catREL}</td>
                       <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{catTotals.catIII}</td>
-                      <td className="px-3 py-2 text-right font-mono">{catTotals.categorized}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-green)]">{catTotals.approvedCat12Rel}</td>
                       <td className="px-3 py-2 text-right font-mono text-[color:var(--status-amber)]">{catTotals.approvalPending}</td>
                       <td className="px-3 py-2 text-right font-mono">{catTotals.balanceSubmission}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{portfolio.submissionOverdue}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[color:var(--status-red)]">{portfolio.overdue}</td>
+                      <td className="px-3 py-2 text-right font-mono" style={{ color: "#8b5cf6" }}>{portfolio.upcoming}</td>
+                      <td className="px-3 py-2" />
+                      <td className="px-3 py-2" />
                     </tr>
                   </tfoot>
                 </table>
               </div>
             </Card>
           </TabsContent>
+
 
           {categories.map((cat) => {
             const catRows = drawings.filter((d) => d.category === cat);

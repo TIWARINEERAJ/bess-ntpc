@@ -33,6 +33,10 @@ export const MDL_VIEWS: Record<string, { label: string; pred: (r: StationDrawing
   categorized: { label: "Categorised (I+II+III+REL)", pred: (r) => ["I", "II", "REL", "III"].includes(catCode(r.cat) ?? "") },
   pending: { label: "Approval Pending", pred: (r) => isSubmitted(r) && catCode(r.cat) === null },
   balance: { label: "Balance Submission", pred: (r) => catCode(r.cat) === null },
+  approved: { label: "Approved", pred: (r) => isApproved(r) },
+  overdue: { label: "Approval Overdue", pred: (r) => isOverdue(r) },
+  due2mo: { label: "Due in 2 months", pred: (r) => isUpcoming(r, 2) },
+  subOverdue: { label: "Submission Overdue", pred: (r) => isSubmissionOverdue(r) },
 };
 
 export function DrawingsTab({

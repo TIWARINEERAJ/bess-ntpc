@@ -315,6 +315,47 @@ export type Database = {
           },
         ]
       }
+      entity_remarks: {
+        Row: {
+          author_name: string | null
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          remark: string
+          station_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          remark: string
+          station_id: string
+        }
+        Update: {
+          author_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          remark?: string
+          station_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_remarks_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issues: {
         Row: {
           created_at: string

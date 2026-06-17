@@ -30,6 +30,7 @@ import { StationOverview, type StationRow } from "@/components/StationOverview";
 import { fetchStationTasks, fetchStationTaskStatuses } from "@/lib/task-data";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { DatePicker } from "@/components/DatePicker";
+import { RemarksTimeline } from "@/components/RemarksTimeline";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/boi-links";
 import type { StationDrawing } from "@/lib/drawings";
@@ -427,6 +428,7 @@ function StationPage() {
       </Tabs>
 
       <TaskDrawer
+        stationId={stationId}
         task={openTask}
         status={openTask ? statusMap.get(openTask.id) : undefined}
         revisions={openTask ? taskRevQ.data?.get(openTask.id) : undefined}
@@ -479,7 +481,8 @@ type DrawerLink = {
   chip: { label: string; c: string };
 };
 
-function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
+function TaskDrawer({ stationId, task, status, revisions, derived, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
+  stationId: string;
   task: L2Task | null;
   status: Status | undefined;
   revisions?: CommitmentRevision[];
@@ -636,9 +639,20 @@ function TaskDrawer({ task, status, revisions, derived, linkedBois, onOpenBoi, o
             <Input id="own" disabled={!canEdit || task.is_section} value={owner} onChange={e => setOwner(e.target.value)} placeholder="Responsible person / agency" />
           </div>
           <div>
-            <Label htmlFor="rem">Remarks</Label>
+            <Label htmlFor="rem">Remarks (current)</Label>
             <Textarea id="rem" disabled={!canEdit || task.is_section} value={remarks} onChange={e => setRemarks(e.target.value)} rows={3} placeholder="Delay reason / notes" />
           </div>
+          {!task.is_section && (
+            <div className="rounded-md border border-border/60 bg-card/40 p-3">
+              <RemarksTimeline
+                stationId={stationId}
+                entityType="task"
+                entityId={task.id}
+                canEdit={canEdit}
+                onAdded={(latest) => setRemarks(latest)}
+              />
+            </div>
+          )}
           {canEdit && !task.is_section ? (
             <Button className="w-full" disabled={saving} onClick={() => onSave({
               actual_start: actualStart || null, actual_finish: actualFinish || null,
@@ -720,9 +734,13 @@ function IssuesPanel({ stationId, canEdit }: { stationId: string; canEdit: boole
                 <Button size="sm" variant="outline" onClick={() => resolve.mutate(i.id)}>Resolve</Button>
               )}
             </div>
+            <div className="mt-3 border-t border-border/50 pt-3">
+              <RemarksTimeline stationId={stationId} entityType="issue" entityId={i.id} canEdit={canEdit} compact />
+            </div>
           </Card>
         ))}
       </div>
+
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full sm:max-w-md">

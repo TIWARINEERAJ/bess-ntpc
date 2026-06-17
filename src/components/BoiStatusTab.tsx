@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { History } from "lucide-react";
+import { RemarksTimeline } from "@/components/RemarksTimeline";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { differenceInCalendarDays, parseISO } from "date-fns";
@@ -405,7 +409,28 @@ function BoiRow({
           {chip.label}
         </Badge>
       </td>
-      <td className="px-1 py-1">{cell("remarks", "text", "w-40")}</td>
+      <td className="px-1 py-1">
+        <div className="flex items-center gap-1">
+          {cell("remarks", "text", "w-40")}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Remarks trail">
+                <History className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <RemarksTimeline
+                stationId={s.station_id}
+                entityType="boi"
+                entityId={b.id}
+                canEdit={canEdit}
+                compact
+                onAdded={(latest) => { const n = { ...local, remarks: latest }; setLocal(n); onSave(n); }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </td>
       <td className="px-1 py-1">
         <DocumentUploads
           kind="boi"

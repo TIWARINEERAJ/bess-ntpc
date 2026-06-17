@@ -64,9 +64,35 @@ const TEMPLATES: Record<MeetingType, { agenda: string; attendees: string; action
     action_items: "Owner — Action — Due date\nGM — Submit revised L2 if slip > 30 days — within 2 weeks\nHOP — Resolve pending vendor escalations — DD-MMM",
   },
   prt: {
-    attendees: "Project Review Team Chair, HOP, NTPC EIC, PM Coordinator, Engg Taskforce, Discipline Leads (Civil / Electrical / C&I), Agency PM, OEM reps",
-    agenda: "1. Schedule health vs L2 baseline (critical path)\n2. BOI / drawing & approval status\n3. Quality & inspection (QAP / FQP / MQP) progress\n4. Safety incidents & corrective actions\n5. Statutory & contractual compliance\n6. Open issues, risks & mitigation\n7. Decisions required from PRT",
-    action_items: "Owner — Action — Due date\nEIC — Close pending TQs with agency — DD-MMM\nAgency — Submit recovery plan for slipped milestones — DD-MMM",
+    attendees: "Project Review Team Chair, HOP, NTPC EIC, PM Coordinator, Engg Taskforce, Discipline Leads (Civil / Electrical / C&I), {AGENCY} PM, OEM reps",
+    agenda:
+      "BESS PROJECT REVIEW TEAM (PRT) MEETING — STANDARD AGENDA\n" +
+      "\nA. AGENDA POINTS\n" +
+      "1. Compliance with Project Management Tools (Hindrance Register & L2 Schedule)\n" +
+      "2. Capex Planning for FY 26-27\n" +
+      "3. Safety Performance & Exceptions — EHS Plan, EHS requirement documents, Induction (LSP) & medical tie-up with local hospital, Daily Safety Report, weekly EHS walkdown\n" +
+      "4. Subcontractor weekly safety meeting — Incident reports, Job Safety Analysis, HIRA report, Method Statement, Emergency Response Plan\n" +
+      "5. Schedule / Award status of packages to be awarded by {AGENCY}\n" +
+      "6. TOPO Survey — completed & approved\n" +
+      "7. GEOTECH Study — NTPC bid document data to be adopted\n" +
+      "8. GRID Study\n" +
+      "9. Civil and Electrical Works\n" +
+      "10. Review of Short-Term & Medium-Term targets\n" +
+      "    Short-Term: Construction power setup; Area clearance grading; Storage space; BESS layout approval; No-increase-in-pollution-load certificate; Start of fencing/drains/road\n" +
+      "    Medium-Term: Drawing approvals; Ordering of BOIs completion; Trial mix; Start of civil foundation work\n" +
+      "11. Site Readiness & Enabling Works (Table-01); Gate pass process; {AGENCY} office & manpower mobilisation; Area-wise exception review (Table-02); Hindrance & risk register\n" +
+      "12. Engineering Submission\n" +
+      "13. Monthly progress report submission by {AGENCY}\n" +
+      "\nB. SITE READINESS & ENABLING WORKS REVIEW (Table-01) — Details | Present status | Remarks ({AGENCY})\n" +
+      "1 Site mobilization, site office & preparatory works\n2 Safety Park\n3 Field Quality Lab setup\n4 Geo investigation & report submission\n5 Topography & report submission\n6 Site grading work\n7 Deputation of admin\n8 Site store development\n9 Trial mix design & approval\n10 No increase in pollution load certificate\n11 Grid / interconnection / reactive-power compensation studies & approval\n12 MDL submission\n13 Approval of BESS plant layout (preliminary)\n14 Soil testing & ERT\n15 HT & DC cable routing, earthing, lightning protection\n16 Illumination system — calculation & layout\n17 Civil — fencing drawings\n18 Civil — road & drainage work drawings\n" +
+      "\nC. AREA-WISE EXCEPTION REVIEW (Table-02) — Package/Area | Issue | Status | Remarks ({AGENCY})\n" +
+      "Engineering & Quality Exceptions:\n1 Submission of civil drawings as per schedule\n2 Submission of electrical drawings as per schedule\n3 Provenness criterion submission\n4 Sub-vendor approval\n" +
+      "Civil Progress Exceptions:\n5 Mobilization schedule of civil agency & T&P\n6 Fencing material ordering & delivery schedule\n7 Drainage material ordering & delivery schedule\n8 Road construction material ordering & delivery schedule\n" +
+      "Electrical Progress Exceptions:\n9 Electrical agency finalization\n10 Any other specific issues\n" +
+      "\nD. ORDERING STATUS OF BROUGHT-OUT ITEMS — BOI (Table-03) — Scheduled PO date as per L-2 network | Remarks from {AGENCY}\n" +
+      "(If any BOI is ordered, PO copy shall be shared with EIC.)\n" +
+      "1 Power Transformer\n2 Switchyard circuit breaker\n3 Switchyard equipment\n4 Switchgear\n5 BESS\n6 PCS\n7 Transformers (PCS duty)\n8 HT Cable\n9 LT Cables\n10 Auxiliary Transformers\n11 BESS EMS System\n12 SCADA and PPC system\n13 Earthing and Lighting system",
+    action_items: "Owner — Action — Due date\nEIC — Close pending TQs with {AGENCY} — DD-MMM\n{AGENCY} — Submit recovery plan for slipped milestones — DD-MMM",
   },
   crm: {
     attendees: "NTPC EIC, PM Coordinator, CRM (Contractor Relationship Manager), Agency PM, OEM / Vendor reps (Switchgear / BESS / PCS / Transformer / Cables / EMS / SCADA)",
