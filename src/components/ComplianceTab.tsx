@@ -10,6 +10,10 @@ import { DocumentUploads } from "@/components/DocumentUploads";
 import { CommitmentHistory } from "@/components/CommitmentHistory";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 import { DatePicker } from "@/components/DatePicker";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { History } from "lucide-react";
+import { RemarksTimeline } from "@/components/RemarksTimeline";
 
 type Master = { id: string; category: string; name: string; authority: string | null; sort_order: number };
 type Stat = { id?: string; station_id: string; compliance_id: string; application_date: string | null; approval_date: string | null; committed_date: string | null; expiry_date: string | null; status: string; document_ref: string | null; owner: string | null; remarks: string | null };
@@ -164,7 +168,28 @@ function ComplRow({ m, s, canEdit, revisions, onSave }: { m: Master; s: Stat; ca
       <td className="px-1 py-1">{inp("expiry_date", "date")}</td>
       <td className="px-1 py-1">{inp("document_ref", "text", "w-28")}</td>
       <td className="px-1 py-1">{inp("owner", "text", "w-28")}</td>
-      <td className="px-1 py-1">{inp("remarks", "text", "w-36")}</td>
+      <td className="px-1 py-1">
+        <div className="flex items-center gap-1">
+          {inp("remarks", "text", "w-36")}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Remarks trail">
+                <History className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <RemarksTimeline
+                stationId={s.station_id}
+                entityType="compliance"
+                entityId={m.id}
+                canEdit={canEdit}
+                compact
+                onAdded={(latest) => { const n = { ...local, remarks: latest }; setLocal(n); onSave(n); }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </td>
       <td className="px-1 py-1"><DocumentUploads kind="compliance" stationId={s.station_id} refId={m.id} canEdit={canEdit} compact /></td>
     </tr>
   );
