@@ -537,12 +537,14 @@ function LogMeetingDialog({ stationId, agency, initialType, open, onOpenChange, 
 // ────────────────────────────────────────────────────────────────────────────
 // Plan meeting dialog (future schedule)
 // ────────────────────────────────────────────────────────────────────────────
-function PlanMeetingDialog({ stationId, initialType, open, onOpenChange, onSaved }: {
-  stationId: string; initialType: MeetingType | null; open: boolean; onOpenChange: (o: boolean) => void; onSaved: () => void;
+function PlanMeetingDialog({ stationId, agency, initialType, open, onOpenChange, onSaved }: {
+  stationId: string; agency: string; initialType: MeetingType | null; open: boolean; onOpenChange: (o: boolean) => void; onSaved: () => void;
 }) {
   const [type, setType] = useState<MeetingType>(initialType ?? "weekly");
   const blank = { title: "", planned_date: "", planned_time: "", agenda: "" };
   const [form, setForm] = useState(blank);
+
+  const loadStandardAgenda = () => setForm((f) => ({ ...f, agenda: applyAgency(TEMPLATES[type].agenda, agency) }));
 
   const [lastKey, setLastKey] = useState("");
   const openKey = `${open}:${initialType}`;
