@@ -601,7 +601,12 @@ function PlanMeetingDialog({ stationId, agency, initialType, open, onOpenChange,
             <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={`e.g. ${TYPE_LABEL[type]} — agenda lock`} />
           </div>
           <div className="col-span-2">
-            <Label>Agenda notes (optional)</Label>
+            <div className="flex items-center justify-between">
+              <Label>Agenda notes (optional)</Label>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-[11px]" onClick={loadStandardAgenda}>
+                Load standard {TYPE_SHORT[type]} agenda
+              </Button>
+            </div>
             <Textarea rows={3} value={form.agenda} onChange={(e) => setForm({ ...form, agenda: e.target.value })} />
           </div>
         </div>
