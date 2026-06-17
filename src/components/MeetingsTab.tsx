@@ -297,6 +297,7 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
 
       <LogMeetingDialog
         stationId={stationId}
+        agency={agency}
         initialType={logFor}
         open={logFor !== null}
         onOpenChange={(o) => !o && setLogFor(null)}
@@ -304,6 +305,7 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
       />
       <PlanMeetingDialog
         stationId={stationId}
+        agency={agency}
         initialType={planFor}
         open={planFor !== null}
         onOpenChange={(o) => !o && setPlanFor(null)}
