@@ -164,14 +164,15 @@ export function MeetingsTab({ stationId, canEdit }: { stationId: string; canEdit
   const stationQ = useQuery({
     queryKey: ["station", stationId],
     queryFn: async () => {
-      const { data } = await supabase.from("stations").select("name").eq("id", stationId).single();
-      return data?.name ?? "Station";
+      const { data } = await supabase.from("stations").select("name, agency").eq("id", stationId).single();
+      return { name: data?.name ?? "Station", agency: cleanAgency(data?.agency ?? null) };
     },
   });
 
   const meetings = meetingsQ.data ?? [];
   const plans = plansQ.data ?? [];
-  const stationName = stationQ.data ?? "Station";
+  const stationName = stationQ.data?.name ?? "Station";
+  const agency = stationQ.data?.agency ?? "Agency";
 
   const cadence = useMemo(
     () => computeCadence(meetings, plans, monthRef),
