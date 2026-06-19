@@ -13,6 +13,7 @@ import {
 import { isSubmissionOverdue, type StationDrawing } from "./drawings";
 import { TYPE_SHORT } from "./meeting-types";
 import { computePortfolioAnalytics } from "./mis-analytics";
+import { computeCPM } from "./cpm";
 
 
 type Station = {
@@ -614,7 +615,89 @@ export function buildWeeklyDoc(
     },
   });
 
-  // ---- Statutory Compliance — Pending / Open items ----
+  // ---- Schedule Forecast & Critical-Path (CPM) per station ----
+  const cpmByStation = stations.map((s) => {
+    const map = buildStatusMap(statusByStation[s.id]);
+    const sTasks = tasks.filter((t) => t.station_id === s.id);
+    return { s, cpm: computeCPM(sTasks, map, today) };
+  });
+  const cpmRows = cpmByStation
+    .filter((r) => r.cpm.hasNetwork)
+    .map((r) => ({
+      station: r.s.name,
+      baseline: r.cpm.baselineFinish ? format(r.cpm.baselineFinish, "dd-MMM-yy") : "—",
+      forecast: r.cpm.forecastFinish ? format(r.cpm.forecastFinish, "dd-MMM-yy") : "—",
+      overrun: r.cpm.overrunDays,
+      critical: r.cpm.criticalCount,
+      driver: r.cpm.drivers[0] ? `${r.cpm.drivers[0].name} (+${r.cpm.drivers[0].slipDays}d)` : "On / ahead of baseline",
+    }))
+    .sort((a, b) => b.overrun - a.overrun);
+
+  // @ts-expect-error lastAutoTable injected by plugin
+  let fcY = doc.lastAutoTable.finalY + 22;
+  if (fcY > pageH - 140) { doc.addPage(); fcY = margin; }
+  sectionTitle(doc, "Schedule Forecast & Critical Path (CPM Engine)", margin, fcY, "Forward/backward-pass forecast of each station's L2 finish vs baseline, with the activity driving the slip");
+  autoTable(doc, {
+    startY: fcY + 20,
+    head: [["Station", "Baseline Finish", "Forecast Finish", "Overrun", "Critical Acts", "Top Driving Activity"]],
+    body: cpmRows.length
+      ? cpmRows.map((r) => [r.station, r.baseline, r.forecast, r.overrun > 0 ? `+${r.overrun}d` : `${r.overrun}d`, String(r.critical), r.driver])
+      : [["—", "—", "No schedule logic available.", "—", "—", "—"]],
+    styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
+    headStyles: { fillColor: BRAND, textColor: 255, fontSize: 9 },
+    alternateRowStyles: { fillColor: [246, 248, 249] },
+    columnStyles: { 3: { halign: "right" }, 4: { halign: "right" }, 5: { cellWidth: 230 } },
+    margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 3 && cpmRows.length) {
+        const o = cpmRows[data.row.index].overrun;
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.textColor = o > 14 ? HEALTH_RGB.red : o > 0 ? HEALTH_RGB.amber : HEALTH_RGB.green;
+      }
+    },
+  });
+
+  // ---- Critical-path driving activities (exception list) ----
+  const driverRows: Array<{ station: string; wbs: string; name: string; baseline: string; forecast: string; slip: number; cause: string }> = [];
+  for (const r of cpmByStation) {
+    for (const d of r.cpm.drivers.slice(0, 6)) {
+      driverRows.push({
+        station: r.s.name,
+        wbs: d.wbs,
+        name: d.name,
+        baseline: d.baselineFinish ? format(d.baselineFinish, "dd-MMM-yy") : "—",
+        forecast: d.forecastFinish ? format(d.forecastFinish, "dd-MMM-yy") : "—",
+        slip: d.slipDays,
+        cause: d.cause,
+      });
+    }
+  }
+  driverRows.sort((a, b) => b.slip - a.slip);
+
+  // @ts-expect-error lastAutoTable injected by plugin
+  let dvY = doc.lastAutoTable.finalY + 22;
+  if (dvY > pageH - 120) { doc.addPage(); dvY = margin; }
+  sectionTitle(doc, "Critical-Path Driving Activities — Responsible for Finish Slip", margin, dvY, "Activities on the longest path pushing the forecast finish beyond baseline, sorted by slip");
+  autoTable(doc, {
+    startY: dvY + 20,
+    head: [["Station", "WBS", "Driving Activity", "Baseline", "Forecast", "Slip", "Cause"]],
+    body: driverRows.length
+      ? driverRows.slice(0, 80).map((e) => [e.station, e.wbs, e.name, e.baseline, e.forecast, `+${e.slip}d`, e.cause])
+      : [["—", "—", "No critical-path slip across stations.", "—", "—", "—", "—"]],
+    styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
+    headStyles: { fillColor: HEALTH_RGB.red, textColor: 255, fontSize: 9 },
+    alternateRowStyles: { fillColor: [252, 246, 246] },
+    columnStyles: { 2: { cellWidth: 200 }, 5: { halign: "right" }, 6: { cellWidth: 180 } },
+    margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 5 && driverRows.length) {
+        data.cell.styles.textColor = HEALTH_RGB.red;
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
+  });
+
+
   const complMaster = extras.complianceMaster ?? [];
   const complStatus = extras.complianceStatus ?? [];
   const complMap = new Map(complStatus.map((c) => [`${c.station_id}::${c.compliance_id}`, c.status]));

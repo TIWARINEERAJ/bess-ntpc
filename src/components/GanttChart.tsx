@@ -11,9 +11,12 @@ type Props = {
   rowHeight?: number;
   bodyRef?: React.RefObject<HTMLDivElement | null>;
   onBodyVerticalScroll?: (scrollTop: number) => void;
+  /** When provided, activities in this set are rendered as critical (driving) path. */
+  criticalIds?: Set<string>;
+  showCritical?: boolean;
 };
 
-export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32, bodyRef: externalBodyRef, onBodyVerticalScroll }: Props) {
+export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHeight = 32, bodyRef: externalBodyRef, onBodyVerticalScroll, criticalIds, showCritical }: Props) {
   const { start: pStart, end: pEnd } = useMemo(() => projectBounds(tasks), [tasks]);
   const totalDays = Math.max(differenceInCalendarDays(pEnd, pStart), 1) + 14;
   const pxPerDay = 3.2;
@@ -95,6 +98,7 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
             const actualW = aStartD && aEndD ? Math.max(differenceInCalendarDays(aEndD, aStartD) * pxPerDay, 2) : 0;
 
             const barColor = cs.status === "completed" ? "var(--gantt-done)" : cs.status === "delayed" ? "var(--gantt-delayed)" : "var(--gantt-actual)";
+            const isCrit = !!showCritical && !!criticalIds?.has(t.id);
 
             if (isMilestone && pStartD) {
               const mx = plannedX;
@@ -102,19 +106,23 @@ export function GanttChart({ tasks, statusMap, onTaskClick, visibleTasks, rowHei
               const fill = aStartD ? "var(--gantt-done)" : "var(--gantt-planned)";
               return (
                 <g key={t.id} onClick={() => onTaskClick?.(t)} className="cursor-pointer">
-                  <polygon points={`${mx-6},${my} ${mx},${my-6} ${mx+6},${my} ${mx},${my+6}`} fill={fill} stroke="var(--primary)" />
+                  <polygon points={`${mx-6},${my} ${mx},${my-6} ${mx+6},${my} ${mx},${my+6}`} fill={fill} stroke={isCrit ? "var(--status-red)" : "var(--primary)"} strokeWidth={isCrit ? 2 : 1} />
                 </g>
               );
             }
 
             return (
               <g key={t.id} onClick={() => onTaskClick?.(t)} className="cursor-pointer">
+                {isCrit && pStartD && pEndD && (
+                  <rect x={plannedX - 1.5} y={yPlanned - 1.5} width={plannedW + 3} height={barH + 3}
+                    fill="none" stroke="var(--status-red)" strokeWidth={1.5} rx={3} opacity={0.9} />
+                )}
                 {pStartD && pEndD && (
                   <rect x={plannedX} y={yPlanned} width={plannedW} height={barH}
                     fill={t.is_section ? "var(--primary)" : "var(--gantt-planned)"} opacity={t.is_section ? 0.5 : 0.85} rx={2} />
                 )}
                 {aStartD && (
-                  <rect x={actualX} y={yActual} width={actualW} height={barH - 4} fill={barColor} rx={2}>
+                  <rect x={actualX} y={yActual} width={actualW} height={barH - 4} fill={isCrit ? "var(--status-red)" : barColor} rx={2}>
                     <title>{`Actual: ${format(aStartD, "dd-MMM")} → ${aEndD ? format(aEndD, "dd-MMM") : "ongoing"}`}</title>
                   </rect>
                 )}
