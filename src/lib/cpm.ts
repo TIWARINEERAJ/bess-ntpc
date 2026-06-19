@@ -8,8 +8,14 @@
 // path), then a data-date forward pass that injects actual progress to forecast
 // the project finish, the schedule over-run, and the *driving* activities on the
 // longest path that are responsible for the slip.
+//
+// Enterprise extensions:
+//   • Work calendars   — non-working weekdays + holidays inflate forecast durations.
+//   • Constraints      — SNET / FNET / MSO / MFO floors + SNLT / FNLT violation flags.
+//   • What-if scenarios — per-activity duration deltas and start overrides.
+//   • Driver drill-down — each activity exposes its binding (driving) predecessor.
 // ---------------------------------------------------------------------------
-import { differenceInCalendarDays, addDays, min as dMin, max as dMax } from "date-fns";
+import { differenceInCalendarDays, addDays, min as dMin, max as dMax, format } from "date-fns";
 import { parseD, type L2Task, type Status } from "./gantt-utils";
 
 export type RelType = "FS" | "SS" | "FF" | "SF";
@@ -35,6 +41,92 @@ export function parsePredecessors(raw: string | null | undefined): Relation[] {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Work calendars
+// ---------------------------------------------------------------------------
+export type WorkCalendar = {
+  enabled: boolean;
+  /** index 0=Sun .. 6=Sat; true = working day. */
+  workdays: boolean[];
+  /** ISO yyyy-MM-dd holiday dates. */
+  holidays: string[];
+};
+
+/** Standard 5-day week, disabled by default (engine runs in calendar days). */
+export const DEFAULT_CALENDAR: WorkCalendar = {
+  enabled: false,
+  workdays: [false, true, true, true, true, true, false],
+  holidays: [],
+};
+
+export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function makeHolidaySet(cal: WorkCalendar): Set<string> {
+  return new Set(cal.holidays);
+}
+
+function isWorkday(d: Date, cal: WorkCalendar, hol: Set<string>): boolean {
+  if (cal.workdays[d.getDay()] === false) return false;
+  return !hol.has(format(d, "yyyy-MM-dd"));
+}
+
+/** Calendar days required, starting at `start`, to span `workingDays` working days. */
+function calDaysForWorking(start: Date, workingDays: number, cal: WorkCalendar, hol: Set<string>): number {
+  if (workingDays <= 0) return 0;
+  let counted = 0;
+  let calDays = 0;
+  let d = new Date(start);
+  // ensure the start day itself is working before counting begins
+  while (!isWorkday(d, cal, hol)) { d = addDays(d, 1); calDays++; }
+  while (counted < workingDays) {
+    if (isWorkday(d, cal, hol)) counted++;
+    if (counted < workingDays) { calDays++; d = addDays(d, 1); }
+  }
+  return calDays;
+}
+
+function workingDaysBetween(start: Date, end: Date, cal: WorkCalendar, hol: Set<string>): number {
+  if (end <= start) return 0;
+  let n = 0;
+  let d = new Date(start);
+  while (d < end) { if (isWorkday(d, cal, hol)) n++; d = addDays(d, 1); }
+  return n;
+}
+
+// ---------------------------------------------------------------------------
+// Constraints
+// ---------------------------------------------------------------------------
+export type ConstraintType = "" | "SNET" | "SNLT" | "FNET" | "FNLT" | "MSO" | "MFO";
+export type ActivityConstraint = { type: ConstraintType; date: string | null };
+
+export const CONSTRAINT_LABELS: Record<ConstraintType, string> = {
+  "": "None",
+  SNET: "Start No Earlier Than",
+  SNLT: "Start No Later Than",
+  FNET: "Finish No Earlier Than",
+  FNLT: "Finish No Later Than",
+  MSO: "Mandatory Start On",
+  MFO: "Mandatory Finish On",
+};
+
+// ---------------------------------------------------------------------------
+// What-if scenario
+// ---------------------------------------------------------------------------
+export type WhatIf = {
+  /** taskId -> +/- duration days applied to the forecast. */
+  durDelta: Record<string, number>;
+  /** taskId -> ISO date forcing the forecast start of that activity. */
+  startSet: Record<string, string>;
+};
+
+export const EMPTY_WHATIF: WhatIf = { durDelta: {}, startSet: {} };
+
+export type CpmOptions = {
+  calendar?: WorkCalendar;
+  constraints?: Record<string, ActivityConstraint>;
+  whatIf?: WhatIf;
+};
+
 type Node = {
   id: string;
   sort: number;
@@ -42,7 +134,8 @@ type Node = {
   name: string;
   isSection: boolean;
   isMilestone: boolean;
-  dur: number; // calendar days
+  dur: number; // calendar days (forecast, after what-if)
+  wdur: number; // working days inside the (what-if adjusted) duration
   bStart: number | null; // baseline start (day index)
   bFinish: number | null; // baseline finish (day index)
   preds: Relation[];
@@ -61,9 +154,17 @@ export type CpmActivity = {
   isCritical: boolean;        // baseline critical path (tf <= tolerance)
   isForecastCritical: boolean; // on the forecast longest/driving path
   isDriver: boolean;          // driving activity responsible for the over-run
+  baselineStart: Date | null;
   baselineFinish: Date | null;
+  forecastStart: Date | null;
   forecastFinish: Date | null;
+  actualStart: Date | null;
+  actualFinish: Date | null;
   slipDays: number;           // forecastFinish - baselineFinish
+  pct: number;
+  drivingPredId: string | null; // binding predecessor on the driving path
+  constraintType: ConstraintType;
+  constraintViolated: boolean;
 };
 
 export type CpmDriver = {
@@ -77,6 +178,16 @@ export type CpmDriver = {
   pct: number;
 };
 
+export type ConstraintViolation = {
+  id: string;
+  wbs: string;
+  name: string;
+  type: ConstraintType;
+  constraintDate: Date | null;
+  forecastDate: Date | null;
+  lateDays: number;
+};
+
 export type CpmResult = {
   hasNetwork: boolean;
   baselineFinish: Date | null;
@@ -84,6 +195,7 @@ export type CpmResult = {
   overrunDays: number;        // +ve = forecast later than baseline
   criticalCount: number;
   drivers: CpmDriver[];       // leaf activities on the driving path, by slip desc
+  violations: ConstraintViolation[];
   byId: Map<string, CpmActivity>;
 };
 
@@ -93,11 +205,17 @@ export function computeCPM(
   tasksIn: L2Task[],
   statusMap: Map<string, Status>,
   today: Date = new Date(),
+  opts: CpmOptions = {},
 ): CpmResult {
+  const cal = opts.calendar ?? DEFAULT_CALENDAR;
+  const hol = makeHolidaySet(cal);
+  const constraints = opts.constraints ?? {};
+  const whatIf = opts.whatIf ?? EMPTY_WHATIF;
+
   const tasks = tasksIn.filter((t) => t.baseline_start && t.baseline_finish);
   const empty: CpmResult = {
     hasNetwork: false, baselineFinish: null, forecastFinish: null, overrunDays: 0,
-    criticalCount: 0, drivers: [], byId: new Map(),
+    criticalCount: 0, drivers: [], violations: [], byId: new Map(),
   };
   if (tasks.length === 0) return empty;
 
@@ -110,10 +228,17 @@ export function computeCPM(
   const nodes: Node[] = tasks.map((t) => {
     const bs = parseD(t.baseline_start);
     const bf = parseD(t.baseline_finish);
+    const baseDur = Math.max(0, t.duration_days);
+    const delta = whatIf.durDelta[t.id] ?? 0;
+    const dur = Math.max(0, baseDur + delta);
+    // working-day content of the activity (relative to its calendar-day duration)
+    const wdur = cal.enabled && bs && bf
+      ? Math.max(0, workingDaysBetween(bs, bf, cal, hol) + delta)
+      : dur;
     return {
       id: t.id, sort: t.sort_order, wbs: t.wbs_code, name: t.name,
-      isSection: t.is_section, isMilestone: t.duration_days === 0,
-      dur: Math.max(0, t.duration_days),
+      isSection: t.is_section, isMilestone: baseDur === 0,
+      dur, wdur,
       bStart: bs ? dayOf(bs) : null,
       bFinish: bf ? dayOf(bf) : null,
       preds: parsePredecessors(t.predecessors),
@@ -123,11 +248,19 @@ export function computeCPM(
   });
   const bySort = new Map<number, Node>();
   for (const n of nodes) bySort.set(n.sort, n);
+  const sortById = new Map<string, number>();
+  for (const n of nodes) sortById.set(n.id, n.sort);
 
   // Only keep resolvable internal predecessors.
   for (const n of nodes) n.preds = n.preds.filter((p) => bySort.has(p.act));
 
   const maxIter = nodes.length + 2;
+
+  // forecast finish (calendar-day) of a node given its early start
+  const efOf = (n: Node, esDay: number): number => {
+    if (!cal.enabled || n.dur === 0) return esDay + n.dur;
+    return esDay + calDaysForWorking(dateOf(esDay), n.wdur, cal, hol);
+  };
 
   // ---- Baseline forward pass (anchored to baseline starts; honours logic) ----
   for (const n of nodes) n.es = n.bStart ?? 0;
@@ -154,7 +287,6 @@ export function computeCPM(
     for (const n of nodes) {
       let lf = projEnd;
       let first = true;
-      // a node's LF is constrained by its successors
       for (const s of nodes) {
         for (const p of s.preds) {
           if (p.act !== n.sort) continue;
@@ -177,17 +309,21 @@ export function computeCPM(
     const aFinish = parseD(st?.actual_finish ?? null);
     const pct = Math.min(100, Math.max(0, st?.percent_complete ?? 0));
     const done = pct >= 100 || st?.status === "completed" || !!aFinish;
-    if (done) {
+    const override = whatIf.startSet[n.id] ? parseD(whatIf.startSet[n.id]) : null;
+    if (override) {
+      n.fEs = dayOf(override); n.fEf = efOf(n, n.fEs); n.fixed = true;
+    } else if (done) {
       const ef = aFinish ? dayOf(aFinish) : Math.max(n.ef, dd);
       const es = aStart ? dayOf(aStart) : ef - n.dur;
       n.fEs = es; n.fEf = ef; n.fixed = true;
     } else if (aStart) {
-      const remDur = Math.ceil(n.dur * (1 - pct / 100));
+      const remWork = Math.ceil(n.wdur * (1 - pct / 100));
       n.fEs = dayOf(aStart);
-      n.fEf = Math.max(dd, n.fEs) + remDur;
+      const base = Math.max(dd, n.fEs);
+      n.fEf = cal.enabled ? base + calDaysForWorking(dateOf(base), remWork, cal, hol) : base + remWork;
       n.fixed = true; // its own finish is progress-driven, not pred-driven
     } else {
-      n.fEs = n.bStart ?? 0; n.fEf = n.fEs + n.dur; n.fixed = false;
+      n.fEs = n.bStart ?? 0; n.fEf = efOf(n, n.fEs); n.fixed = false;
     }
   }
   for (let it = 0; it < maxIter; it++) {
@@ -204,9 +340,16 @@ export function computeCPM(
       }
       // a not-yet-started activity cannot start before the data date
       if (es < dd) es = Math.max(es, dd);
+      // apply "no earlier than" constraints as floors
+      const c = constraints[n.id];
+      if (c && c.date) {
+        const cDay = dayOf(parseD(c.date)!);
+        if (c.type === "SNET" || c.type === "MSO") es = Math.max(es, cDay);
+        if (c.type === "FNET") es = Math.max(es, cDay - n.dur);
+      }
       if (!Number.isFinite(es)) es = dd;
       if (es !== n.fEs || bind !== n.bindPred) { n.fEs = es; n.bindPred = bind; changed = true; }
-      n.fEf = n.fEs + n.dur;
+      n.fEf = efOf(n, n.fEs);
     }
     if (!changed) break;
   }
@@ -224,7 +367,6 @@ export function computeCPM(
     guard.add(cur.id);
     driverIds.add(cur.id);
     if (cur.fixed && cur.bindPred == null) {
-      // an in-progress / completed driver: continue via its strongest pred
       const best = pickBindingPred(cur, bySort);
       if (best == null) break;
       cur = bySort.get(best)!;
@@ -234,18 +376,61 @@ export function computeCPM(
     cur = bySort.get(cur.bindPred)!;
   }
 
+  // binding predecessor (for drill-down chains) — prefer the forecast binder,
+  // else the strongest predecessor by finish.
+  const drivingPredIdOf = (n: Node): string | null => {
+    const sort = n.bindPred ?? pickBindingPred(n, bySort);
+    if (sort == null) return null;
+    const pn = bySort.get(sort);
+    return pn ? pn.id : null;
+  };
+
+  // ---- Constraint violations (late constraints breached by the forecast) ----
+  const violations: ConstraintViolation[] = [];
+  for (const n of nodes) {
+    const c = constraints[n.id];
+    if (!c || !c.date || c.type === "") continue;
+    const cDate = parseD(c.date);
+    if (!cDate) continue;
+    const cDay = dayOf(cDate);
+    let late = 0;
+    let forecastDay = n.fEs;
+    if (c.type === "SNLT") { late = n.fEs - cDay; forecastDay = n.fEs; }
+    else if (c.type === "FNLT") { late = n.fEf - cDay; forecastDay = n.fEf; }
+    else if (c.type === "MFO") { late = Math.abs(n.fEf - cDay); forecastDay = n.fEf; }
+    if (late > 0) {
+      violations.push({
+        id: n.id, wbs: n.wbs, name: n.name, type: c.type,
+        constraintDate: cDate, forecastDate: dateOf(forecastDay), lateDays: Math.round(late),
+      });
+    }
+  }
+  violations.sort((a, b) => b.lateDays - a.lateDays);
+
   const byId = new Map<string, CpmActivity>();
   for (const n of nodes) {
+    const st = statusMap.get(n.id);
     const bf = n.bFinish != null ? dateOf(n.bFinish) : null;
+    const bs = n.bStart != null ? dateOf(n.bStart) : null;
     const ff = dateOf(n.fEf);
+    const fs = dateOf(n.fEs);
     const slip = n.bFinish != null ? Math.round(n.fEf - n.bFinish) : 0;
+    const c = constraints[n.id];
     byId.set(n.id, {
       id: n.id, wbs: n.wbs, name: n.name, isSection: n.isSection,
       totalFloat: Math.round(n.tf),
       isCritical: n.tf <= FLOAT_TOL,
       isForecastCritical: driverIds.has(n.id),
       isDriver: driverIds.has(n.id) && slip > 0 && !n.isSection,
-      baselineFinish: bf, forecastFinish: ff, slipDays: slip,
+      baselineStart: bs, baselineFinish: bf,
+      forecastStart: fs, forecastFinish: ff,
+      actualStart: parseD(st?.actual_start ?? null),
+      actualFinish: parseD(st?.actual_finish ?? null),
+      slipDays: slip,
+      pct: Math.min(100, Math.max(0, st?.percent_complete ?? 0)),
+      drivingPredId: drivingPredIdOf(n),
+      constraintType: c?.type ?? "",
+      constraintViolated: violations.some((v) => v.id === n.id),
     });
   }
 
@@ -270,6 +455,7 @@ export function computeCPM(
     })
     .sort((a, b) => b.slipDays - a.slipDays);
 
+  void sortById;
   return {
     hasNetwork: true,
     baselineFinish: dateOf(baseFinishDay),
@@ -277,6 +463,7 @@ export function computeCPM(
     overrunDays,
     criticalCount: nodes.filter((n) => !n.isSection && n.tf <= FLOAT_TOL).length,
     drivers,
+    violations,
     byId,
   };
 }
@@ -314,6 +501,21 @@ function pickBindingPred(n: Node, bySort: Map<number, Node>): number | null {
 
 function fmtShort(d: Date): string {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
+}
+
+/** Build the binding-predecessor chain for an activity (driving path drill-down). */
+export function driverChain(byId: Map<string, CpmActivity>, startId: string, maxLen = 12): CpmActivity[] {
+  const out: CpmActivity[] = [];
+  const guard = new Set<string>();
+  let cur: CpmActivity | undefined = byId.get(startId);
+  while (cur && !guard.has(cur.id) && out.length < maxLen) {
+    guard.add(cur.id);
+    out.push(cur);
+    const next = cur.drivingPredId;
+    if (!next) break;
+    cur = byId.get(next);
+  }
+  return out;
 }
 
 // Avoid unused import warning while keeping dMax available for future use.
