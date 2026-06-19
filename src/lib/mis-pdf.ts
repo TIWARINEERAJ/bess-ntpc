@@ -13,6 +13,7 @@ import {
 import { isSubmissionOverdue, type StationDrawing } from "./drawings";
 import { TYPE_SHORT } from "./meeting-types";
 import { computePortfolioAnalytics } from "./mis-analytics";
+import { computeCPM } from "./cpm";
 
 
 type Station = {

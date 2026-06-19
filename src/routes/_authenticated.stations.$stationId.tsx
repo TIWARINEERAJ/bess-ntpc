@@ -34,6 +34,8 @@ import { RemarksTimeline } from "@/components/RemarksTimeline";
 import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitments";
 import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/boi-links";
 import type { StationDrawing } from "@/lib/drawings";
+import { computeCPM, type CpmActivity } from "@/lib/cpm";
+import { CpmForecastPanel } from "@/components/CpmForecastPanel";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
 
@@ -148,6 +150,13 @@ function StationPage() {
   const statusMap = useMemo(() => buildStatusMap(status), [status]);
   const progress = useMemo(() => stationProgress(tasks, statusMap), [tasks, statusMap]);
   const idealPct = useMemo(() => (tasks.length ? Math.round(plannedPctAt(tasks, new Date())) : 0), [tasks]);
+  const cpm = useMemo(() => computeCPM(tasks, statusMap, new Date()), [tasks, statusMap]);
+  const criticalIds = useMemo(() => {
+    const s = new Set<string>();
+    cpm.byId.forEach((a, id) => { if (a.isForecastCritical) s.add(id); });
+    return s;
+  }, [cpm]);
+  const [showCritical, setShowCritical] = useState(false);
   const taskRevQ = useCommitmentRevisions(stationId, "task");
 
   // ---- BOI ↔ MDL ↔ L2 link layer ----
@@ -349,6 +358,12 @@ function StationPage() {
 
 
         <TabsContent value="gantt" className="space-y-2">
+          <CpmForecastPanel
+            cpm={cpm}
+            showCritical={showCritical}
+            onToggleCritical={() => setShowCritical((v) => !v)}
+            onFocusTask={(id) => focusOn("gantt", id)}
+          />
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
@@ -394,7 +409,7 @@ function StationPage() {
               </div>
             </div>
             {/* Gantt */}
-            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} bodyRef={ganttBodyRef} onBodyVerticalScroll={(top) => syncScroll("gantt", top)} />
+            <GanttChart tasks={tasks} statusMap={statusMap} expanded={expanded} visibleTasks={visibleTasks} onTaskClick={setOpenTask} rowHeight={48} bodyRef={ganttBodyRef} onBodyVerticalScroll={(top) => syncScroll("gantt", top)} criticalIds={criticalIds} showCritical={showCritical} />
           </div>
           <Legend />
         </TabsContent>
@@ -433,6 +448,7 @@ function StationPage() {
         status={openTask ? statusMap.get(openTask.id) : undefined}
         revisions={openTask ? taskRevQ.data?.get(openTask.id) : undefined}
         derived={openTask?.is_section ? sectionDerived(tasks, statusMap, openTask.wbs_code) : null}
+        cpm={openTask ? cpm.byId.get(openTask.id) : undefined}
         linkedBois={drawerLinks}
         onOpenBoi={(id) => { setOpenTask(null); focusOn("boi", id); }}
         onOpenDrawing={(id) => { setOpenTask(null); focusOn("mdl", id); }}
@@ -463,6 +479,7 @@ function Legend() {
       <LegendItem color="var(--gantt-done)" label="Completed" />
       <LegendItem color="var(--gantt-delayed)" label="Delayed" />
       <LegendItem color="var(--primary)" label="Today" dashed />
+      <LegendItem color="var(--status-red)" label="Critical / driving path" />
     </div>
   );
 }
@@ -481,12 +498,13 @@ type DrawerLink = {
   chip: { label: string; c: string };
 };
 
-function TaskDrawer({ stationId, task, status, revisions, derived, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
+function TaskDrawer({ stationId, task, status, revisions, derived, cpm, linkedBois, onOpenBoi, onOpenDrawing, onClose, onSave, canEdit, saving }: {
   stationId: string;
   task: L2Task | null;
   status: Status | undefined;
   revisions?: CommitmentRevision[];
   derived: { pct: number; actual_start: Date | null; actual_finish: Date | null; leafCount: number } | null;
+  cpm?: CpmActivity;
   linkedBois?: DrawerLink[];
   onOpenBoi?: (boiId: string) => void;
   onOpenDrawing?: (drawingId: string) => void;
@@ -549,6 +567,32 @@ function TaskDrawer({ stationId, task, status, revisions, derived, linkedBois, o
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4 px-4">
+          {cpm && !isSection && (
+            <div className="rounded-md border border-border/60 bg-secondary/30 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Schedule (CPM)</span>
+                {cpm.isForecastCritical ? (
+                  <Badge className="text-[10px]" style={{ background: "var(--status-red)", color: "white" }}>Critical / driving</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">{cpm.totalFloat}d total float</Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">Baseline</div>
+                  <div className="font-mono">{fmtD(cpm.baselineFinish)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">Forecast</div>
+                  <div className="font-mono" style={{ color: cpm.slipDays > 0 ? "var(--status-red)" : "var(--status-green)" }}>{fmtD(cpm.forecastFinish)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase text-muted-foreground">Slip</div>
+                  <div className="font-mono" style={{ color: cpm.slipDays > 0 ? "var(--status-red)" : "var(--status-green)" }}>{cpm.slipDays > 0 ? `+${cpm.slipDays}d` : `${cpm.slipDays}d`}</div>
+                </div>
+              </div>
+            </div>
+          )}
           {linkedBois && linkedBois.length > 0 && (
             <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
