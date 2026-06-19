@@ -499,11 +499,12 @@ function CalendarConstraintsView({
                     <td className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground">{a.wbs}</td>
                     <td className="px-2 py-1.5"><span className="line-clamp-1">{a.name}</span></td>
                     <td className="px-2 py-1.5">
-                      <Select value={c?.type ?? ""} onValueChange={(v) => setConstraintType(a.id, v as ConstraintType)}>
+                      <Select value={c?.type ? c.type : "none"} onValueChange={(v) => setConstraintType(a.id, v)}>
                         <SelectTrigger className="h-7 w-44 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
                         <SelectContent>
-                          {(Object.keys(CONSTRAINT_LABELS) as ConstraintType[]).map((t) => (
-                            <SelectItem key={t || "none"} value={t || "none-x"} disabled={t === ""}>{CONSTRAINT_LABELS[t]}</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
+                          {(Object.keys(CONSTRAINT_LABELS) as ConstraintType[]).filter((t) => t !== "").map((t) => (
+                            <SelectItem key={t} value={t}>{CONSTRAINT_LABELS[t]}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
