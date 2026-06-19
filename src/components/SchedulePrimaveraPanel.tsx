@@ -424,7 +424,8 @@ function CalendarConstraintsView({
   };
   const removeHoliday = (h: string) => setCalendar({ ...calendar, holidays: calendar.holidays.filter((x) => x !== h) });
 
-  const setConstraintType = (id: string, type: ConstraintType) => {
+  const setConstraintType = (id: string, raw: string) => {
+    const type = (raw === "none" ? "" : raw) as ConstraintType;
     const c = { ...constraints };
     if (type === "") delete c[id]; else c[id] = { type, date: c[id]?.date ?? null };
     setConstraints(c);
