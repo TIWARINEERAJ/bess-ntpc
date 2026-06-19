@@ -358,11 +358,13 @@ function StationPage() {
 
 
         <TabsContent value="gantt" className="space-y-2">
-          <CpmForecastPanel
-            cpm={cpm}
+          <SchedulePrimaveraPanel
+            tasks={tasks}
+            statusMap={statusMap}
+            stationName={station?.name}
             showCritical={showCritical}
             onToggleCritical={() => setShowCritical((v) => !v)}
-            onFocusTask={(id) => focusOn("gantt", id)}
+            onFocusTask={(id: string) => focusOn("gantt", id)}
           />
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
