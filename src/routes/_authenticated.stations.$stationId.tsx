@@ -35,7 +35,7 @@ import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitmen
 import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/boi-links";
 import type { StationDrawing } from "@/lib/drawings";
 import { computeCPM, type CpmActivity } from "@/lib/cpm";
-import { CpmForecastPanel } from "@/components/CpmForecastPanel";
+import { SchedulePrimaveraPanel } from "@/components/SchedulePrimaveraPanel";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
 
