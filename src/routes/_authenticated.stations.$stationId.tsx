@@ -367,6 +367,7 @@ function StationPage() {
             onToggleCritical={() => setShowCritical((v) => !v)}
             onFocusTask={(id: string) => focusOn("gantt", id)}
           />
+          <CpmNetworkDiagram cpm={cpm} onFocusTask={(id: string) => focusOn("gantt", id)} />
           <div className="grid grid-cols-[minmax(880px,1040px)_1fr] gap-0 overflow-hidden rounded-md border border-border bg-card/40">
             {/* WBS Table */}
             <div className="border-r border-border">
