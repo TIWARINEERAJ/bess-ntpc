@@ -199,7 +199,7 @@ export type CpmNetNode = {
   level: number;        // topological column (longest predecessor chain)
   row: number;          // vertical slot within the level
   dur: number;
-  es: number; ef: number; ls: number; lf: number; tf: number;
+  es: number; ef: number; ls: number; lf: number; tf: number; ff: number;
   isCritical: boolean;
   isMilestone: boolean;
   baselineStart: Date | null;
@@ -514,12 +514,35 @@ export function computeCPM(
     rowCounter.set(lvl, r + 1);
   }
 
+  // Free float = slack an activity can consume without delaying ANY successor's ES.
+  const succsBySort = new Map<number, { node: Node; rel: Relation }[]>();
+  for (const s of netNodesSrc) {
+    for (const p of s.preds) {
+      if (!includedSorts.has(p.act)) continue;
+      const arr = succsBySort.get(p.act) ?? [];
+      arr.push({ node: s, rel: p });
+      succsBySort.set(p.act, arr);
+    }
+  }
+  const ffBySort = new Map<number, number>();
+  for (const n of netNodesSrc) {
+    const succs = succsBySort.get(n.sort) ?? [];
+    if (succs.length === 0) { ffBySort.set(n.sort, Math.max(0, projEnd - n.ef)); continue; }
+    let ff = Infinity;
+    for (const { node: s, rel } of succs) {
+      const earliest = predConstraint(rel.type, n.es, n.ef, s.dur, rel.lag);
+      ff = Math.min(ff, s.es - earliest);
+    }
+    ffBySort.set(n.sort, Math.max(0, Number.isFinite(ff) ? ff : 0));
+  }
+
   const netNodes: CpmNetNode[] = netNodesSrc.map((n) => ({
     id: n.id, sort: n.sort, wbs: n.wbs, name: n.name,
     level: levelBySort.get(n.sort) ?? 0,
     row: rowBySort.get(n.sort) ?? 0,
     dur: n.dur,
     es: n.es, ef: n.ef, ls: n.ls, lf: n.lf, tf: Math.round(n.tf),
+    ff: Math.round(ffBySort.get(n.sort) ?? 0),
     isCritical: n.tf <= FLOAT_TOL,
     isMilestone: n.isMilestone,
     baselineStart: n.bStart != null ? dateOf(n.bStart) : null,
