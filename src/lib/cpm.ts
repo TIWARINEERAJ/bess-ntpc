@@ -239,6 +239,7 @@ export function computeCPM(
   const empty: CpmResult = {
     hasNetwork: false, baselineFinish: null, forecastFinish: null, overrunDays: 0,
     criticalCount: 0, drivers: [], violations: [], byId: new Map(),
+    network: { nodes: [], edges: [], levels: 0 },
   };
   if (tasks.length === 0) return empty;
 
