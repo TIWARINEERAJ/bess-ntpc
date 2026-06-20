@@ -199,7 +199,7 @@ export type CpmNetNode = {
   level: number;        // topological column (longest predecessor chain)
   row: number;          // vertical slot within the level
   dur: number;
-  es: number; ef: number; ls: number; lf: number; tf: number;
+  es: number; ef: number; ls: number; lf: number; tf: number; ff: number;
   isCritical: boolean;
   isMilestone: boolean;
   baselineStart: Date | null;
