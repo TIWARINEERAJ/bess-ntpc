@@ -480,6 +480,68 @@ export function computeCPM(
     .sort((a, b) => b.slipDays - a.slipDays);
 
   void sortById;
+
+  // ---- Build the activity-on-node network (circles + lines) --------------
+  // Only leaf activities form the diagram; sections are containers.
+  const netNodesSrc = nodes.filter((n) => !n.isSection);
+  const includedSorts = new Set(netNodesSrc.map((n) => n.sort));
+
+  // Topological column = longest predecessor chain (relaxation passes).
+  const levelBySort = new Map<number, number>();
+  for (const n of netNodesSrc) levelBySort.set(n.sort, 0);
+  for (let it = 0; it < netNodesSrc.length + 2; it++) {
+    let changed = false;
+    for (const n of netNodesSrc) {
+      let lvl = 0;
+      for (const p of n.preds) {
+        if (!includedSorts.has(p.act)) continue;
+        const cand = (levelBySort.get(p.act) ?? 0) + 1;
+        if (cand > lvl) lvl = cand;
+      }
+      if (lvl !== levelBySort.get(n.sort)) { levelBySort.set(n.sort, lvl); changed = true; }
+    }
+    if (!changed) break;
+  }
+
+  // Vertical slot within each column (stable by ES then sort).
+  const rowCounter = new Map<number, number>();
+  const ordered = [...netNodesSrc].sort((a, b) => (a.es - b.es) || (a.sort - b.sort));
+  const rowBySort = new Map<number, number>();
+  for (const n of ordered) {
+    const lvl = levelBySort.get(n.sort) ?? 0;
+    const r = rowCounter.get(lvl) ?? 0;
+    rowBySort.set(n.sort, r);
+    rowCounter.set(lvl, r + 1);
+  }
+
+  const netNodes: CpmNetNode[] = netNodesSrc.map((n) => ({
+    id: n.id, sort: n.sort, wbs: n.wbs, name: n.name,
+    level: levelBySort.get(n.sort) ?? 0,
+    row: rowBySort.get(n.sort) ?? 0,
+    dur: n.dur,
+    es: n.es, ef: n.ef, ls: n.ls, lf: n.lf, tf: Math.round(n.tf),
+    isCritical: n.tf <= FLOAT_TOL,
+    isMilestone: n.isMilestone,
+    baselineStart: n.bStart != null ? dateOf(n.bStart) : null,
+    baselineFinish: n.bFinish != null ? dateOf(n.bFinish) : null,
+  }));
+
+  const netEdges: CpmNetEdge[] = [];
+  for (const n of netNodesSrc) {
+    for (const p of n.preds) {
+      if (!includedSorts.has(p.act)) continue;
+      const pn = bySort.get(p.act)!;
+      // Critical edge: both endpoints critical AND this link drives the successor's ES.
+      const drives = predConstraint(p.type, pn.es, pn.ef, n.dur, p.lag) >= n.es - FLOAT_TOL;
+      const critical = pn.tf <= FLOAT_TOL && n.tf <= FLOAT_TOL && drives;
+      netEdges.push({ from: pn.id, to: n.id, type: p.type, lag: p.lag, critical });
+    }
+  }
+  const network: CpmNetwork = {
+    nodes: netNodes, edges: netEdges,
+    levels: Math.max(0, ...netNodes.map((n) => n.level)) + 1,
+  };
+
   return {
     hasNetwork: true,
     baselineFinish: dateOf(baseFinishDay),
@@ -489,6 +551,7 @@ export function computeCPM(
     drivers,
     violations,
     byId,
+    network,
   };
 }
 
