@@ -188,6 +188,28 @@ export type ConstraintViolation = {
   lateDays: number;
 };
 
+// ---------------------------------------------------------------------------
+// Network diagram (activity-on-node) — circles + connecting lines.
+// ---------------------------------------------------------------------------
+export type CpmNetNode = {
+  id: string;
+  sort: number;
+  wbs: string;
+  name: string;
+  level: number;        // topological column (longest predecessor chain)
+  row: number;          // vertical slot within the level
+  dur: number;
+  es: number; ef: number; ls: number; lf: number; tf: number;
+  isCritical: boolean;
+  isMilestone: boolean;
+  baselineStart: Date | null;
+  baselineFinish: Date | null;
+};
+export type CpmNetEdge = {
+  from: string; to: string; type: RelType; lag: number; critical: boolean;
+};
+export type CpmNetwork = { nodes: CpmNetNode[]; edges: CpmNetEdge[]; levels: number };
+
 export type CpmResult = {
   hasNetwork: boolean;
   baselineFinish: Date | null;
@@ -197,6 +219,7 @@ export type CpmResult = {
   drivers: CpmDriver[];       // leaf activities on the driving path, by slip desc
   violations: ConstraintViolation[];
   byId: Map<string, CpmActivity>;
+  network: CpmNetwork;        // graphic critical-path network
 };
 
 const FLOAT_TOL = 1; // days — activities within 1 day of zero float are "critical"
