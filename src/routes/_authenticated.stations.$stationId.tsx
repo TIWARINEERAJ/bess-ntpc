@@ -36,6 +36,7 @@ import { buildBoiLinks, drawingToBois, taskToBois, type BoiLite } from "@/lib/bo
 import type { StationDrawing } from "@/lib/drawings";
 import { computeCPM, type CpmActivity } from "@/lib/cpm";
 import { SchedulePrimaveraPanel } from "@/components/SchedulePrimaveraPanel";
+import { CpmNetworkDiagram } from "@/components/CpmNetworkDiagram";
 
 const STATION_TABS = ["overview", "gantt", "boi", "mdl", "compliance", "delays", "issues", "meetings", "audit"];
 
