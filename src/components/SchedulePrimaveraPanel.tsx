@@ -80,7 +80,7 @@ export function SchedulePrimaveraPanel({
 
       <div className="grid grid-cols-2 gap-px bg-border md:grid-cols-5">
         <Metric icon={<CalendarClock className="h-3.5 w-3.5" />} label="Baseline Finish" value={fmtD(cpm.baselineFinish)} />
-        <Metric icon={<CalendarClock className="h-3.5 w-3.5" />} label="Forecast Finish" value={fmtD(cpm.forecastFinish)} color={tone} />
+        <Metric icon={<CalendarClock className="h-3.5 w-3.5" />} label="Revised Finish (from actuals)" value={fmtD(cpm.forecastFinish)} color={tone} />
         <Metric
           icon={<TriangleAlert className="h-3.5 w-3.5" />}
           label="Schedule Variance"

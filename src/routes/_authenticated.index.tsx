@@ -334,38 +334,44 @@ function Dashboard() {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
-      <section className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Executive Dashboard</div>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">BESS Portfolio Progress</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Live status across all 15 NTPC thermal co-located storage projects · As of {format(new Date(), "dd MMM yyyy, HH:mm")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
-            <FileWarning className="mr-2 h-4 w-4" /> Exception Report
-          </Button>
-          <Button variant="outline" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
-          </Button>
-          <Button variant="outline" size="sm" disabled={capturing} onClick={captureSnapshot}>
-            <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
-          </Button>
-          <Button variant="outline" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("docx")}>
-            <FileType className="mr-2 h-4 w-4" /> {exporting === "docx" ? "Building…" : "Weekly MIS (Word)"}
-          </Button>
-          <Button size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
-            <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
-          </Button>
-          <Button variant="outline" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
-            <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief (Word)"}
-          </Button>
-          <Button size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
-            <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief (PDF)"}
-          </Button>
-
-
-
-
+      <section
+        className="relative overflow-hidden rounded-2xl border border-white/10 p-5 md:p-7 shadow-[var(--shadow-elegant)]"
+        style={{ background: "var(--gradient-hero)" }}
+      >
+        {/* decorative glow orbs */}
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-30 blur-3xl" style={{ background: "var(--brand-2)" }} />
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full opacity-20 blur-3xl" style={{ background: "var(--brand-3)" }} />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div className="text-white">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] backdrop-blur-sm">
+              <Zap className="h-3.5 w-3.5" /> Executive Dashboard
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">BESS Portfolio Progress</h1>
+            <p className="mt-1.5 max-w-2xl text-sm text-white/80">Live status across all 15 NTPC thermal co-located storage projects · As of {format(new Date(), "dd MMM yyyy, HH:mm")}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
+              <FileWarning className="mr-2 h-4 w-4" /> Exception Report
+            </Button>
+            <Button variant="secondary" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
+            </Button>
+            <Button variant="secondary" size="sm" disabled={capturing} onClick={captureSnapshot}>
+              <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
+            </Button>
+            <Button variant="secondary" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("docx")}>
+              <FileType className="mr-2 h-4 w-4" /> {exporting === "docx" ? "Building…" : "Weekly MIS (Word)"}
+            </Button>
+            <Button variant="secondary" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
+              <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
+            </Button>
+            <Button variant="secondary" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
+              <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief (Word)"}
+            </Button>
+            <Button variant="secondary" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
+              <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief (PDF)"}
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -889,22 +895,26 @@ function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]
 }
 
 function Kpi({ icon, label, value, unit, tone, onClick, active }: { icon: React.ReactNode; label: string; value: string; unit?: string; tone: "primary" | "green" | "amber" | "red"; onClick?: () => void; active?: boolean }) {
-  const colorVar = tone === "primary" ? "var(--primary)" : `var(--status-${tone})`;
+  const colorVar = tone === "primary" ? "var(--brand-1)" : `var(--status-${tone})`;
   return (
     <Card
       onClick={onClick}
-      className={`relative overflow-hidden p-4 ${onClick ? "cursor-pointer transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_25%,transparent)]" : ""}`}
-      style={active ? { boxShadow: `0 0 0 1.5px ${colorVar}`, borderColor: colorVar } : undefined}
+      className={`group relative overflow-hidden p-4 transition-all ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]" : "hover:-translate-y-0.5"}`}
+      style={{
+        background: `linear-gradient(160deg, color-mix(in oklab, ${colorVar} 12%, var(--card)), var(--card))`,
+        ...(active ? { boxShadow: `0 0 0 1.5px ${colorVar}`, borderColor: colorVar } : {}),
+      }}
     >
-      <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: colorVar }} />
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span style={{ color: colorVar }}>{icon}</span>{label}
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: colorVar }} />
+      <div className="pointer-events-none absolute -right-6 -top-8 h-20 w-20 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40" style={{ background: colorVar }} />
+      <div className="relative flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: `color-mix(in oklab, ${colorVar} 18%, transparent)`, color: colorVar }}>{icon}</span>{label}
       </div>
-      <div className="mt-1 flex items-baseline gap-1.5">
+      <div className="relative mt-1.5 flex items-baseline gap-1.5">
         <span className="font-mono text-3xl font-bold tabular-nums" style={{ color: colorVar }}>{value}</span>
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
-      {onClick && <div className="mt-1 text-[10px] text-muted-foreground">{active ? "Filtering ↓" : "Click to filter ↓"}</div>}
+      {onClick && <div className="relative mt-1 text-[10px] text-muted-foreground">{active ? "Filtering ↓" : "Click to filter ↓"}</div>}
     </Card>
   );
 }
