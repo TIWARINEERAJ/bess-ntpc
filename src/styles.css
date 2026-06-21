@@ -106,6 +106,15 @@
   --gantt-actual: oklch(0.55 0.17 240);
   --gantt-done: oklch(0.58 0.16 155);
   --gantt-delayed: oklch(0.58 0.22 25);
+  /* Vibrant brand accents (theme-stable — do NOT flip in dark mode) */
+  --brand-1: oklch(0.62 0.18 245);
+  --brand-2: oklch(0.7 0.16 195);
+  --brand-3: oklch(0.62 0.2 300);
+  --gradient-hero: linear-gradient(120deg, oklch(0.55 0.19 255) 0%, oklch(0.6 0.17 215) 45%, oklch(0.66 0.16 185) 100%);
+  --gradient-brand: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+  --gradient-card: linear-gradient(160deg, color-mix(in oklab, var(--brand-1) 8%, var(--card)), var(--card));
+  --shadow-elegant: 0 12px 32px -12px color-mix(in oklab, var(--brand-1) 40%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--brand-1) 25%, transparent), 0 8px 28px -10px color-mix(in oklab, var(--brand-1) 45%, transparent);
 }
 
 .dark {
