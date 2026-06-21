@@ -486,6 +486,7 @@ function Legend() {
       <LegendItem color="var(--gantt-delayed)" label="Delayed" />
       <LegendItem color="var(--primary)" label="Today" dashed />
       <LegendItem color="var(--status-red)" label="Critical / driving path" />
+      <LegendItem color="var(--muted-foreground)" label="Predecessor link →" />
     </div>
   );
 }
