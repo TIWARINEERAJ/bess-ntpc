@@ -895,22 +895,26 @@ function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]
 }
 
 function Kpi({ icon, label, value, unit, tone, onClick, active }: { icon: React.ReactNode; label: string; value: string; unit?: string; tone: "primary" | "green" | "amber" | "red"; onClick?: () => void; active?: boolean }) {
-  const colorVar = tone === "primary" ? "var(--primary)" : `var(--status-${tone})`;
+  const colorVar = tone === "primary" ? "var(--brand-1)" : `var(--status-${tone})`;
   return (
     <Card
       onClick={onClick}
-      className={`relative overflow-hidden p-4 ${onClick ? "cursor-pointer transition-all hover:border-primary/40 hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_25%,transparent)]" : ""}`}
-      style={active ? { boxShadow: `0 0 0 1.5px ${colorVar}`, borderColor: colorVar } : undefined}
+      className={`group relative overflow-hidden p-4 transition-all ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]" : "hover:-translate-y-0.5"}`}
+      style={{
+        background: `linear-gradient(160deg, color-mix(in oklab, ${colorVar} 12%, var(--card)), var(--card))`,
+        ...(active ? { boxShadow: `0 0 0 1.5px ${colorVar}`, borderColor: colorVar } : {}),
+      }}
     >
-      <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: colorVar }} />
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span style={{ color: colorVar }}>{icon}</span>{label}
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: colorVar }} />
+      <div className="pointer-events-none absolute -right-6 -top-8 h-20 w-20 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40" style={{ background: colorVar }} />
+      <div className="relative flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: `color-mix(in oklab, ${colorVar} 18%, transparent)`, color: colorVar }}>{icon}</span>{label}
       </div>
-      <div className="mt-1 flex items-baseline gap-1.5">
+      <div className="relative mt-1.5 flex items-baseline gap-1.5">
         <span className="font-mono text-3xl font-bold tabular-nums" style={{ color: colorVar }}>{value}</span>
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
-      {onClick && <div className="mt-1 text-[10px] text-muted-foreground">{active ? "Filtering ↓" : "Click to filter ↓"}</div>}
+      {onClick && <div className="relative mt-1 text-[10px] text-muted-foreground">{active ? "Filtering ↓" : "Click to filter ↓"}</div>}
     </Card>
   );
 }
