@@ -685,7 +685,7 @@ function MdlStat({ label, value, sub, tone }: { label: string; value: number; su
 }
 
 
-function BulkMisPanel({ stations, tasks, statusByStation }: { stations: Station[]; tasks: L2Task[]; statusByStation: Record<string, Status[]> }) {
+function BulkMisPanel({ stations, tasks, statusByStation, embedded }: { stations: Station[]; tasks: L2Task[]; statusByStation: Record<string, Status[]>; embedded?: boolean }) {
   const REPORTS = [
     { id: "weekly", label: "Weekly MIS" }, { id: "exceptions", label: "Exceptions" },
     { id: "boi", label: "BOI Status" }, { id: "delays", label: "Delay Register" },
