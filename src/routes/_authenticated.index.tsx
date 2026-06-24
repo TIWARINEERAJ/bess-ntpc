@@ -333,59 +333,99 @@ function Dashboard() {
 
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-[1700px] space-y-5 p-3 md:p-6">
+      {/* ============================ HERO ============================ */}
       <section
-        className="relative overflow-hidden rounded-2xl border border-white/10 p-5 md:p-7 shadow-[var(--shadow-elegant)]"
+        className="relative overflow-hidden rounded-3xl border border-white/10 p-5 md:p-6 shadow-[var(--shadow-elegant)]"
         style={{ background: "var(--gradient-hero)" }}
       >
-        {/* decorative glow orbs */}
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-30 blur-3xl" style={{ background: "var(--brand-2)" }} />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full opacity-20 blur-3xl" style={{ background: "var(--brand-3)" }} />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div className="text-white">
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="min-w-0 text-white">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] backdrop-blur-sm">
-              <Zap className="h-3.5 w-3.5" /> Executive Dashboard
+              <Zap className="h-3.5 w-3.5" /> Executive Command Center
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">BESS Portfolio Progress</h1>
-            <p className="mt-1.5 max-w-2xl text-sm text-white/80">Live status across all 15 NTPC thermal co-located storage projects · As of {format(new Date(), "dd MMM yyyy, HH:mm")}</p>
+            <p className="mt-1.5 max-w-2xl text-sm text-white/80">
+              Live status across all {kpis.total || 15} NTPC co-located storage projects · As of {format(new Date(), "dd MMM yyyy, HH:mm")}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <HeroPill label="On Track" value={kpis.green} tone="green" />
+              <HeroPill label="At Risk" value={kpis.amber} tone="amber" />
+              <HeroPill label="Delayed" value={kpis.red} tone="red" />
+              <HeroPill label="Deviations" value={kpis.exceptions} tone="red" />
+              <HeroPill label="Due · 30d" value={kpis.upcoming} tone="blue" />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
-              <FileWarning className="mr-2 h-4 w-4" /> Exception Report
-            </Button>
-            <Button variant="secondary" size="sm" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS (Excel)
-            </Button>
-            <Button variant="secondary" size="sm" disabled={capturing} onClick={captureSnapshot}>
-              <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
-            </Button>
-            <Button variant="secondary" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("docx")}>
-              <FileType className="mr-2 h-4 w-4" /> {exporting === "docx" ? "Building…" : "Weekly MIS (Word)"}
-            </Button>
-            <Button variant="secondary" size="sm" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
-              <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS (PDF)"}
-            </Button>
-            <Button variant="secondary" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
-              <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief (Word)"}
-            </Button>
-            <Button variant="secondary" size="sm" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
-              <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief (PDF)"}
-            </Button>
+          <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+            <ProgressRing pct={kpis.avgPct} />
+            <div className="text-white">
+              <div className="text-[10px] uppercase tracking-wider text-white/70">Portfolio avg</div>
+              <div className="font-mono text-3xl font-bold leading-none">{kpis.avgPct}%</div>
+              <div className="mt-1 font-mono text-[11px] text-white/70">{kpis.totalMWh.toLocaleString()} MWh total</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Dashboard</TabsTrigger>
-          <TabsTrigger value="bulk">Bulk MIS Export</TabsTrigger>
-        </TabsList>
+      {/* ===================== REPORTS — all at top ===================== */}
+      <section>
+        <Card className="overflow-hidden p-0">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-4 py-2.5" style={{ background: "color-mix(in oklab, var(--primary) 7%, var(--card))" }}>
+            <FileStack className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold tracking-tight">Reports &amp; Exports</span>
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">— generate any MIS deliverable instantly</span>
+          </div>
+          <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ReportGroup title="Excel" accent="var(--status-green)">
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading} onClick={() => exportWeeklyMIS(stations, tasks, statusByStation)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Weekly MIS
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading} onClick={() => exportExceptions(stations, tasks, statusByStation)}>
+                <FileWarning className="mr-2 h-4 w-4" /> Exception Report
+              </Button>
+            </ReportGroup>
+            <ReportGroup title="PDF" accent="var(--status-red)">
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("pdf")}>
+                <FileText className="mr-2 h-4 w-4" /> {exporting === "pdf" ? "Building…" : "Weekly MIS"}
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("pdf")}>
+                <FileStack className="mr-2 h-4 w-4" /> {briefExporting === "pdf" ? "Building…" : "Weekly Brief"}
+              </Button>
+            </ReportGroup>
+            <ReportGroup title="Word" accent="var(--status-blue)">
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading || exporting !== null} onClick={() => runWeeklyExport("docx")}>
+                <FileType className="mr-2 h-4 w-4" /> {exporting === "docx" ? "Building…" : "Weekly MIS"}
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start" disabled={loading || briefExporting !== null} onClick={() => runWeeklyBrief("docx")}>
+                <FileType className="mr-2 h-4 w-4" /> {briefExporting === "docx" ? "Building…" : "Weekly Brief"}
+              </Button>
+            </ReportGroup>
+            <ReportGroup title="Live data" accent="var(--brand-3)">
+              <Button variant="outline" size="sm" className="justify-start" disabled={capturing} onClick={captureSnapshot}>
+                <Camera className="mr-2 h-4 w-4" /> {capturing ? "Capturing…" : "Capture Snapshot"}
+              </Button>
+              <Link to="/drawings" className="inline-flex h-9 items-center justify-start rounded-md border border-border px-3 text-sm transition-colors hover:border-primary/40 hover:text-primary">
+                <FileStack className="mr-2 h-4 w-4" /> Drawings page
+              </Link>
+            </ReportGroup>
+          </div>
+          <details className="group border-t border-border/60">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary/50">
+              <Package className="h-4 w-4 text-primary" />
+              Bulk MIS Pack — multi-station, multi-report .zip
+              <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="border-t border-border/60 p-4">
+              <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} embedded />
+            </div>
+          </details>
+        </Card>
+      </section>
 
-        <TabsContent value="overview" className="mt-0 space-y-6">
-
-
+      {/* ============================ KPI STRIP ============================ */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-
         <Kpi icon={<Battery className="h-4 w-4" />} label="Total Capacity" value={`${kpis.totalMWh.toLocaleString()}`} unit="MWh" tone="primary" />
         <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Avg. Progress" value={`${kpis.avgPct}`} unit="%" tone="primary" />
         <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="On Track" value={`${kpis.green}`} unit={`/ ${kpis.total}`} tone="green" onClick={() => onStatusCardClick("green")} active={healthFilter === "green"} />
@@ -394,97 +434,138 @@ function Dashboard() {
         <Kpi icon={<Calendar className="h-4 w-4" />} label="Due in 30 days" value={`${kpis.upcoming}`} unit="tasks" tone="primary" />
       </section>
 
-      <section>
-        <SectionHeading title="Portfolio Progress vs Delays" sub="Weighted % complete per station with delayed-task overlay · portfolio average shown as reference line" />
-        <Card className="p-4">
-          <div style={{ width: "100%", height: 360 }}>
-            <ResponsiveContainer>
-              <ComposedChart
-                data={computed.map(s => ({ name: s.name, pct: s.pct, remaining: Math.max(0, 100 - s.pct), delayed: s.delayed, health: s.health }))}
-                margin={{ top: 16, right: 24, left: 0, bottom: 70 }}
-                barCategoryGap="22%"
-              >
-                <defs>
-                  <linearGradient id="gradProgress" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
-                    <stop offset="100%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
-                  </linearGradient>
-                  <linearGradient id="gradRemaining" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--muted)" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="var(--muted)" stopOpacity={0.18} />
-                  </linearGradient>
-                  <linearGradient id="gradDelay" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.72 0.22 28)" stopOpacity={0.95} />
-                    <stop offset="100%" stopColor="oklch(0.55 0.20 28)" stopOpacity={0.95} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={70} />
-                <YAxis yAxisId="left" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
-                <YAxis yAxisId="right" orientation="right" tick={{ fill: "oklch(0.72 0.22 28)", fontSize: 10 }} allowDecimals={false} label={{ value: "Delayed tasks", angle: 90, position: "insideRight", fill: "oklch(0.72 0.22 28)", fontSize: 10 }} />
-                <Tooltip
-                  cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
-                  contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                  formatter={(value: number, name: string) => {
-                    if (name === "Remaining") return [`${value}%`, "Remaining"];
-                    if (name === "% Complete") return [`${value}%`, "% Complete"];
-                    return [value, name];
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <ReferenceLine yAxisId="left" y={kpis.avgPct} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
-                  label={{ value: `Portfolio avg ${kpis.avgPct}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
-                <Bar yAxisId="left" dataKey="pct" name="% Complete" stackId="prog" fill="url(#gradProgress)" radius={[0, 0, 0, 0]}>
-                  <LabelList dataKey="pct" position="insideTop" fill="var(--background)" fontSize={9} formatter={(v: number) => v >= 8 ? `${v}%` : ""} />
-                </Bar>
-                <Bar yAxisId="left" dataKey="remaining" name="Remaining" stackId="prog" fill="url(#gradRemaining)" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="right" dataKey="delayed" name="Delayed tasks" fill="url(#gradDelay)" radius={[4, 4, 0, 0]} maxBarSize={14}>
-                  <LabelList dataKey="delayed" position="top" fill="oklch(0.72 0.22 28)" fontSize={10} formatter={(v: number) => v > 0 ? v : ""} />
-                </Bar>
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
-            <LegendDot grad="linear-gradient(180deg,oklch(0.78 0.18 195),oklch(0.55 0.16 220))" label="Physical % complete (weighted by duration)" />
-            <LegendDot grad="var(--muted)" label="Remaining to 100%" />
-            <LegendDot grad="linear-gradient(180deg,oklch(0.72 0.22 28),oklch(0.55 0.20 28))" label="Delayed leaf tasks" />
-            <LegendDot grad="var(--primary)" label={`Portfolio avg ${kpis.avgPct}%`} dashed />
-          </div>
-        </Card>
-      </section>
-
-      <AgencyPerformance data={agencyData} />
-
-      <section className="grid gap-6 xl:grid-cols-3" ref={stationsRef}>
-        <div className="xl:col-span-2">
-          <SectionHeading
-            title={healthFilter ? `Stations — ${healthLabel(healthFilter)}` : "Stations"}
-            sub={healthFilter ? `Showing ${visibleStations.length} ${healthLabel(healthFilter).toLowerCase()} station(s) · click a card to open the L2 Gantt` : `${stations.length} sites · Click any card to open the L2 Gantt`}
-          />
-          {healthFilter && (
-            <button onClick={() => setHealthFilter(null)} className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-              Clear filter · show all {computed.length}
-            </button>
-          )}
-          {loading ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
+      {/* ================= BENTO: progress chart + top 5 deviations ================= */}
+      <section className="grid gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-8">
+          <SectionHeading title="Portfolio Progress vs Delays" sub="Weighted % complete per station with delayed-task overlay · portfolio average shown as reference line" />
+          <Card className="p-4">
+            <div style={{ width: "100%", height: 360 }}>
+              <ResponsiveContainer>
+                <ComposedChart
+                  data={computed.map(s => ({ name: s.name, pct: s.pct, remaining: Math.max(0, 100 - s.pct), delayed: s.delayed, health: s.health }))}
+                  margin={{ top: 16, right: 24, left: 0, bottom: 70 }}
+                  barCategoryGap="22%"
+                >
+                  <defs>
+                    <linearGradient id="gradProgress" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="oklch(0.78 0.18 195)" stopOpacity={1} />
+                      <stop offset="100%" stopColor="oklch(0.55 0.16 220)" stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id="gradRemaining" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--muted)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--muted)" stopOpacity={0.18} />
+                    </linearGradient>
+                    <linearGradient id="gradDelay" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="oklch(0.72 0.22 28)" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="oklch(0.55 0.20 28)" stopOpacity={0.95} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={70} />
+                  <YAxis yAxisId="left" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: "oklch(0.72 0.22 28)", fontSize: 10 }} allowDecimals={false} label={{ value: "Delayed tasks", angle: 90, position: "insideRight", fill: "oklch(0.72 0.22 28)", fontSize: 10 }} />
+                  <Tooltip
+                    cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
+                    contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "Remaining") return [`${value}%`, "Remaining"];
+                      if (name === "% Complete") return [`${value}%`, "% Complete"];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                  <ReferenceLine yAxisId="left" y={kpis.avgPct} stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5}
+                    label={{ value: `Portfolio avg ${kpis.avgPct}%`, fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} />
+                  <Bar yAxisId="left" dataKey="pct" name="% Complete" stackId="prog" fill="url(#gradProgress)" radius={[0, 0, 0, 0]}>
+                    <LabelList dataKey="pct" position="insideTop" fill="var(--background)" fontSize={9} formatter={(v: number) => v >= 8 ? `${v}%` : ""} />
+                  </Bar>
+                  <Bar yAxisId="left" dataKey="remaining" name="Remaining" stackId="prog" fill="url(#gradRemaining)" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="delayed" name="Delayed tasks" fill="url(#gradDelay)" radius={[4, 4, 0, 0]} maxBarSize={14}>
+                    <LabelList dataKey="delayed" position="top" fill="oklch(0.72 0.22 28)" fontSize={10} formatter={(v: number) => v > 0 ? v : ""} />
+                  </Bar>
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
-          ) : visibleStations.length === 0 ? (
-            <Card className="p-6 text-center text-sm text-muted-foreground">No stations in this status.</Card>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {visibleStations.map(s => <StationCard key={s.id} s={s} />)}
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+              <LegendDot grad="linear-gradient(180deg,oklch(0.78 0.18 195),oklch(0.55 0.16 220))" label="Physical % complete (weighted by duration)" />
+              <LegendDot grad="var(--muted)" label="Remaining to 100%" />
+              <LegendDot grad="linear-gradient(180deg,oklch(0.72 0.22 28),oklch(0.55 0.20 28))" label="Delayed leaf tasks" />
+              <LegendDot grad="var(--primary)" label={`Portfolio avg ${kpis.avgPct}%`} dashed />
             </div>
-          )}
+          </Card>
         </div>
-        <div className="space-y-6">
-          <div>
-            <SectionHeading title="Upcoming Meetings" sub="Planned reviews across stations · highlighted important dates" />
-            <UpcomingMeetings />
-          </div>
+        <div className="xl:col-span-4">
           <StationExceptions exceptions={exceptions} loading={loading} />
         </div>
+      </section>
+
+      {/* ================= BENTO: S-curve + upcoming meetings ================= */}
+      <section className="grid gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-8">
+          <div className="mb-3">
+            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+              <LineChartIcon className="h-4 w-4 text-primary" /> Portfolio S-Curve
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Ideal / baseline vs actual cumulative progress · Actual {portfolioAnalytics.totals.avgProgress}% vs ideal {portfolioAnalytics.totals.idealProgress}% ·{" "}
+              {portfolioAnalytics.totals.daysBehind >= 0 ? `${portfolioAnalytics.totals.daysBehind} days behind` : `${Math.abs(portfolioAnalytics.totals.daysBehind)} days ahead of`} baseline
+            </p>
+          </div>
+          <Card className="p-4">
+            {portfolioAnalytics.sCurve.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">No baseline schedule available to plot the S-curve.</div>
+            ) : (
+              <div style={{ width: "100%", height: 360 }}>
+                <ResponsiveContainer>
+                  <ComposedChart data={portfolioAnalytics.sCurve} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval="preserveStartEnd" height={50} />
+                    <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
+                    <Tooltip
+                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(value: number, name: string) => [value == null ? "—" : `${value}%`, name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                    <ReferenceLine x="Now" stroke="var(--primary)" strokeDasharray="3 3" label={{ value: "Now", fill: "var(--primary)", fontSize: 10, position: "top" }} />
+                    <Line type="monotone" dataKey="planned" name="Ideal / Baseline" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--primary)" strokeWidth={2.5} dot={false} connectNulls />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Card>
+        </div>
+        <div className="xl:col-span-4">
+          <SectionHeading title="Upcoming Meetings" sub="Planned reviews across stations · highlighted important dates" />
+          <UpcomingMeetings />
+        </div>
+      </section>
+
+      {/* ============================ AGENCY ============================ */}
+      <AgencyPerformance data={agencyData} />
+
+      {/* ============================ STATIONS ============================ */}
+      <section ref={stationsRef}>
+        <SectionHeading
+          title={healthFilter ? `Stations — ${healthLabel(healthFilter)}` : "Stations"}
+          sub={healthFilter ? `Showing ${visibleStations.length} ${healthLabel(healthFilter).toLowerCase()} station(s) · click a card to open the L2 Gantt` : `${stations.length} sites · Click any card to open the L2 Gantt`}
+        />
+        {healthFilter && (
+          <button onClick={() => setHealthFilter(null)} className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+            Clear filter · show all {computed.length}
+          </button>
+        )}
+        {loading ? (
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
+          </div>
+        ) : visibleStations.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">No stations in this status.</Card>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visibleStations.map(s => <StationCard key={s.id} s={s} />)}
+          </div>
+        )}
       </section>
 
       <DrawingsSummary stations={stations} drawings={drawingsQ.data ?? []} />
@@ -498,49 +579,7 @@ function Dashboard() {
         complMaster={complMasterQ.data ?? []}
         complStatus={complStatusQ.data ?? []}
       />
-
-      <section>
-        <div className="mb-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <LineChartIcon className="h-4 w-4 text-primary" /> Portfolio S-Curve
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Ideal / baseline vs actual cumulative progress · Actual {portfolioAnalytics.totals.avgProgress}% vs ideal {portfolioAnalytics.totals.idealProgress}% ·{" "}
-            {portfolioAnalytics.totals.daysBehind >= 0 ? `${portfolioAnalytics.totals.daysBehind} days behind` : `${Math.abs(portfolioAnalytics.totals.daysBehind)} days ahead of`} baseline
-          </p>
-        </div>
-        <Card className="p-4">
-          {portfolioAnalytics.sCurve.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">No baseline schedule available to plot the S-curve.</div>
-          ) : (
-            <div style={{ width: "100%", height: 360 }}>
-              <ResponsiveContainer>
-                <ComposedChart data={portfolioAnalytics.sCurve} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval="preserveStartEnd" height={50} />
-                  <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} domain={[0, 100]} unit="%" />
-                  <Tooltip
-                    contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                    formatter={(value: number, name: string) => [value == null ? "—" : `${value}%`, name]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                  <ReferenceLine x="Now" stroke="var(--primary)" strokeDasharray="3 3" label={{ value: "Now", fill: "var(--primary)", fontSize: 10, position: "top" }} />
-                  <Line type="monotone" dataKey="planned" name="Ideal / Baseline" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--primary)" strokeWidth={2.5} dot={false} connectNulls />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Card>
-      </section>
-        </TabsContent>
-
-        <TabsContent value="bulk" className="mt-0">
-          <BulkMisPanel stations={stations} tasks={tasks} statusByStation={statusByStation} />
-        </TabsContent>
-      </Tabs>
     </div>
-
   );
 }
 
