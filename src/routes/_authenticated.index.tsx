@@ -888,8 +888,8 @@ function StationExceptions({ exceptions, loading }: { exceptions: ExceptionRow[]
   return (
     <div>
       <SectionHeading
-        title="Top 10 Exceptions"
-        sub={station === "all" ? "Worst 10 delayed / blocked activities across all stations · days overdue against planned finish" : "Worst 10 delayed / blocked activities for this station · days overdue against planned finish"}
+        title="Top 5 Deviations"
+        sub={station === "all" ? "Worst 5 delayed / blocked activities across all stations · days overdue against planned finish" : "Worst 5 delayed / blocked activities for this station · days overdue against planned finish"}
         right={
           <Select value={station} onValueChange={setStation}>
             <SelectTrigger className="h-8 w-[190px] text-xs">
