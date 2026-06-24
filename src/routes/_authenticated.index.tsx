@@ -707,9 +707,9 @@ function BulkMisPanel({ stations, tasks, statusByStation, embedded }: { stations
   };
 
   return (
-    <section>
-      <SectionHeading title="Bulk MIS Export" sub="Generate a single .zip pack with all selected reports for top-management review" />
-      <Card className="p-4">
+    <section className={embedded ? "contents" : undefined}>
+      {!embedded && <SectionHeading title="Bulk MIS Export" sub="Generate a single .zip pack with all selected reports for top-management review" />}
+      <Card className={embedded ? "border-0 bg-transparent p-0 shadow-none" : "p-4"}>
         <div className="grid gap-6 lg:grid-cols-[1fr_1fr_auto]">
           <div>
             <div className="mb-2 flex items-center justify-between">
