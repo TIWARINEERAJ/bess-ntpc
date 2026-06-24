@@ -1004,3 +1004,42 @@ function StationCard({ s }: { s: Station & ReturnType<typeof stationProgress> & 
     </Link>
   );
 }
+
+function HeroPill({ label, value, tone }: { label: string; value: number; tone: "green" | "amber" | "red" | "blue" }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-sm ring-1 ring-white/10">
+      <span className="h-2 w-2 rounded-full" style={{ background: `var(--status-${tone})` }} />
+      <span className="text-[11px] text-white/80">{label}</span>
+      <span className="font-mono text-sm font-bold text-white">{value}</span>
+    </div>
+  );
+}
+
+function ProgressRing({ pct }: { pct: number }) {
+  const r = 28;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.min(100, Math.max(0, pct));
+  const off = c - (clamped / 100) * c;
+  return (
+    <svg width="76" height="76" viewBox="0 0 76 76" className="shrink-0">
+      <circle cx="38" cy="38" r={r} fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="7" />
+      <circle
+        cx="38" cy="38" r={r} fill="none" stroke="white" strokeWidth="7" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={off} transform="rotate(-90 38 38)"
+      />
+      <text x="38" y="43" textAnchor="middle" className="fill-white font-mono text-[16px] font-bold">{clamped}%</text>
+    </svg>
+  );
+}
+
+function ReportGroup({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-sm" style={{ background: accent }} />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
+      </div>
+      <div className="grid gap-2">{children}</div>
+    </div>
+  );
+}
