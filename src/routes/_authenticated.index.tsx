@@ -31,7 +31,7 @@ import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, C
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { DrawingTypeAnalytics, BoiComplianceAnalytics } from "@/components/PortfolioAnalytics";
 import { LineChart as LineChartIcon } from "lucide-react";
 
