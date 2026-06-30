@@ -561,7 +561,7 @@ function TaskDrawer({ stationId, task, status, revisions, derived, cpm, linkedBo
 
   return (
     <Sheet open={!!task} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-md">
+      <SheetContent className="w-full sm:max-w-md flex flex-col">
         <SheetHeader>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="font-mono text-[10px]">{task.wbs_code}</Badge>
@@ -573,7 +573,7 @@ function TaskDrawer({ stationId, task, status, revisions, derived, cpm, linkedBo
             {task.predecessors && <div className="mt-1 text-[10px]">Predecessors: <span className="font-mono">{task.predecessors}</span></div>}
           </SheetDescription>
         </SheetHeader>
-        <div className="mt-6 space-y-4 px-4">
+        <div className="mt-6 flex-1 overflow-y-auto space-y-4 px-4">
           {cpm && !isSection && (
             <div className="rounded-md border border-border/60 bg-secondary/30 p-3">
               <div className="mb-2 flex items-center justify-between">
