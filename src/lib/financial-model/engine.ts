@@ -18,7 +18,7 @@
  * ============================================================================
  */
 
-import { GLOBAL_ASSUMPTIONS as G, type Project } from "./data";
+import { GLOBAL_ASSUMPTIONS as G, PROJECTS, type Project } from "./data";
 
 /** Assumptions that drive a single calculation run (defaults = report §C2). */
 export interface EngineAssumptions {
