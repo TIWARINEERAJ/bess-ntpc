@@ -401,5 +401,5 @@ export function computeProject(p: Project, a: EngineAssumptions = defaultAssumpt
 }
 
 export function computePortfolio(a: EngineAssumptions = defaultAssumptions()) {
-  return (require("./data").PROJECTS as Project[]).map((p) => computeProject(p, a));
+  return PROJECTS.map((p) => computeProject(p, a));
 }
