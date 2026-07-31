@@ -121,7 +121,7 @@ export function RemarksTimeline({
       setDraft("");
       qc.invalidateQueries({ queryKey: remarksKey(stationId, entityType, entityId ?? "") });
       onAdded?.(latest);
-      toast.success("Remark added to trail");
+      toast.success("Remark added");
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -129,13 +129,13 @@ export function RemarksTimeline({
   const remarks = remarksQ.data ?? [];
 
   if (!entityId) {
-    return <p className="text-[11px] text-muted-foreground">Save this item first to start its remarks trail.</p>;
+    return <p className="text-[11px] text-muted-foreground">Save this item first to start adding remarks.</p>;
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-        <History className="h-3.5 w-3.5" /> Remarks trail
+        <History className="h-3.5 w-3.5" /> Remarks
         {remarks.length > 0 && <span className="text-muted-foreground/70">({remarks.length})</span>}
       </div>
 
@@ -160,9 +160,9 @@ export function RemarksTimeline({
       )}
 
       <div className="max-h-60 space-y-0 overflow-y-auto">
-        {remarksQ.isLoading && <p className="text-[11px] text-muted-foreground">Loading trail…</p>}
+        {remarksQ.isLoading && <p className="text-[11px] text-muted-foreground">Loading remarks…</p>}
         {!remarksQ.isLoading && remarks.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">No remarks yet. The first remark you add starts the trail.</p>
+          <p className="text-[11px] text-muted-foreground">No remarks yet. Add the first remark to start the timeline.</p>
         )}
         <ol className="relative space-y-3 border-l border-border/60 pl-4">
           {remarks.map((r) => (

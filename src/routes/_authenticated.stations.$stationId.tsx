@@ -689,10 +689,6 @@ function TaskDrawer({ stationId, task, status, revisions, derived, cpm, linkedBo
             <Label htmlFor="own">Owner</Label>
             <Input id="own" disabled={!canEdit || task.is_section} value={owner} onChange={e => setOwner(e.target.value)} placeholder="Responsible person / agency" />
           </div>
-          <div>
-            <Label htmlFor="rem">Remarks (current)</Label>
-            <Textarea id="rem" disabled={!canEdit || task.is_section} value={remarks} onChange={e => setRemarks(e.target.value)} rows={3} placeholder="Delay reason / notes" />
-          </div>
           {!task.is_section && (
             <div className="rounded-md border border-border/60 bg-card/40 p-3">
               <RemarksTimeline
