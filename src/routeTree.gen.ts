@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedWeeklyPlannerRouteImport } from './routes/_authenticated.weekly-planner'
+import { Route as AuthenticatedTraceabilityRouteImport } from './routes/_authenticated.traceability'
 import { Route as AuthenticatedScheduleHealthRouteImport } from './routes/_authenticated.schedule-health'
 import { Route as AuthenticatedRepositoryRouteImport } from './routes/_authenticated.repository'
 import { Route as AuthenticatedFinancialModelRouteImport } from './routes/_authenticated.financial-model'
@@ -39,6 +40,12 @@ const AuthenticatedWeeklyPlannerRoute =
   AuthenticatedWeeklyPlannerRouteImport.update({
     id: '/weekly-planner',
     path: '/weekly-planner',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTraceabilityRoute =
+  AuthenticatedTraceabilityRouteImport.update({
+    id: '/traceability',
+    path: '/traceability',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedScheduleHealthRoute =
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/financial-model': typeof AuthenticatedFinancialModelRoute
   '/repository': typeof AuthenticatedRepositoryRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
+  '/traceability': typeof AuthenticatedTraceabilityRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
   '/api/public/hooks/weekly-snapshot': typeof ApiPublicHooksWeeklySnapshotRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/financial-model': typeof AuthenticatedFinancialModelRoute
   '/repository': typeof AuthenticatedRepositoryRoute
   '/schedule-health': typeof AuthenticatedScheduleHealthRoute
+  '/traceability': typeof AuthenticatedTraceabilityRoute
   '/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/': typeof AuthenticatedIndexRoute
   '/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/financial-model': typeof AuthenticatedFinancialModelRoute
   '/_authenticated/repository': typeof AuthenticatedRepositoryRoute
   '/_authenticated/schedule-health': typeof AuthenticatedScheduleHealthRoute
+  '/_authenticated/traceability': typeof AuthenticatedTraceabilityRoute
   '/_authenticated/weekly-planner': typeof AuthenticatedWeeklyPlannerRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/stations/$stationId': typeof AuthenticatedStationsStationIdRoute
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/financial-model'
     | '/repository'
     | '/schedule-health'
+    | '/traceability'
     | '/weekly-planner'
     | '/stations/$stationId'
     | '/api/public/hooks/weekly-snapshot'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/financial-model'
     | '/repository'
     | '/schedule-health'
+    | '/traceability'
     | '/weekly-planner'
     | '/'
     | '/stations/$stationId'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financial-model'
     | '/_authenticated/repository'
     | '/_authenticated/schedule-health'
+    | '/_authenticated/traceability'
     | '/_authenticated/weekly-planner'
     | '/_authenticated/'
     | '/_authenticated/stations/$stationId'
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/weekly-planner'
       fullPath: '/weekly-planner'
       preLoaderRoute: typeof AuthenticatedWeeklyPlannerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/traceability': {
+      id: '/_authenticated/traceability'
+      path: '/traceability'
+      fullPath: '/traceability'
+      preLoaderRoute: typeof AuthenticatedTraceabilityRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/schedule-health': {
@@ -253,6 +273,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinancialModelRoute: typeof AuthenticatedFinancialModelRoute
   AuthenticatedRepositoryRoute: typeof AuthenticatedRepositoryRoute
   AuthenticatedScheduleHealthRoute: typeof AuthenticatedScheduleHealthRoute
+  AuthenticatedTraceabilityRoute: typeof AuthenticatedTraceabilityRoute
   AuthenticatedWeeklyPlannerRoute: typeof AuthenticatedWeeklyPlannerRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedStationsStationIdRoute: typeof AuthenticatedStationsStationIdRoute
@@ -264,6 +285,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinancialModelRoute: AuthenticatedFinancialModelRoute,
   AuthenticatedRepositoryRoute: AuthenticatedRepositoryRoute,
   AuthenticatedScheduleHealthRoute: AuthenticatedScheduleHealthRoute,
+  AuthenticatedTraceabilityRoute: AuthenticatedTraceabilityRoute,
   AuthenticatedWeeklyPlannerRoute: AuthenticatedWeeklyPlannerRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedStationsStationIdRoute: AuthenticatedStationsStationIdRoute,
