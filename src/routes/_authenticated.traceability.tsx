@@ -195,7 +195,7 @@ function TraceabilityPage() {
                   <Badge variant="outline">{stationName}</Badge>
                   <h2 className="text-base font-semibold">{activeBoi.name}</h2>
                   {activeLink?.concept && <Badge className="bg-primary/15 text-primary">{activeLink.concept.replace(/_/g, " ")}</Badge>}
-                  <Link to="/stations/$stationId" params={{ stationId: activeStation! }} className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                  <Link to="/stations/$stationId" params={{ stationId: activeStation! }} search={{ tab: "boi" }} className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline">
                     Open station <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
