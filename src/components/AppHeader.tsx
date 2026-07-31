@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Battery, LogOut, Shield, CalendarDays, Users, LineChart, FileStack, BookOpen, Calculator } from "lucide-react";
+import { Battery, LogOut, Shield, CalendarDays, Users, LineChart, FileStack, BookOpen, Calculator, Network } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,9 @@ export function AppHeader() {
           <Link to="/" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} activeOptions={{ exact: true }}>Dashboard</Link>
           <Link to="/drawings" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} title="Drawings = Master Drawing List (MDL)">
             <FileStack className="h-3.5 w-3.5" /> Drawings (MDL)
+          </Link>
+          <Link to="/traceability" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }} title="BOI to MDL to L2 drilldown">
+            <Network className="h-3.5 w-3.5" /> Traceability
           </Link>
           <Link to="/schedule-health" className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
             <LineChart className="h-3.5 w-3.5" /> Schedule Health
