@@ -425,33 +425,39 @@ export function BoiComplianceAnalytics({
           <p className="mt-1 text-center text-[10px] text-muted-foreground">Tip: click a bar to see the underlying items for that station &amp; stage</p>
 
 
-          {/* Per-component (item) breakdown — click a component for its station-wise constituents */}
+          {/* Per-component (item) breakdown — item-wise chart, click a bar/row for station-wise constituents */}
           {boiByItem.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-5">
               <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                Components ({boiByItem.length}) · click for station-wise constituents
+                BOI item-wise status ({boiByItem.length} components) · click a bar for station-wise constituents
               </div>
-              <div className="max-h-72 space-y-1.5 overflow-auto pr-1">
-                {boiByItem.map((it) => (
-                  <button
-                    key={it.id}
-                    onClick={() => setBoiDrill({ id: it.id, name: it.name })}
-                    className="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-left text-xs transition-colors hover:border-primary/40"
+              <div style={{ width: "100%", height: Math.max(260, boiByItem.length * 30) }}>
+                <ResponsiveContainer>
+                  <ComposedChart
+                    layout="vertical"
+                    data={boiByItem}
+                    margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+                    barCategoryGap="22%"
                   >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{it.name}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {it.received}/{it.total} received{it.category ? ` · ${it.category}` : ""}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 font-mono">
-                      <span style={{ color: "var(--status-blue)" }} title="PO placed">{it.po}</span>
-                      <span style={{ color: "#8b5cf6" }} title="Delivered">{it.delivered}</span>
-                      <span style={{ color: "var(--status-green)" }} title="Received">{it.received}</span>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    </span>
-                  </button>
-                ))}
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={190}
+                      interval={0}
+                      tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
+                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
+                    <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
