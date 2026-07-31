@@ -68,53 +68,149 @@ export const ingestDocument = createServerFn({ method: "POST" })
     }
   });
 
-// ---------- Build a compact live DB snapshot for the AI ----------
-async function buildProjectSnapshot(supabase: any): Promise<string> {
-  const { data: stations } = await supabase.from("stations").select("*").order("sort_order");
-  const { data: tasks } = await supabase.from("l2_tasks").select("id,station_id,is_section");
-  const { data: statuses } = await supabase.from("station_task_status").select("station_id,task_id,percent_complete,status");
-  const { data: delays } = await supabase.from("delay_register").select("station_id,status");
-  const { data: issues } = await supabase.from("issues").select("station_id,status");
+// ---------- Build a comprehensive live DB snapshot for the AI ----------
+const PAGE = 1000;
+async function fetchAll(supabase: any, table: string, columns: string, order?: string) {
+  const rows: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase.from(table).select(columns);
+    if (order) q = q.order(order);
+    const { data, error } = await q.range(from, from + PAGE - 1);
+    if (error) break;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return rows;
+}
 
-  const leafByStation = new Map<string, Set<string>>();
-  for (const t of tasks ?? []) {
-    if (t.is_section) continue;
-    if (!leafByStation.has(t.station_id)) leafByStation.set(t.station_id, new Set());
-    leafByStation.get(t.station_id)!.add(t.id);
-  }
-  const stStatus = new Map<string, { sum: number; n: number; delayed: number }>();
-  for (const s of statuses ?? []) {
-    const leaves = leafByStation.get(s.station_id);
-    if (leaves && !leaves.has(s.task_id)) continue;
-    const e = stStatus.get(s.station_id) ?? { sum: 0, n: 0, delayed: 0 };
-    e.sum += Number(s.percent_complete ?? 0); e.n += 1;
-    if (s.status === "delayed") e.delayed += 1;
-    stStatus.set(s.station_id, e);
-  }
-  const countBy = (rows: any[] | null, key: string, open: (r: any) => boolean) => {
-    const m = new Map<string, number>();
-    for (const r of rows ?? []) { if (open(r)) m.set(r[key], (m.get(r[key]) ?? 0) + 1); }
+const openIssue = (r: any) => r.status !== "resolved" && r.status !== "closed";
+const d = (v: any) => (v ? String(v).slice(0, 10) : "-");
+
+async function buildProjectSnapshot(supabase: any): Promise<string> {
+  const [
+    stations, tasks, statuses, delays, issues,
+    boiMaster, boiStatus, drawings, compliance, complianceMaster, remarks, meetings,
+  ] = await Promise.all([
+    fetchAll(supabase, "stations", "*", "sort_order"),
+    fetchAll(supabase, "l2_tasks", "id,station_id,name,wbs_code,is_section,baseline_start,baseline_finish,duration_days,predecessors", "sort_order"),
+    fetchAll(supabase, "station_task_status", "station_id,task_id,percent_complete,status,actual_start,actual_finish,committed_date,owner,remarks,updated_at"),
+    fetchAll(supabase, "delay_register", "station_id,title,status,reason_category,responsibility,root_cause,corrective_action,recovery_date"),
+    fetchAll(supabase, "issues", "station_id,title,description,severity,status,owner,target_date,created_at"),
+    fetchAll(supabase, "boi_master", "id,station_id,name,inspection_category,scheduled_po_date,sort_order"),
+    fetchAll(supabase, "station_boi_status", "station_id,boi_id,actual_po_date,delivery_date,site_receipt_date,committed_date,inspection_status,drawings_status,sub_vendor_category,remarks"),
+    fetchAll(supabase, "station_drawings", "station_id,drg_ref,drg_desc,category,cat,boi_name,sch_date,submitted_date,sch_apprvl_date,approved_date,resubmitted_date"),
+    fetchAll(supabase, "station_compliance", "station_id,compliance_id,status,application_date,approval_date,expiry_date,owner,remarks"),
+    fetchAll(supabase, "compliance_master", "id,name,category,authority"),
+    fetchAll(supabase, "entity_remarks", "station_id,entity_type,entity_id,remark,author_name,created_at"),
+    fetchAll(supabase, "meetings", "station_id,meeting_type,meeting_date,agenda,action_items,minutes,next_meeting_date"),
+  ]);
+
+  const byStation = <T extends { station_id: string }>(rows: T[]) => {
+    const m = new Map<string, T[]>();
+    for (const r of rows) { const a = m.get(r.station_id) ?? []; a.push(r); m.set(r.station_id, a); }
     return m;
   };
-  const openDelays = countBy(delays, "station_id", r => r.status !== "resolved" && r.status !== "closed");
-  const openIssues = countBy(issues, "station_id", r => r.status !== "resolved");
+  const tasksByStation = byStation(tasks);
+  const statusByTask = new Map(statuses.map((s: any) => [`${s.station_id}::${s.task_id}`, s]));
+  const delaysByStation = byStation(delays);
+  const issuesByStation = byStation(issues);
+  const boiByStation = byStation(boiMaster);
+  const boiStatusMap = new Map(boiStatus.map((b: any) => [`${b.station_id}::${b.boi_id}`, b]));
+  const dwgByStation = byStation(drawings);
+  const compByStation = byStation(compliance);
+  const compName = new Map(complianceMaster.map((c: any) => [c.id, c]));
+  const remarksByStation = byStation(remarks);
+  const meetingsByStation = byStation(meetings);
+  const taskName = new Map(tasks.map((t: any) => [t.id, t.name]));
 
-  const lines = (stations ?? []).map((s: any) => {
-    const e = stStatus.get(s.id);
-    const leaves = leafByStation.get(s.id)?.size ?? 0;
-    const pct = e && e.n ? Math.round(e.sum / e.n) : 0;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const blocks = stations.map((s: any) => {
+    const sTasks = (tasksByStation.get(s.id) ?? []).filter((t: any) => !t.is_section);
+    let sum = 0, done = 0, delayed = 0, notStarted = 0;
+    const late: string[] = [];
+    for (const t of sTasks) {
+      const st: any = statusByTask.get(`${s.id}::${t.id}`);
+      const pct = Number(st?.percent_complete ?? 0);
+      sum += pct;
+      if (pct >= 100 || st?.status === "completed") done += 1;
+      else if (st?.status === "delayed") delayed += 1;
+      else if (!st || st.status === "not_started") notStarted += 1;
+      const slipping = pct < 100 && t.baseline_finish && t.baseline_finish < today;
+      if (slipping && late.length < 25) {
+        late.push(`    - ${t.wbs_code ?? ""} ${t.name} | baseline ${d(t.baseline_start)}→${d(t.baseline_finish)} | actual ${d(st?.actual_start)}→${d(st?.actual_finish)} | ${pct}% | ${st?.status ?? "not_started"}${st?.owner ? ` | owner ${st.owner}` : ""}${st?.remarks ? ` | ${String(st.remarks).slice(0, 140)}` : ""}`);
+      }
+    }
+    const pctAvg = sTasks.length ? Math.round(sum / sTasks.length) : 0;
+
+    // BOI
+    const bois = boiByStation.get(s.id) ?? [];
+    let po = 0, del = 0, rec = 0;
+    const boiLines: string[] = [];
+    for (const b of bois) {
+      const c: any = boiStatusMap.get(`${s.id}::${b.id}`);
+      if (c?.actual_po_date) po += 1;
+      if (c?.delivery_date) del += 1;
+      if (c?.site_receipt_date) rec += 1;
+      boiLines.push(`    - ${b.name}${b.inspection_category ? ` [${b.inspection_category}]` : ""} | sch PO ${d(b.scheduled_po_date)} | PO ${d(c?.actual_po_date)} | delivered ${d(c?.delivery_date)} | received ${d(c?.site_receipt_date)}${c?.sub_vendor_category ? ` | sub-vendor ${c.sub_vendor_category}` : ""}${c?.remarks ? ` | ${String(c.remarks).slice(0, 120)}` : ""}`);
+    }
+
+    // MDL drawings by category
+    const dwgs = dwgByStation.get(s.id) ?? [];
+    const catAgg = new Map<string, { t: number; sub: number; app: number }>();
+    for (const w of dwgs) {
+      const k = (w.category || "Uncategorised").trim();
+      const e = catAgg.get(k) ?? { t: 0, sub: 0, app: 0 };
+      e.t += 1;
+      if (w.submitted_date || w.resubmitted_date) e.sub += 1;
+      if (w.approved_date) e.app += 1;
+      catAgg.set(k, e);
+    }
+    const overdueDwgs = dwgs
+      .filter((w: any) => !w.approved_date && w.sch_apprvl_date && w.sch_apprvl_date < today)
+      .slice(0, 25)
+      .map((w: any) => `    - ${w.drg_ref} ${String(w.drg_desc ?? "").slice(0, 80)} | ${w.category} | sch sub ${d(w.sch_date)} sub ${d(w.submitted_date)} | sch appr ${d(w.sch_apprvl_date)} appr ${d(w.approved_date)}`);
+
+    const sDelays = (delaysByStation.get(s.id) ?? []).filter(openIssue);
+    const sIssues = (issuesByStation.get(s.id) ?? []).filter((r: any) => r.status !== "resolved" && r.status !== "closed");
+    const sComp = compByStation.get(s.id) ?? [];
+    const sRemarks = [...(remarksByStation.get(s.id) ?? [])]
+      .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0, 15);
+    const sMeetings = [...(meetingsByStation.get(s.id) ?? [])]
+      .sort((a: any, b: any) => String(b.meeting_date).localeCompare(String(a.meeting_date)))
+      .slice(0, 3);
+
     return [
-      `Station: ${s.name} (Lot ${s.lot ?? "-"})`,
+      `=== STATION: ${s.name} (Lot ${s.lot ?? "-"}) [id ${s.id}] ===`,
       `  Capacity: ${s.capacity_mwh ?? "-"} MWh / ${s.capacity_mw ?? "-"} MW; Cost: ₹${s.project_cost_cr ?? "-"} Cr`,
-      `  Agency: ${s.agency ?? "-"}; NTPC EIC: ${s.ntpc_eic ?? "-"}; PM: ${s.pm_coordinator ?? "-"}`,
-      `  NOA: ${s.noa_date ?? "-"}; Completion: ${s.completion_date ?? "-"}; POI: ${s.poi ?? "-"}`,
+      `  Agency: ${s.agency ?? "-"}; NTPC EIC: ${s.ntpc_eic ?? "-"} (${s.eic_contact ?? "-"}); PM: ${s.pm_coordinator ?? "-"}`,
+      `  NOA: ${d(s.noa_date)}; Start: ${d(s.project_start_date)}; Completion: ${d(s.completion_date)}; POI: ${s.poi ?? "-"}`,
       `  Connectivity: ${s.connectivity_status ?? "-"}; Transformer: ${s.transformer_rating ?? "-"} x${s.transformer_qty ?? "-"}`,
-      `  Physical progress: ${pct}% across ${leaves} L2 activities; Delayed activities: ${e?.delayed ?? 0}`,
-      `  Open hindrances: ${openDelays.get(s.id) ?? 0}; Open issues: ${openIssues.get(s.id) ?? 0}`,
-    ].join("\n");
+      `  L2 SCHEDULE: ${pctAvg}% avg across ${sTasks.length} activities — ${done} completed, ${delayed} delayed, ${notStarted} not started`,
+      late.length ? `  L2 SLIPPING/OVERDUE ACTIVITIES (baseline finish past, not complete):\n${late.join("\n")}` : `  No overdue L2 activities.`,
+      `  BOI: ${bois.length} items — PO ${po}, delivered ${del}, received ${rec}`,
+      boiLines.length ? `  BOI ITEM DETAIL:\n${boiLines.join("\n")}` : "",
+      `  MDL DRAWINGS: ${dwgs.length} total — submitted ${dwgs.filter((w: any) => w.submitted_date || w.resubmitted_date).length}, approved ${dwgs.filter((w: any) => w.approved_date).length}`,
+      `  MDL BY CATEGORY: ${Array.from(catAgg.entries()).map(([k, v]) => `${k}: ${v.app}/${v.sub}/${v.t} (appr/sub/total)`).join("; ") || "-"}`,
+      overdueDwgs.length ? `  MDL APPROVAL OVERDUE:\n${overdueDwgs.join("\n")}` : "",
+      sIssues.length ? `  OPEN ISSUES (${sIssues.length}):\n${sIssues.slice(0, 20).map((i: any) => `    - [${i.severity}] ${i.title}${i.owner ? ` (owner ${i.owner})` : ""}${i.target_date ? ` target ${d(i.target_date)}` : ""}${i.description ? ` — ${String(i.description).slice(0, 200)}` : ""}`).join("\n")}` : "  No open issues.",
+      sDelays.length ? `  OPEN HINDRANCES (${sDelays.length}):\n${sDelays.slice(0, 20).map((x: any) => `    - ${x.title}${x.task_id ? ` [task: ${taskName.get(x.task_id) ?? ""}]` : ""} | cause ${x.root_cause ?? x.reason_category ?? "-"} | resp ${x.responsibility ?? "-"} | recovery ${d(x.recovery_date)}`).join("\n")}` : "  No open hindrances.",
+      sComp.length ? `  STATUTORY COMPLIANCE: ${sComp.map((c: any) => `${compName.get(c.compliance_id)?.name ?? c.compliance_id}=${c.status}${c.approval_date ? ` (appr ${d(c.approval_date)})` : ""}`).join("; ")}` : "",
+      sRemarks.length ? `  LATEST REMARKS / STATUS NOTES:\n${sRemarks.map((r: any) => `    - [${d(r.created_at)}] (${r.entity_type}${r.entity_type === "task" ? `: ${taskName.get(r.entity_id) ?? ""}` : ""}) ${String(r.remark).slice(0, 300)}${r.author_name ? ` — ${r.author_name}` : ""}`).join("\n")}` : "",
+      sMeetings.length ? `  RECENT MEETINGS:\n${sMeetings.map((m: any) => `    - ${d(m.meeting_date)} ${m.meeting_type}${m.action_items ? ` | actions: ${String(m.action_items).slice(0, 300)}` : ""}`).join("\n")}` : "",
+    ].filter(Boolean).join("\n");
   });
-  return `PORTFOLIO: ${stations?.length ?? 0} BESS stations.\n\n${lines.join("\n\n")}`;
+
+  const totals = [
+    `PORTFOLIO SNAPSHOT (generated ${today}): ${stations.length} BESS stations`,
+    `Totals — L2 activities: ${tasks.filter((t: any) => !t.is_section).length}; BOI items: ${boiMaster.length}; MDL drawings: ${drawings.length} (approved ${drawings.filter((w: any) => w.approved_date).length}); open issues: ${issues.filter((i: any) => i.status !== "resolved" && i.status !== "closed").length}; open hindrances: ${delays.filter(openIssue).length}; remarks logged: ${remarks.length}`,
+  ].join("\n");
+
+  return `${totals}\n\n${blocks.join("\n\n")}`;
 }
+
 
 // ---------- RAG chat ----------
 export const askProjectAI = createServerFn({ method: "POST" })
