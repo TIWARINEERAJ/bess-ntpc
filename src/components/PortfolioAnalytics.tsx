@@ -15,6 +15,8 @@ import {
 } from "recharts";
 import { ArrowRight, FileStack, Package, ShieldCheck } from "lucide-react";
 import { isApproved, isSubmitted, type StationDrawing } from "@/lib/drawings";
+import { canonicalBoiName } from "@/lib/oem-catalog";
+
 
 type StationLite = { id: string; name: string };
 
