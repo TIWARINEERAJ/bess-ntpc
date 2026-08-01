@@ -598,6 +598,36 @@ export type Database = {
         }
         Relationships: []
       }
+      oem_vendors: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          source: string
+          tier: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          source?: string
+          tier?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          source?: string
+          tier?: string | null
+        }
+        Relationships: []
+      }
       project_documents: {
         Row: {
           chunk_count: number
@@ -653,9 +683,11 @@ export type Database = {
           committed_date: string | null
           delivery_date: string | null
           drawings_status: string | null
+          expected_delivery_date: string | null
           id: string
           inspection_status: string | null
           mobilization_status: string | null
+          oem_name: string | null
           remarks: string | null
           site_receipt_date: string | null
           station_id: string
@@ -670,9 +702,11 @@ export type Database = {
           committed_date?: string | null
           delivery_date?: string | null
           drawings_status?: string | null
+          expected_delivery_date?: string | null
           id?: string
           inspection_status?: string | null
           mobilization_status?: string | null
+          oem_name?: string | null
           remarks?: string | null
           site_receipt_date?: string | null
           station_id: string
@@ -687,9 +721,11 @@ export type Database = {
           committed_date?: string | null
           delivery_date?: string | null
           drawings_status?: string | null
+          expected_delivery_date?: string | null
           id?: string
           inspection_status?: string | null
           mobilization_status?: string | null
+          oem_name?: string | null
           remarks?: string | null
           site_receipt_date?: string | null
           station_id?: string
