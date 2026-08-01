@@ -42,7 +42,10 @@ type BoiStatus = {
   drawings_status: string | null;
   inspection_status: string | null;
   remarks: string | null;
+  oem_name: string | null;
+  expected_delivery_date: string | null;
 };
+
 
 const DRAWING_OPTIONS = ["", "Submitted", "Approved"];
 const INSPECTION_OPTIONS = ["", "Call Raised", "Pending", "Completed"];
