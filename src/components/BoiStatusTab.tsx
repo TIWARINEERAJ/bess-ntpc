@@ -21,6 +21,8 @@ import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitmen
 import { buildBoiLinks, type BoiLink } from "@/lib/boi-links";
 import { fmtD, type L2Task } from "@/lib/gantt-utils";
 import type { StationDrawing } from "@/lib/drawings";
+import { OemNameField } from "@/components/OemNameField";
+
 
 type Boi = {
   id: string;
