@@ -211,10 +211,12 @@ export function BoiStatusTab({
                 {[
                   "SL",
                   "BOI Equipment",
+                  "OEM Name",
                   "Dwgs",
                   "Sched PO",
                   "Actual PO",
                   "Committed",
+                  "Expected Delivery",
                   "Drawings",
                   "Inspection",
                   "Dispatch",
@@ -224,6 +226,7 @@ export function BoiStatusTab({
                   "Docs",
                   "Quality Plan",
                 ].map((h) => (
+
                   <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">
                     {h}
                   </th>
