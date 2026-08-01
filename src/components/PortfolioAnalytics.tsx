@@ -460,8 +460,6 @@ export function BoiComplianceAnalytics({
             </div>
           </div>
         </Card>
-
-        </Card>
       </div>
 
       <Dialog open={!!boiDrill} onOpenChange={(o) => !o && setBoiDrill(null)}>
