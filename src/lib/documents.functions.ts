@@ -98,7 +98,7 @@ async function buildProjectSnapshot(supabase: any): Promise<string> {
     fetchAll(supabase, "delay_register", "station_id,title,status,reason_category,responsibility,root_cause,corrective_action,recovery_date"),
     fetchAll(supabase, "issues", "station_id,title,description,severity,status,owner,target_date,created_at"),
     fetchAll(supabase, "boi_master", "id,station_id,name,inspection_category,scheduled_po_date,sort_order"),
-    fetchAll(supabase, "station_boi_status", "station_id,boi_id,actual_po_date,delivery_date,site_receipt_date,committed_date,inspection_status,drawings_status,sub_vendor_category,remarks"),
+    fetchAll(supabase, "station_boi_status", "station_id,boi_id,actual_po_date,delivery_date,site_receipt_date,committed_date,expected_delivery_date,oem_name,inspection_status,drawings_status,sub_vendor_category,remarks"),
     fetchAll(supabase, "station_drawings", "station_id,drg_ref,drg_desc,category,cat,boi_name,sch_date,submitted_date,sch_apprvl_date,approved_date,resubmitted_date"),
     fetchAll(supabase, "station_compliance", "station_id,compliance_id,status,application_date,approval_date,expiry_date,owner,remarks"),
     fetchAll(supabase, "compliance_master", "id,name,category,authority"),
