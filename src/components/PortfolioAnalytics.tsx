@@ -290,15 +290,17 @@ export function BoiComplianceAnalytics({
     return { cells, po, delivered, received };
   }, [boiByStation, boiMaster.length]);
 
-  /* ---- BOI: per-component (item) roll-up across stations, grouped by item name ---- */
+  /* ---- BOI: per-component roll-up across stations, clubbing equivalent item names ---- */
   const boiByItem = useMemo(() => {
     const byName = new Map<string, { name: string; category: string | null; sort: number; po: number; delivered: number; received: number; total: number }>();
     for (const st of stations) {
       const items = boiMasterByStation.get(st.id) ?? [];
       for (const b of items) {
-        let e = byName.get(b.name);
-        if (!e) { e = { name: b.name, category: b.inspection_category ?? null, sort: b.sort_order ?? 0, po: 0, delivered: 0, received: 0, total: 0 }; byName.set(b.name, e); }
+        const key = canonicalBoiName(b.name);
+        let e = byName.get(key);
+        if (!e) { e = { name: key, category: b.inspection_category ?? null, sort: b.sort_order ?? 0, po: 0, delivered: 0, received: 0, total: 0 }; byName.set(key, e); }
         e.total += 1;
+        e.sort = Math.min(e.sort, b.sort_order ?? 0);
         const cell = boiStatusMap.get(`${st.id}::${b.id}`);
         if (cell?.actual_po_date) e.po += 1;
         if (cell?.delivery_date) e.delivered += 1;
@@ -306,9 +308,10 @@ export function BoiComplianceAnalytics({
       }
     }
     return Array.from(byName.values())
-      .sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name))
-      .map((e) => ({ id: e.name, name: e.name, category: e.category, po: e.po, delivered: e.delivered, received: e.received, total: e.total }));
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+      .map((e) => ({ id: e.name, name: e.name, category: e.category, po: e.po, delivered: e.delivered, received: e.received, total: e.total, pending: Math.max(0, e.total - e.po) }));
   }, [boiMasterByStation, stations, boiStatusMap]);
+
 
   const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
 
