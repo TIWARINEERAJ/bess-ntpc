@@ -369,6 +369,19 @@ function BoiRow({
           b.name
         )}
       </td>
+      <td className="px-1 py-1">
+        <OemNameField
+          boiName={b.name}
+          value={local.oem_name ?? null}
+          canEdit={canEdit}
+          onSave={(name) => {
+            const n = { ...local, oem_name: name };
+            setLocal(n);
+            onSave(n);
+          }}
+        />
+      </td>
+
       <td className="px-2 py-1 text-[10px]">
         {link && link.drawings.length > 0 ? (
           <div className="flex max-w-[160px] flex-col gap-0.5">
