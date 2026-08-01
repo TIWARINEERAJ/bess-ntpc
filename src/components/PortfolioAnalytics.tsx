@@ -343,13 +343,14 @@ export function BoiComplianceAnalytics({
       .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [stationDrill, boiMasterByStation, boiStatusMap]);
 
-  // Per-station constituents for the drilled component (matched by item name)
+  // Per-station constituents for the drilled component (clubbed item names)
   const boiDrillStations = useMemo(() => {
     if (!boiDrill) return [];
     return stations.map((st) => {
       const items = boiMasterByStation.get(st.id) ?? [];
-      const b = items.find((x) => x.name === boiDrill.id);
+      const b = items.find((x) => canonicalBoiName(x.name) === boiDrill.id);
       if (!b) return null;
+
       const cell = boiStatusMap.get(`${st.id}::${b.id}`);
       const stage = cell?.site_receipt_date ? "received" : cell?.delivery_date ? "delivered" : cell?.actual_po_date ? "po" : "pending";
       return {
