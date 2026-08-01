@@ -424,6 +424,8 @@ function BoiRow({
           <CommitmentHistory revisions={revisions} />
         </div>
       </td>
+      <td className="px-1 py-1">{cell("expected_delivery_date", "date", "w-32")}</td>
+
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>
