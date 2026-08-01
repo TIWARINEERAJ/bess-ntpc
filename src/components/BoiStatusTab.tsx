@@ -21,6 +21,8 @@ import { useCommitmentRevisions, type CommitmentRevision } from "@/lib/commitmen
 import { buildBoiLinks, type BoiLink } from "@/lib/boi-links";
 import { fmtD, type L2Task } from "@/lib/gantt-utils";
 import type { StationDrawing } from "@/lib/drawings";
+import { OemNameField } from "@/components/OemNameField";
+
 
 type Boi = {
   id: string;
@@ -42,7 +44,10 @@ type BoiStatus = {
   drawings_status: string | null;
   inspection_status: string | null;
   remarks: string | null;
+  oem_name: string | null;
+  expected_delivery_date: string | null;
 };
+
 
 const DRAWING_OPTIONS = ["", "Submitted", "Approved"];
 const INSPECTION_OPTIONS = ["", "Call Raised", "Pending", "Completed"];
@@ -208,10 +213,12 @@ export function BoiStatusTab({
                 {[
                   "SL",
                   "BOI Equipment",
+                  "OEM Name",
                   "Dwgs",
                   "Sched PO",
                   "Actual PO",
                   "Committed",
+                  "Expected Delivery",
                   "Drawings",
                   "Inspection",
                   "Dispatch",
@@ -221,6 +228,7 @@ export function BoiStatusTab({
                   "Docs",
                   "Quality Plan",
                 ].map((h) => (
+
                   <th key={h} className="whitespace-nowrap border-b border-border px-2 py-2 text-left font-semibold">
                     {h}
                   </th>
@@ -229,7 +237,7 @@ export function BoiStatusTab({
             </thead>
             <tbody>
               {visible.map((b) => {
-                const s = map.get(b.id) ?? {
+                const s: BoiStatus = map.get(b.id) ?? {
                   station_id: stationId,
                   boi_id: b.id,
                   actual_po_date: null,
@@ -240,7 +248,10 @@ export function BoiStatusTab({
                   drawings_status: null,
                   inspection_status: null,
                   remarks: null,
+                  oem_name: null,
+                  expected_delivery_date: null,
                 };
+
                 const chip = statusChip(b, s);
                 return (
                   <BoiRow
@@ -316,6 +327,10 @@ function BoiRow({
         value={(local[k] as string) ?? ""}
         onChange={(e) => setLocal({ ...local, [k]: e.target.value || null })}
         onBlur={() => dirty && onSave(local)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && dirty) onSave(local);
+        }}
+
       />
     );
   const select = (k: keyof BoiStatus, opts: string[], w = "w-28") => (
@@ -360,6 +375,19 @@ function BoiRow({
           b.name
         )}
       </td>
+      <td className="px-1 py-1">
+        <OemNameField
+          boiName={b.name}
+          value={local.oem_name ?? null}
+          canEdit={canEdit}
+          onSave={(name) => {
+            const n = { ...local, oem_name: name };
+            setLocal(n);
+            onSave(n);
+          }}
+        />
+      </td>
+
       <td className="px-2 py-1 text-[10px]">
         {link && link.drawings.length > 0 ? (
           <div className="flex max-w-[160px] flex-col gap-0.5">
@@ -400,6 +428,8 @@ function BoiRow({
           <CommitmentHistory revisions={revisions} />
         </div>
       </td>
+      <td className="px-1 py-1">{cell("expected_delivery_date", "date", "w-32")}</td>
+
       <td className="px-1 py-1">{select("drawings_status", DRAWING_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{select("inspection_status", INSPECTION_OPTIONS, "w-28")}</td>
       <td className="px-1 py-1">{cell("delivery_date", "date", "w-32")}</td>

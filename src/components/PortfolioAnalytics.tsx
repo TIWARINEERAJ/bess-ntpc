@@ -15,6 +15,8 @@ import {
 } from "recharts";
 import { ArrowRight, FileStack, Package, ShieldCheck } from "lucide-react";
 import { isApproved, isSubmitted, type StationDrawing } from "@/lib/drawings";
+import { canonicalBoiName } from "@/lib/oem-catalog";
+
 
 type StationLite = { id: string; name: string };
 
@@ -288,15 +290,17 @@ export function BoiComplianceAnalytics({
     return { cells, po, delivered, received };
   }, [boiByStation, boiMaster.length]);
 
-  /* ---- BOI: per-component (item) roll-up across stations, grouped by item name ---- */
+  /* ---- BOI: per-component roll-up across stations, clubbing equivalent item names ---- */
   const boiByItem = useMemo(() => {
     const byName = new Map<string, { name: string; category: string | null; sort: number; po: number; delivered: number; received: number; total: number }>();
     for (const st of stations) {
       const items = boiMasterByStation.get(st.id) ?? [];
       for (const b of items) {
-        let e = byName.get(b.name);
-        if (!e) { e = { name: b.name, category: b.inspection_category ?? null, sort: b.sort_order ?? 0, po: 0, delivered: 0, received: 0, total: 0 }; byName.set(b.name, e); }
+        const key = canonicalBoiName(b.name);
+        let e = byName.get(key);
+        if (!e) { e = { name: key, category: b.inspection_category ?? null, sort: b.sort_order ?? 0, po: 0, delivered: 0, received: 0, total: 0 }; byName.set(key, e); }
         e.total += 1;
+        e.sort = Math.min(e.sort, b.sort_order ?? 0);
         const cell = boiStatusMap.get(`${st.id}::${b.id}`);
         if (cell?.actual_po_date) e.po += 1;
         if (cell?.delivery_date) e.delivered += 1;
@@ -304,9 +308,10 @@ export function BoiComplianceAnalytics({
       }
     }
     return Array.from(byName.values())
-      .sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name))
-      .map((e) => ({ id: e.name, name: e.name, category: e.category, po: e.po, delivered: e.delivered, received: e.received, total: e.total }));
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+      .map((e) => ({ id: e.name, name: e.name, category: e.category, po: e.po, delivered: e.delivered, received: e.received, total: e.total, pending: Math.max(0, e.total - e.po) }));
   }, [boiMasterByStation, stations, boiStatusMap]);
+
 
   const [boiDrill, setBoiDrill] = useState<{ id: string; name: string } | null>(null);
 
@@ -338,13 +343,14 @@ export function BoiComplianceAnalytics({
       .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [stationDrill, boiMasterByStation, boiStatusMap]);
 
-  // Per-station constituents for the drilled component (matched by item name)
+  // Per-station constituents for the drilled component (clubbed item names)
   const boiDrillStations = useMemo(() => {
     if (!boiDrill) return [];
     return stations.map((st) => {
       const items = boiMasterByStation.get(st.id) ?? [];
-      const b = items.find((x) => x.name === boiDrill.id);
+      const b = items.find((x) => canonicalBoiName(x.name) === boiDrill.id);
       if (!b) return null;
+
       const cell = boiStatusMap.get(`${st.id}::${b.id}`);
       const stage = cell?.site_receipt_date ? "received" : cell?.delivery_date ? "delivered" : cell?.actual_po_date ? "po" : "pending";
       return {
@@ -401,66 +407,58 @@ export function BoiComplianceAnalytics({
     <section className="grid gap-6 xl:grid-cols-2">
       {/* BOI */}
       <div>
-        <SectionHeading title="BOI Procurement — all stations" sub="Bought-out items: PO placed → delivered → received at site (per-station item master)" />
+        <SectionHeading title="BOI Procurement — all stations" sub="Bought-out items: PO placed → delivered → received at site · equivalent item names clubbed (e.g. IDT / PCS duty transformer)" />
         <Card className="p-4">
           <div className="grid grid-cols-3 gap-3">
             <Stat label="PO placed" value={boiTotals.po} tone="var(--status-blue)" sub={boiTotals.cells ? `${Math.round((boiTotals.po / boiTotals.cells) * 100)}%` : undefined} icon={<Package className="h-3.5 w-3.5" />} />
             <Stat label="Delivered" value={boiTotals.delivered} tone="#8b5cf6" />
             <Stat label="Received at site" value={boiTotals.received} tone="var(--status-green)" />
           </div>
-          <div className="mt-4" style={{ width: "100%", height: 340 }}>
-            <ResponsiveContainer>
-              <ComposedChart data={boiByStation} margin={{ top: 12, right: 12, left: 0, bottom: 80 }} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={80} />
-                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
-                <Tooltip cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "po" })} />
-                <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "delivered" })} />
-                <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[3, 3, 0, 0]} maxBarSize={16} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "received" })} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="mt-1 text-center text-[10px] text-muted-foreground">Tip: click a bar to see the underlying items for that station &amp; stage</p>
 
-
-          {/* Per-component (item) breakdown — item-wise chart, click a bar/row for station-wise constituents */}
+          {/* Item-wise horizontal chart (clubbed component names) */}
           {boiByItem.length > 0 && (
-            <div className="mt-5">
+            <div className="mt-4">
               <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 BOI item-wise status ({boiByItem.length} components) · click a bar for station-wise constituents
               </div>
-              <div style={{ width: "100%", height: Math.max(260, boiByItem.length * 30) }}>
+              <div style={{ width: "100%", height: Math.max(280, boiByItem.length * 34) }}>
                 <ResponsiveContainer>
-                  <ComposedChart
-                    layout="vertical"
-                    data={boiByItem}
-                    margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-                    barCategoryGap="22%"
-                  >
+                  <ComposedChart layout="vertical" data={boiByItem} margin={{ top: 4, right: 20, left: 8, bottom: 4 }} barCategoryGap="26%">
                     <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
                     <XAxis type="number" allowDecimals={false} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={190}
-                      interval={0}
-                      tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }}
-                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                    />
+                    <YAxis type="category" dataKey="name" width={210} interval={0} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+                    <Tooltip cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
                     <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
-                    <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
-                    <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
-                    <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[0, 3, 3, 0]} maxBarSize={12} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[0, 3, 3, 0]} maxBarSize={11} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[0, 3, 3, 0]} maxBarSize={11} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[0, 3, 3, 0]} maxBarSize={11} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
+                    <Bar dataKey="pending" name="PO pending" fill="var(--status-amber)" radius={[0, 3, 3, 0]} maxBarSize={11} cursor="pointer" onClick={(d: any) => d?.payload && setBoiDrill({ id: d.payload.id, name: d.payload.name })} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
+
+          {/* Station-wise horizontal funnel */}
+          <div className="mt-5">
+            <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Station-wise funnel · click a bar for the underlying items
+            </div>
+            <div style={{ width: "100%", height: Math.max(280, boiByStation.length * 30) }}>
+              <ResponsiveContainer>
+                <ComposedChart layout="vertical" data={boiByStation} margin={{ top: 4, right: 20, left: 8, bottom: 4 }} barCategoryGap="24%">
+                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+                  <YAxis type="category" dataKey="name" width={150} interval={0} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+                  <Tooltip cursor={{ fill: "color-mix(in oklab, var(--primary) 8%, transparent)" }} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
+                  <Bar dataKey="po" name="PO placed" fill="var(--status-blue)" radius={[0, 3, 3, 0]} maxBarSize={10} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "po" })} />
+                  <Bar dataKey="delivered" name="Delivered" fill="#8b5cf6" radius={[0, 3, 3, 0]} maxBarSize={10} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "delivered" })} />
+                  <Bar dataKey="received" name="Received" fill="var(--status-green)" radius={[0, 3, 3, 0]} maxBarSize={10} cursor="pointer" onClick={(d: any) => d?.payload && setStationDrill({ stationId: d.payload.id, name: d.payload.name, stage: "received" })} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </Card>
       </div>
 
