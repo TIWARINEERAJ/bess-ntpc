@@ -327,6 +327,10 @@ function BoiRow({
         value={(local[k] as string) ?? ""}
         onChange={(e) => setLocal({ ...local, [k]: e.target.value || null })}
         onBlur={() => dirty && onSave(local)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && dirty) onSave(local);
+        }}
+
       />
     );
   const select = (k: keyof BoiStatus, opts: string[], w = "w-28") => (
