@@ -153,7 +153,7 @@ async function buildProjectSnapshot(supabase: any): Promise<string> {
       if (c?.actual_po_date) po += 1;
       if (c?.delivery_date) del += 1;
       if (c?.site_receipt_date) rec += 1;
-      boiLines.push(`    - ${b.name}${b.inspection_category ? ` [${b.inspection_category}]` : ""} | sch PO ${d(b.scheduled_po_date)} | PO ${d(c?.actual_po_date)} | delivered ${d(c?.delivery_date)} | received ${d(c?.site_receipt_date)}${c?.sub_vendor_category ? ` | sub-vendor ${c.sub_vendor_category}` : ""}${c?.remarks ? ` | ${String(c.remarks).slice(0, 120)}` : ""}`);
+      boiLines.push(`    - ${b.name}${b.inspection_category ? ` [${b.inspection_category}]` : ""} | sch PO ${d(b.scheduled_po_date)} | PO ${d(c?.actual_po_date)} | delivered ${d(c?.delivery_date)} | received ${d(c?.site_receipt_date)}${c?.expected_delivery_date ? ` | exp delivery ${d(c.expected_delivery_date)}` : ""}${c?.oem_name ? ` | OEM ${c.oem_name}` : ""}${c?.sub_vendor_category ? ` | sub-vendor ${c.sub_vendor_category}` : ""}${c?.remarks ? ` | ${String(c.remarks).slice(0, 120)}` : ""}`);
     }
 
     // MDL drawings by category
