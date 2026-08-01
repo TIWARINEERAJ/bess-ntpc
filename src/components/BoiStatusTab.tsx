@@ -232,7 +232,7 @@ export function BoiStatusTab({
             </thead>
             <tbody>
               {visible.map((b) => {
-                const s = map.get(b.id) ?? {
+                const s: BoiStatus = map.get(b.id) ?? {
                   station_id: stationId,
                   boi_id: b.id,
                   actual_po_date: null,
@@ -243,7 +243,10 @@ export function BoiStatusTab({
                   drawings_status: null,
                   inspection_status: null,
                   remarks: null,
+                  oem_name: null,
+                  expected_delivery_date: null,
                 };
+
                 const chip = statusChip(b, s);
                 return (
                   <BoiRow
