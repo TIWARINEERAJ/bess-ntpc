@@ -282,8 +282,18 @@ function Assistant() {
 
   return (
     <Card className="flex h-[calc(100vh-220px)] flex-col p-0">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Bot className="h-4 w-4 text-primary" />
+          {historyLoading ? "Loading saved conversation…" : `Conversation saved — ${messages.length} message${messages.length === 1 ? "" : "s"} in history`}
+        </div>
+        <Button variant="ghost" size="sm" disabled={loading || historyLoading || messages.length === 0} onClick={clearHistory}>
+          <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear history
+        </Button>
+      </div>
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-        {messages.length === 0 && (
+        {historyLoading && <div className="space-y-2"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-10 w-1/2" /></div>}
+        {!historyLoading && messages.length === 0 && (
           <div className="mx-auto max-w-xl py-8 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary"><Sparkles className="h-6 w-6" /></div>
             <h3 className="mt-3 text-lg font-semibold">Ask about the NTPC BESS project</h3>
@@ -295,6 +305,7 @@ function Assistant() {
             </div>
           </div>
         )}
+
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
             {m.role === "assistant" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary"><Bot className="h-4 w-4" /></div>}
