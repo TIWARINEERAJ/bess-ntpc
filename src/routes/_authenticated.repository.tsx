@@ -208,27 +208,77 @@ function Assistant() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const ask = useServerFn(askProjectAI);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
+  // Load saved chat history for the signed-in user
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) { setHistoryLoading(false); return; }
+      const { data, error } = await supabase
+        .from("ai_chat_messages")
+        .select("role,content,sources")
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      if (error) toast.error(`Could not load chat history: ${error.message}`);
+      else setMessages((data ?? []).map(r => ({
+        role: r.role as "user" | "assistant",
+        content: r.content,
+        sources: (r.sources ?? []) as string[],
+      })));
+      setHistoryLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const persist = async (rows: Msg[]) => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const { error } = await supabase.from("ai_chat_messages").insert(
+      rows.map(m => ({
+        user_id: auth.user!.id,
+        role: m.role,
+        content: m.content,
+        sources: m.sources ?? [],
+      })),
+    );
+    if (error) toast.error(`Could not save chat message: ${error.message}`);
+  };
+
+  const clearHistory = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const { error } = await supabase.from("ai_chat_messages").delete().eq("user_id", auth.user.id);
+    if (error) { toast.error(`Could not clear history: ${error.message}`); return; }
+    setMessages([]);
+    toast.success("Chat history cleared");
+  };
 
   const send = async (q: string) => {
     const question = q.trim();
     if (!question || loading) return;
     const history = messages.map(m => ({ role: m.role, content: m.content }));
-    setMessages(prev => [...prev, { role: "user", content: question }]);
+    const userMsg: Msg = { role: "user", content: question };
+    setMessages(prev => [...prev, userMsg]);
     setInput("");
     setLoading(true);
     try {
       const res = await ask({ data: { question, history } });
-      setMessages(prev => [...prev, { role: "assistant", content: res.answer, sources: res.sources }]);
+      const reply: Msg = { role: "assistant", content: res.answer, sources: res.sources };
+      setMessages(prev => [...prev, reply]);
+      await persist([userMsg, reply]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: "assistant", content: `⚠️ ${(e as Error).message}` }]);
+      const reply: Msg = { role: "assistant", content: `⚠️ ${(e as Error).message}` };
+      setMessages(prev => [...prev, reply]);
+      await persist([userMsg, reply]);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <Card className="flex h-[calc(100vh-220px)] flex-col p-0">
