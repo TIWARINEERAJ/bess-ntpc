@@ -208,32 +208,92 @@ function Assistant() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const ask = useServerFn(askProjectAI);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
+  // Load saved chat history for the signed-in user
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) { setHistoryLoading(false); return; }
+      const { data, error } = await supabase
+        .from("ai_chat_messages")
+        .select("role,content,sources")
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      if (error) toast.error(`Could not load chat history: ${error.message}`);
+      else setMessages((data ?? []).map(r => ({
+        role: r.role as "user" | "assistant",
+        content: r.content,
+        sources: (r.sources ?? []) as string[],
+      })));
+      setHistoryLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const persist = async (rows: Msg[]) => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const { error } = await supabase.from("ai_chat_messages").insert(
+      rows.map(m => ({
+        user_id: auth.user!.id,
+        role: m.role,
+        content: m.content,
+        sources: m.sources ?? [],
+      })),
+    );
+    if (error) toast.error(`Could not save chat message: ${error.message}`);
+  };
+
+  const clearHistory = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const { error } = await supabase.from("ai_chat_messages").delete().eq("user_id", auth.user.id);
+    if (error) { toast.error(`Could not clear history: ${error.message}`); return; }
+    setMessages([]);
+    toast.success("Chat history cleared");
+  };
 
   const send = async (q: string) => {
     const question = q.trim();
     if (!question || loading) return;
     const history = messages.map(m => ({ role: m.role, content: m.content }));
-    setMessages(prev => [...prev, { role: "user", content: question }]);
+    const userMsg: Msg = { role: "user", content: question };
+    setMessages(prev => [...prev, userMsg]);
     setInput("");
     setLoading(true);
     try {
       const res = await ask({ data: { question, history } });
-      setMessages(prev => [...prev, { role: "assistant", content: res.answer, sources: res.sources }]);
+      const reply: Msg = { role: "assistant", content: res.answer, sources: res.sources };
+      setMessages(prev => [...prev, reply]);
+      await persist([userMsg, reply]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: "assistant", content: `⚠️ ${(e as Error).message}` }]);
+      const reply: Msg = { role: "assistant", content: `⚠️ ${(e as Error).message}` };
+      setMessages(prev => [...prev, reply]);
+      await persist([userMsg, reply]);
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <Card className="flex h-[calc(100vh-220px)] flex-col p-0">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Bot className="h-4 w-4 text-primary" />
+          {historyLoading ? "Loading saved conversation…" : `Conversation saved — ${messages.length} message${messages.length === 1 ? "" : "s"} in history`}
+        </div>
+        <Button variant="ghost" size="sm" disabled={loading || historyLoading || messages.length === 0} onClick={clearHistory}>
+          <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear history
+        </Button>
+      </div>
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-        {messages.length === 0 && (
+        {historyLoading && <div className="space-y-2"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-10 w-1/2" /></div>}
+        {!historyLoading && messages.length === 0 && (
           <div className="mx-auto max-w-xl py-8 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary"><Sparkles className="h-6 w-6" /></div>
             <h3 className="mt-3 text-lg font-semibold">Ask about the NTPC BESS project</h3>
@@ -245,6 +305,7 @@ function Assistant() {
             </div>
           </div>
         )}
+
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
             {m.role === "assistant" && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary"><Bot className="h-4 w-4" /></div>}
